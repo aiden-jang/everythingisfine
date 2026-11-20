@@ -23,6 +23,8 @@ export function EvidenceCard({ evidence }: { evidence: VisitEvidence }) {
       </div>
       <h3>{evidence.title}</h3>
       <p>{evidence.place}</p>
+      <strong className="kept-reading">{evidence.reading}</strong>
+      <p>{evidence.time}</p>
       {chart && evidence.trace && (
         <figure>
           <svg
@@ -40,8 +42,6 @@ export function EvidenceCard({ evidence }: { evidence: VisitEvidence }) {
           </figcaption>
         </figure>
       )}
-      <strong className="kept-reading">{evidence.reading}</strong>
-      <p>{evidence.time}</p>
       <p>{evidence.detail}</p>
       <a href={evidence.url} target="_blank" rel="noreferrer">
         {evidence.source}

@@ -70,7 +70,7 @@ test("a saved float returns to its measured depth after a new page visit", async
   await page
     .getByRole("textbox", { name: /A note for this observation/ })
     .fill("The warmer water was below the shallowest sample.");
-  await page.getByRole("button", { name: "Keep this observation", exact: true }).click();
+  await page.getByRole("button", { name: "Keep the 62 m reading", exact: true }).click();
   await page.goto("/");
   await openStories(page, "all");
   const shelf = page.getByRole("region", { name: "Your visits" });
@@ -82,7 +82,7 @@ test("a saved float returns to its measured depth after a new page visit", async
   await expect(depth).toHaveValue(value);
   await expect(page.getByRole("group", { name: "Float projection" })).toBeHidden();
   await expect.poll(() => new URLSearchParams(new URL(page.url()).hash.slice(1)).get("p")).toBe("map");
-  await page.getByText("Add a note (optional)", { exact: true }).click();
+  await page.getByText("Your note", { exact: true }).click();
   await expect(page.getByRole("textbox", { name: /A note for this observation/ })).toHaveValue(
     "The warmer water was below the shallowest sample.",
   );

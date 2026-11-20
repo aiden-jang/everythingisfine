@@ -1,6 +1,6 @@
+import { useState } from "react";
 import { useStoryNavigation } from "../journeys/StoryNavigation";
 import { pressureAt, timeIso, timeLabel, type stations } from "./tongaTimeline";
-import { savedVisitKey } from "../visitor/library";
 
 export function KeepPressure({
   station,
@@ -14,16 +14,27 @@ export function KeepPressure({
   onKept?: () => void;
 }) {
   const navigation = useStoryNavigation();
+  const [lastAttempt, setLastAttempt] = useState<{ station: string; at: number } | null>(null);
   const reading = pressureAt(station, minute);
   if (!navigation) return null;
+  const at = Date.parse(timeIso(Math.floor(minute)));
+  const kept = navigation.library.saved.some(
+    ({ id, position }) =>
+      id === "tonga" &&
+      position.moment?.choice === station.id &&
+      position.moment.at !== undefined &&
+      Math.floor(position.moment.at / 60_000) === Math.floor(at / 60_000),
+  );
   return (
     <div className="visit-save">
       <button
         type="button"
         disabled={reading === null}
+        aria-disabled={kept || reading === null}
         onClick={() => {
           const current = navigation.current();
-          if (current?.id !== "tonga" || reading === null) return;
+          if (kept || current?.id !== "tonga" || reading === null) return;
+          setLastAttempt({ station: station.id, at });
           const { note, ...rest } = current;
           void note;
           const next = {
@@ -31,21 +42,17 @@ export function KeepPressure({
             position: {
               moment: {
                 id: "tonga",
-                at: Date.parse(timeIso(Math.floor(minute))),
+                at,
                 choice: station.id,
                 chapter: "pressure",
                 map,
               },
             },
           };
-          const previous = navigation.library.saved.find(
-            (entry) => savedVisitKey(entry) === savedVisitKey(next),
-          );
-          if (navigation.library.save({ ...next, ...(previous?.note ? { note: previous.note } : {}) }))
-            onKept?.();
+          if (navigation.library.save(next)) onKept?.();
         }}
       >
-        Keep this reading
+        {kept ? "Kept" : "Keep this reading"}
       </button>
       <span>
         {reading === null
@@ -53,7 +60,7 @@ export function KeepPressure({
           : `${station.name} · ${timeLabel(minute)} UTC · ${reading.toFixed(2)} hPa`}
       </span>
       <span role="status" aria-label="Kept pressure status">
-        {navigation.library.notice}
+        {lastAttempt?.station === station.id && lastAttempt.at === at ? navigation.library.notice : ""}
       </span>
     </div>
   );

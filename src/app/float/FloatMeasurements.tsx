@@ -5,6 +5,8 @@ import { TimelineTrack } from "../observations/TimelineTrack";
 import { useStoryCompletion } from "../journeys/useStoryCompletion";
 import { PlaybackButton } from "../PlaybackButton";
 import { MeasurementSound } from "../MeasurementSound";
+import { ShareMoment } from "../observations/StorySession";
+import { floatMoment } from "./floatMoment";
 import { FloatObservation } from "./FloatObservation";
 import { FloatChapter } from "./FloatChapter";
 import { FloatFinding } from "./FloatFinding";
@@ -17,10 +19,12 @@ const meters = new Intl.NumberFormat(undefined, { maximumFractionDigits: 0 });
 export function FloatMeasurements({
   view,
   sound,
+  map,
   onClose,
 }: {
   view: FloatDiveView;
   sound: boolean;
+  map: boolean;
   onClose: () => void;
 }) {
   const { index, playing, inspecting, stage } = useSyncExternalStore(view.subscribe, view.read);
@@ -29,10 +33,11 @@ export function FloatMeasurements({
   const { samples } = view.profile;
   const entries = useStoryNavigation()?.library.saved;
   const kept = entries?.flatMap(({ position }) =>
-    position.float?.profile === view.profile.id ? [position.float.index] : [],
+    position.float?.profile === `${view.source}/${view.profile.id}` ? [position.float.index] : [],
   );
   const sample = samples[index]!;
   const takeaway = useMemo(() => profileTakeaway(samples), [samples]);
+  const findingIndex = stage === "notice" && !inspecting ? takeaway.finding.index : undefined;
   useStoryCompletion(stage === "notice");
   useLayoutEffect(() => {
     const element = transport.current;
@@ -170,12 +175,9 @@ export function FloatMeasurements({
       <p className="sr-only" role="status">
         {stage === "notice" ? `Ascent complete. ${takeaway.finding.heading} ${takeaway.finding.reading}` : ""}
       </p>
-      <FloatFinding view={view} onClose={onClose} notice={stage === "notice"}>
+      <FloatFinding view={view} finding={takeaway.finding} onClose={onClose} notice={stage === "notice"}>
         <div hidden={stage === "locate"}>
-          <FloatObservation
-            view={view}
-            sampleIndex={stage === "notice" && !inspecting ? takeaway.finding.index : undefined}
-          />
+          <FloatObservation view={view} sampleIndex={findingIndex} />
         </div>
       </FloatFinding>
       {sound && (
@@ -188,6 +190,11 @@ export function FloatMeasurements({
           explanation="Higher pitch means warmer measured water (−2 to 35 °C)."
         />
       )}
+      <ShareMoment
+        key={findingIndex === undefined ? "sample" : "finding"}
+        current={() => floatMoment(view, map, findingIndex)}
+        label={findingIndex === undefined ? "Share this moment" : "Share this finding"}
+      />
     </>
   );
 }

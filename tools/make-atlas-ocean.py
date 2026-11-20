@@ -107,11 +107,19 @@ def aral():
         observations = list(pool.map(one, years))
     baseline = np.logical_or.reduce([a >= 2 for year, a, url in observations if year <= 1986])
     edge = baseline & ~binary_erosion(baseline)
+    yy, xx = np.indices(baseline.shape)
+    # Draw gaps only within the historical footprint, where a blank patch could be read as retreat.
+    hatch = (xx + yy) % 8 < 3
+    reference = np.zeros((*baseline.shape, 4), dtype=np.uint8)
+    reference[edge] = [230, 225, 197, 235]
+    raster(Image.fromarray(reference), 'aral-reference',
+           'EC JRC/Google Global Surface Water; union of observed water in the archived 1984–1986 annual classifications')
     frames = []
     for year, data, url in observations:
         rgba = np.zeros((*data.shape, 4), dtype=np.uint8)
         rgba[data == 2] = [112, 192, 203, 175]
         rgba[data == 3] = [57, 135, 178, 245]
+        rgba[(data == 0) & baseline & hatch] = [178, 153, 180, 180]
         rgba[edge] = [230, 225, 197, 235]
         image = raster(Image.fromarray(rgba), 'aral-' + str(year), url + '; seasonal and permanent water; 1984–1986 observed-water boundary retained; nearest-neighbor geographic subset')
         frames.append(dict(year=year, image=image, missing=round(float(np.mean(data[baseline] == 0) * 100), 1)))

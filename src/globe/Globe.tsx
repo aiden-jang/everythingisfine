@@ -12,7 +12,7 @@ import { GlobeOverlays } from "./GlobeOverlays";
 import { GlobeUnavailable } from "./GlobeUnavailable";
 import { animationDelta } from "./animation";
 import { createAnimationFrame } from "./animationFrame";
-import { createTapGesture } from "./tapGesture";
+import { attachMarkerInspection, type MarkerTarget } from "./markerInspection";
 import { observeViewport } from "./observeViewport";
 import { useLandingRotation } from "./useLandingRotation";
 import { attachSectionDrawing } from "./sectionDrawing";
@@ -20,7 +20,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { matches } from "../data/filter";
 import { loadStars, type FigureTable } from "../geo/stars";
 import { createGlobe, type GlobeMoment } from "./scene";
-import { isLocalView, isRecordedFlight, isShadowChase, type GlobePresentation } from "./scenePresentation";
+import { isRecordedFlight, isShadowChase, type GlobePresentation } from "./scenePresentation";
 import { frontsFor, type FeedSnapshot } from "../app/feed";
 import { createReplay, replayFrom, REPLAY_FRONT_MIN_MAG, type Replay } from "../app/replay";
 import type { RampName } from "./ramp";
@@ -31,9 +31,6 @@ import type { Mark } from "./marks";
 import type { GlobeProps } from "./GlobeProps";
 
 /* The canvas, and the smallest possible amount of React around it. three.js owns everything inside it. See ARCHITECTURE.md#srcglobeglobetsx. */
-
-/* Half of the 44px a finger is reckoned to need, so a marker's own radius makes up the rest. */
-const TOUCH_SLOP_PX = 18;
 
 export function Globe({
   feed,
@@ -55,6 +52,7 @@ export function Globe({
   scrubAt = null,
   flat = false,
   globePresentation = null,
+  landing = false,
   rotateLanding = true,
   depthSink = false,
   cutaway = null,
@@ -97,6 +95,7 @@ export function Globe({
     scrubAt,
     flat,
     globePresentation,
+    landing,
     depthSink,
     cutaway,
     slab,
@@ -116,6 +115,7 @@ export function Globe({
     scrubAt,
     flat,
     globePresentation,
+    landing,
     depthSink,
     cutaway,
     slab,
@@ -126,6 +126,10 @@ export function Globe({
     aurora,
     marks,
   };
+  const clearInspection = useRef<() => void>(() => {});
+  useLayoutEffect(() => {
+    if (!landing) clearInspection.current();
+  }, [landing]);
   const onSectionRef = useRef(onSection);
   onSectionRef.current = onSection;
   const drag = useRef<SectionLine | null>(null);
@@ -184,7 +188,7 @@ export function Globe({
      * What the pointer is over, which is no longer only an earthquake. Tagged rather than a bare string,
      * because a quake key and a mark id are different namespaces that both contain colons.
      */
-    let hovered: { kind: "quake" | "mark"; id: string } | null = null;
+    let hovered: MarkerTarget | null = null;
 
     const placeOverlays = overlayPlacement({
       el,
@@ -241,7 +245,7 @@ export function Globe({
       const dt = animationDelta(rawDt);
       last = now;
       const moving = globe.controls.step(dt);
-      const rotating = rotation.step(dt, moving || globe.controls.morph() > 0);
+      const rotating = hovered === null && rotation.step(dt, moving || globe.controls.morph() > 0);
       globe.controls.apply();
       let replaying = false;
       if (replay && !replay.done()) {
@@ -478,73 +482,31 @@ export function Globe({
       else redraw();
     };
 
-    const tap = createTapGesture();
-    const onMove = (e: PointerEvent): void => {
-      tap.move(e);
-      if (live.current.inspection?.kind === "sequence") return;
-      // Earthquakes first, then the other four, the same order the click uses: the ramp belongs to
-      // earthquakes and so does the pointer when both are under it.
-      const quake = globe.hitTest(e.clientX, e.clientY, feed.store, live.current.filters, clockAt());
-      const next: { kind: "quake" | "mark"; id: string } | null =
-        quake !== null
-          ? { kind: "quake", id: quake }
-          : ((): { kind: "mark"; id: string } | null => {
-              const mark = globe.hitMark(e.clientX, e.clientY);
-              return mark === null ? null : { kind: "mark", id: mark };
-            })();
-      if (next?.id !== hovered?.id || next?.kind !== hovered?.kind) {
+    const inspectionInput = attachMarkerInspection(
+      el,
+      globe,
+      feed,
+      () => live.current,
+      clockAt,
+      revealUntil,
+      (next) => {
         hovered = next;
         el.style.cursor = next ? "pointer" : "";
-        // A mark is highlighted by its own shape; an earthquake keeps the ring. A dot has no shape to
-        // brighten, and a circle round a spiral said nothing the shape was not already saying.
         globe.setMarkHover(next?.kind === "mark" ? next.id : null);
         redraw();
-      }
-      placeOverlays();
-    };
-
-    /** Any deliberate interaction ends the replay: nobody should have to wait out a title card. */
-    const interrupt = (): void => {
-      if (!replay || replay.done()) return;
-      replay.skip();
-      onReplayRef.current?.(null);
-      redraw();
-    };
-
-    const onDown = (e: PointerEvent): void => {
-      if (isLocalView(live.current.globePresentation)) return;
-      interrupt();
-      tap.down(e);
-    };
-    const onUp = (e: PointerEvent): void => {
-      if (!tap.up(e) || (morph > 0 && morph < 1)) return;
-      // Fingers need a larger hit area than the few pixels occupied by a small quake.
-      const slop = e.pointerType === "mouse" ? undefined : TOUCH_SLOP_PX;
-      const quake = globe.hitTest(e.clientX, e.clientY, feed.store, live.current.filters, clockAt(), slop);
-      if (quake) {
-        onSelect(quake);
-        onSelectMark?.(null);
-        return;
-      }
-      const mark = globe.hitMark(e.clientX, e.clientY, slop);
-      onSelectMark?.(mark);
-      if (mark) return;
-      onSelect(null);
-      const point = live.current.onPlace && !e.shiftKey ? globe.controls.pick(e.clientX, e.clientY) : null;
-      if (point) live.current.onPlace?.(point);
-    };
-    const onLeave = (): void => {
-      hovered = null;
-      globe.setMarkHover(null);
-      redraw();
-      placeOverlays();
-    };
-
-    el.addEventListener("pointermove", onMove);
-    el.addEventListener("pointerdown", onDown);
-    el.addEventListener("pointerup", onUp);
-    el.addEventListener("pointercancel", tap.cancel);
-    el.addEventListener("pointerleave", onLeave);
+        wake();
+      },
+      onSelect,
+      onSelectMark,
+      () => {
+        if (!replay || replay.done()) return;
+        replay.skip();
+        onReplayRef.current?.(null);
+        redraw();
+      },
+    );
+    clearInspection.current = inspectionInput.clear;
+    presentationRef.current = globe.setPresentation;
 
     const detach = globe.controls.attach(() => {
       readout.show();
@@ -586,11 +548,8 @@ export function Globe({
       detachRotation();
       unsubscribe();
       detach();
-      el.removeEventListener("pointermove", onMove);
-      el.removeEventListener("pointerdown", onDown);
-      el.removeEventListener("pointerup", onUp);
-      el.removeEventListener("pointercancel", tap.cancel);
-      el.removeEventListener("pointerleave", onLeave);
+      clearInspection.current = () => {};
+      inspectionInput.dispose();
       detachSection();
       gone = true; // Reject late table writes before disposing the scene.
       readout.dispose();
@@ -620,6 +579,7 @@ export function Globe({
     { wake: wakeRef, redraw: redrawRef },
   );
 
+  const inspectable = landing && !unavailable;
   return (
     <div className="globe-scene relative h-full w-full [--scene-hud-top:76px]">
       {unavailable ? (
@@ -632,7 +592,11 @@ export function Globe({
       ) : null}
       <canvas
         ref={canvas}
-        aria-hidden="true"
+        aria-hidden={!inspectable}
+        tabIndex={inspectable ? 0 : undefined}
+        role={inspectable ? "button" : undefined}
+        aria-label="Explore visible observations"
+        aria-description="Use the left and right arrows to choose an observation. Press Enter to open it or Escape to dismiss."
         className="block h-full w-full touch-none cursor-grab active:cursor-grabbing"
       />
       <GlobeOverlays

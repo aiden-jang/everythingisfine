@@ -38,6 +38,8 @@ export const MAX_SAVED_VISITS = ids.size + 24;
 export const LIBRARY_MAX_LENGTH = 50_000;
 
 export function savedVisitKey(visit: Visit): string {
+  const float = visit.position.float;
+  if (visit.id === "float" && float) return `float:${float.profile}:${float.index}`;
   const solar = visit.position.solar;
   if (visit.id === "sun" && solar) return `sun:${solar.source}:${solar.at}`;
   const lunar = visit.position.sky?.lunar;

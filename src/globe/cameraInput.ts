@@ -91,7 +91,7 @@ export function attachCameraInput(canvas: HTMLCanvasElement, input: CameraInput)
   const key = (event: KeyboardEvent) => {
     if (input.blocked() || event.metaKey || event.ctrlKey || event.altKey) return;
     const active = document.activeElement;
-    if (active && active !== document.body && active.id !== "globe-view") return;
+    if (active && active !== document.body && active !== canvas && active.id !== "globe-view") return;
     const step = event.shiftKey ? 24 : 8;
     switch (event.key) {
       case "ArrowLeft":

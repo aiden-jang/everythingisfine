@@ -12,6 +12,7 @@ import { ObservationChart } from "./ObservationChart";
 import { DeepTimePin } from "./DeepTimePin";
 import { useObservationData, useObservationImage } from "./useObservationData";
 import { observationReadiness } from "./observationReadiness";
+import { useReportStorySource } from "./StorySourceStatus";
 import { StoryDock } from "./StoryDock";
 
 import { useStorySession } from "./StorySession";
@@ -49,6 +50,7 @@ export function ObservationPlayer({
   const [selectedAt, setSelectedAt] = useState<number | null>(initial?.at ?? null);
   const [playing, setPlaying] = useState(false);
   const { data, state, reason, retry } = useObservationData(source, option);
+  useReportStorySource(id, state, retry);
   const frames = data?.frames ?? EMPTY;
   const frame =
     selectedAt === null ? frames[data?.initial ?? 0] : nearest(frames, selectedAt, ({ at }) => at);

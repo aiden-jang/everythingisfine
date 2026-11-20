@@ -109,6 +109,8 @@ export function GlobeOverlays({
       </svg>
       <div
         ref={tooltip}
+        id="globe-marker-preview"
+        role="tooltip"
         /* `truncate` belongs on the name inside, not on the box: on the box it clips to one line and the
            measurement line existed but was never shown. */
         /* On the sans step, like every other piece of prose here. This is the label you read at arm's

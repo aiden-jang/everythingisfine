@@ -227,6 +227,7 @@ test("a delayed final image keeps its prior timestamp and cannot announce an uns
 }) => {
   await installFeeds(page, { presentation: "fresh", empty: true });
   await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.setViewportSize({ width: 320, height: 568 });
   let release = () => {};
   const held = new Promise<void>((resolve) => {
     release = resolve;
@@ -239,15 +240,29 @@ test("a delayed final image keeps its prior timestamp and cannot announce an uns
     await page.goto("/#v=observe&story=aral");
     const panel = page.getByRole("region", { name: "Vanishing Sea", exact: true });
     const shown = panel.locator(".story-time time");
-    await expect(shown).toHaveAttribute("datetime", "1984-06-01T12:00:00.000Z");
+    await expect(shown).toHaveAttribute("datetime", "1984");
     await expect(panel.getByText("Loading the selected observations…", { exact: true })).toHaveCount(0);
     await panel.getByRole("slider").press("End");
     await expect(panel.getByText("Loading the selected observations…", { exact: true })).toBeVisible();
-    await expect(shown).toHaveAttribute("datetime", "1984-06-01T12:00:00.000Z");
+    await expect(shown).toHaveAttribute("datetime", "1984");
     await expect(panel.getByText("Last available moment", { exact: true })).toHaveCount(0);
     release();
-    await expect(shown).toHaveAttribute("datetime", "2021-06-01T12:00:00.000Z");
+    await expect(shown).toHaveAttribute("datetime", "2021");
     await expect(panel.getByText("Last available moment", { exact: true })).toBeVisible();
+    const finding = panel.getByRole("region", { name: "What this view showed" });
+    await expect(finding.getByRole("heading")).toBeInViewport({ ratio: 1 });
+    await expect(finding.getByText(/Missing observations are not dry land/)).toBeInViewport({ ratio: 1 });
+    await expect(panel.getByRole("button", { name: "Replay", exact: true })).toBeInViewport({ ratio: 1 });
+    const timeline = panel.getByRole("button", { name: "Timeline", exact: true });
+    await expect(timeline).toHaveAttribute("aria-expanded", "false");
+    await expect(panel.locator("#earth-story-time")).toBeHidden();
+    await timeline.click();
+    await expect(panel.getByRole("slider")).toHaveValue("20");
+    const compare = finding.getByRole("button", { name: "Compare shorelines" });
+    await compare.click();
+    await expect(panel.locator(".shoreline-labels")).toHaveText("1984–86 shoreline");
+    await finding.getByRole("button", { name: "Show 2021 water" }).click();
+    await expect(panel.locator(".shoreline-labels")).toContainText("2021 water");
   } finally {
     release();
   }

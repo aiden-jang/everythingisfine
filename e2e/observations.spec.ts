@@ -1,4 +1,4 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Page, type Route } from "@playwright/test";
 import { installFeeds, openStories, selectScene } from "./feeds";
 
 test("feed status names unavailable sources without increasing the background count", async ({ page }) => {
@@ -79,7 +79,17 @@ test("Tide Watch preserves its measured sample across projections and recovers w
   await tideRow.click();
   const tide = page.getByRole("region", { name: "Tide Watch", exact: true });
   await expect(tide.getByText(/Couldn’t load Tide Watch data from NOAA/)).toBeVisible();
-  await tide.getByRole("button", { name: "Retry source" }).click();
+  await expect(tide.getByRole("button", { name: "Retry source" })).toBeVisible();
+  const feedToggle = page.getByRole("button", { name: /Feed status,/ });
+  await expect(feedToggle).toHaveAccessibleName(/7\/7 available.*Tide Watch source unavailable/);
+  await feedToggle.click();
+  const storySource = page.getByRole("region", { name: "Tide Watch source" });
+  await expect(storySource).toContainText("NOAA Tides & Currents · Unavailable");
+  await storySource.getByRole("button", { name: "Retry Tide Watch source" }).click();
+  await expect(storySource).toContainText("Data loaded");
+  await expect(storySource.getByRole("heading", { name: "Tide Watch" })).toBeFocused();
+  await expect(feedToggle).toHaveAccessibleName("Feed status, 7/7 available");
+  await page.keyboard.press("Escape");
   const slider = tide.getByRole("slider", { name: "Observation time" });
   await slider.press("Home");
   await expect(tide.getByText("0.30 m", { exact: true })).toBeVisible();
@@ -97,11 +107,22 @@ test("Tide Watch preserves its measured sample across projections and recovers w
   await expect(slider).toBeInViewport({ ratio: 1 });
   expect(await canvas.evaluate((element, before) => element === before, original)).toBe(true);
   await page.setViewportSize({ width: 390, height: 844 });
+  const delayed: Route[] = [];
+  await page.route("https://api.tidesandcurrents.noaa.gov/**", (route) => {
+    delayed.push(route);
+  });
+  await tide.getByRole("combobox", { name: "Harbor" }).selectOption("9414290");
+  await expect(tide.getByText("Checking NOAA Tides & Currents…")).toBeVisible();
+  await expect.poll(() => delayed.length).toBe(2);
   await tide.getByRole("button", { name: "Back to stories", exact: true }).click();
+  await Promise.all(delayed.map((route) => route.fulfill({ status: 503 })));
   await expect(tideRow).toBeFocused();
   expect(await sidebar.evaluate((panel) => panel.scrollTop)).toBe(scroll);
   await page.keyboard.press("Escape");
   await expect(page.getByRole("tab", { name: "Layers", exact: true })).toBeFocused();
+  await feedToggle.click();
+  await expect(storySource).toHaveCount(0);
+  await expect(feedToggle).toHaveAccessibleName("Feed status, 7/7 available");
   expect(errors).toEqual([]);
 });
 

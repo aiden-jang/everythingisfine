@@ -1337,11 +1337,11 @@ export function App(): JSX.Element {
                 aurora={observatory.observations.entry ? null : (overflight.run?.forecast ?? onGlobe.aurora)}
                 marks={marks}
                 scrubAt={view.at}
-                /* Keep the light and capture caption on the same clock. See ARCHITECTURE.md#srcapptsx. */
                 moment={overflight.run?.forecast.forecastAt ?? chase.frame ?? litAt}
                 inspection={inspection.run}
                 flat={flat}
                 globePresentation={mapLayers.compose(observatory.globe(tourAt !== null))}
+                landing={observatory.landing}
                 rotateLanding={observatory.rotation.enabled}
                 depthSink={observatory.depth || sinkOn}
                 cutaway={observatory.observing ? observatory.depthFocus : flat ? null : cutaway}

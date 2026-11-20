@@ -10,11 +10,11 @@ export function readFloatMoment(moment: StoryMoment | undefined) {
   return { profile: moment.choice, index, ...(moment.map ? { map: true } : {}) };
 }
 
-export function floatMoment(view: FloatDiveView, map = false): StoryMoment {
+export function floatMoment(view: FloatDiveView, map = false, index = view.read().index): StoryMoment {
   return {
     id: "float",
     choice: `${view.source}/${view.profile.id}`,
-    chapter: String(view.read().index),
+    chapter: String(index),
     map,
   };
 }

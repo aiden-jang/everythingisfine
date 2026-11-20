@@ -1,8 +1,9 @@
 import { expect, it } from "vitest";
 import { readStoryMoment, writeStoryMoment } from "../observations/storyMoment";
-import { floatNavigationMoment, readFloatMoment } from "./floatMoment";
+import { floatMoment, floatNavigationMoment, readFloatMoment } from "./floatMoment";
 import { createFloatPlayback } from "./floatPlayback";
 import { argoStation, compileArgoProfile } from "../../sources/argo";
+import { profileTakeaway } from "./profileGeometry";
 import recorded from "./recorded.json";
 
 it("round-trips the exact Argo profile and selected sample", () => {
@@ -68,4 +69,20 @@ it("keeps a failed remote source in navigation until an explicit replacement is 
   expect(
     floatNavigationMoment(fallback, { profile: `recorded/${fallback.profile.id}`, index: 4 }, true),
   ).toMatchObject({ chapter: "12", map: true });
+});
+
+it("shares the finding's actual sample while the world stays at the end of the ascent", () => {
+  const raw = recorded[0]!;
+  const profile = compileArgoProfile(argoStation(raw.station)!, raw.measurements)!;
+  const playback = createFloatPlayback(profile, false, "recorded");
+  playback.notice();
+  const { finding } = profileTakeaway(profile.samples);
+  const moment = floatMoment(playback, true, finding.index);
+  expect(profile.samples[Number(moment.chapter)]!.depth).toBeCloseTo(62, 0);
+  expect(Math.round(playback.depth())).toBe(3);
+  expect(readFloatMoment(moment)).toEqual({
+    profile: `recorded/${profile.id}`,
+    index: finding.index,
+    map: true,
+  });
 });

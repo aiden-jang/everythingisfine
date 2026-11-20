@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { ObservationDataError, type ObservationData, type ObservationSource } from "./types";
 import { pollVisible } from "../pollVisible";
 
@@ -61,20 +61,18 @@ export function useObservationData(source: ObservationSource, option: string) {
           reason: undefined,
           lastCheck: checked.current.get(option),
         };
-  return {
-    ...state,
-    retry() {
-      setResult({
-        option,
-        result: {
-          data: cache.current.get(option) ?? null,
-          state: "loading",
-          lastCheck: checked.current.get(option),
-        },
-      });
-      retry((value) => value + 1);
-    },
-  };
+  const retrySource = useCallback(() => {
+    setResult({
+      option,
+      result: {
+        data: cache.current.get(option) ?? null,
+        state: "loading",
+        lastCheck: checked.current.get(option),
+      },
+    });
+    retry((value) => value + 1);
+  }, [option]);
+  return { ...state, retry: retrySource };
 }
 
 export function useObservationImage(url: string | undefined, sequence?: string) {

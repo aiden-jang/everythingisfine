@@ -1,3 +1,4 @@
+import { layerTime } from "../app/layerTime";
 import type { RefObject } from "react";
 import type { createGlobe } from "./scene";
 import type { Feed } from "../app/feed";
@@ -13,7 +14,7 @@ import { matches } from "../data/filter";
 type Target = { kind: "quake" | "mark"; id: string } | null;
 type State = Pick<
   Required<GlobeProps>,
-  "selected" | "marks" | "inspection" | "depthSink" | "section" | "filters" | "scrubAt"
+  "selected" | "marks" | "inspection" | "depthSink" | "section" | "filters" | "scrubAt" | "landing"
 >;
 interface Placement {
   el: HTMLCanvasElement;
@@ -51,6 +52,8 @@ export function overlayPlacement({
 }: Placement) {
   let tooltipKey = "";
   let projectionMoving = false;
+  let tipWidth = 0;
+  let tipHeight = 0;
   return () => {
     const state = read();
     const hovered = hover();
@@ -64,7 +67,13 @@ export function overlayPlacement({
     const locate = (t: {
       kind: "quake" | "mark";
       id: string;
-    }): { lon: number; lat: number; label: string; quake: Quake | null } | null => {
+    }): {
+      lon: number;
+      lat: number;
+      label: string;
+      quake: Quake | null;
+      observed?: string | undefined;
+    } | null => {
       if (t.kind === "quake") {
         const q = feed.store.get(t.id);
         if (!q) return null;
@@ -83,7 +92,13 @@ export function overlayPlacement({
       }
       const mark = state.marks.find((m) => m.id === t.id && m.anchor !== undefined);
       if (!mark?.anchor || mark.label === undefined) return null;
-      return { lon: mark.anchor.lon, lat: mark.anchor.lat, label: mark.label, quake: null };
+      return {
+        lon: mark.anchor.lon,
+        lat: mark.anchor.lat,
+        label: mark.label,
+        quake: null,
+        observed: mark.observationTime,
+      };
     };
     const put = (
       node: HTMLDivElement | null,
@@ -98,7 +113,14 @@ export function overlayPlacement({
           : 1;
       const at = found ? globe.controls.project(found.lon, found.lat, radius) : null;
       node.style.opacity = at ? "1" : "0";
-      if (!at || !found) return;
+      if (!at || !found) {
+        if (node === tooltip.current && tooltipKey) {
+          tooltipKey = "";
+          node.replaceChildren();
+          el.removeAttribute("aria-describedby");
+        }
+        return;
+      }
       /*
        * The ring and the bracket take their size from the mark they are on. Fixed pixels were chosen when
        * the largest marker was 8.8px, and the scale is wider now and grows with the zoom besides.
@@ -123,7 +145,10 @@ export function overlayPlacement({
             ? `${distanceLabel(pair.km)} from the pin · ${seconds(pair.p)}`
             : `${distanceLabel(pair.km)} from the pin`
           : "";
-        const key = `${found.label}\n${distance}`;
+        const landing = state.landing;
+        const time = landing ? (found.quake?.primary.time ?? found.observed) : undefined;
+        const touch = landing && el.hasAttribute("data-touch-preview");
+        const key = `${found.label}\n${distance}\n${time ?? ""}\n${touch}`;
         if (key !== tooltipKey) {
           tooltipKey = key;
           node.replaceChildren();
@@ -131,12 +156,34 @@ export function overlayPlacement({
           name.className = "truncate";
           name.textContent = found.label;
           node.append(name);
+          if (time !== undefined) {
+            const stamp = document.createElement("div");
+            stamp.className = "font-mono text-dim tabular-nums";
+            stamp.textContent = typeof time === "number" ? layerTime(time) : time;
+            node.append(stamp);
+          }
+          if (touch) {
+            const hint = document.createElement("small");
+            hint.textContent = "Tap again to open";
+            node.append(hint);
+          }
           if (distance) {
             const gap = document.createElement("div");
             gap.className = "font-mono text-dim tabular-nums";
             gap.textContent = distance;
             node.append(gap);
           }
+          if (landing) {
+            el.setAttribute("aria-describedby", "globe-marker-preview");
+            tipWidth = node.offsetWidth;
+            tipHeight = node.offsetHeight;
+          }
+        }
+        if (landing) {
+          const left = Math.max(8, Math.min(at.x - box.left - tipWidth / 2, box.width - tipWidth - 8));
+          const top = at.y - box.top - tipHeight - 16;
+          node.style.transform = `translate(${left}px, ${top >= 8 ? top : at.y - box.top + 16}px)`;
+          return;
         }
       }
       node.style.transform =

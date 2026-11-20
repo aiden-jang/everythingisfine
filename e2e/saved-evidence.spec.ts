@@ -28,8 +28,9 @@ test("a kept pressure reading exports its source card and reopens the same stati
   const card = collection.getByRole("article");
   await expect(card).toContainText("1017.75 hPa");
   await expect(card).toContainText("Honolulu");
+  expect((await collection.boundingBox())!.width).toBeLessThanOrEqual(420);
   await expect(card).toContainText("meanwhile.");
-  await expect(card).toContainText("15 Jan 2022, 08:59 UTC");
+  await expect(card).toContainText(/15 Jan 2022(?:,| at) 08:59 UTC/);
   await expect(card.getByRole("link", { name: "ASOS / Iowa Environmental Mesonet" })).toHaveAttribute(
     "href",
     "https://mesonet.agron.iastate.edu/request/asos/1min.phtml",
@@ -46,7 +47,8 @@ test("a kept pressure reading exports its source card and reopens the same stati
     "The same event was recorded across the Pacific.",
   );
   const saveNote = collection.getByRole("button", { name: "Save note", exact: true });
-  await saveNote.click();
+  await saveNote.focus();
+  await saveNote.press("Enter");
   await expect(saveNote).toBeFocused();
   await expect(collection.getByText("Note saved.", { exact: true })).toBeVisible();
   await expect(collection.getByRole("textbox", { name: "What did you notice?" })).toBeVisible();
@@ -72,4 +74,108 @@ test("a kept pressure reading exports its source card and reopens the same stati
   );
   await expect(story.locator(".tonga-chart-meta").first()).toContainText("1017.75 hPa");
   await expect(story.locator(".tonga-chart-dot[data-kept-reading]")).toBeVisible();
+  await expect(story.getByRole("button", { name: "Kept", exact: true })).toHaveAttribute(
+    "aria-disabled",
+    "true",
+  );
+  const samples = story.getByRole("slider", { name: "Station pressure time", exact: true });
+  await samples.press("ArrowRight");
+  await expect(story.getByRole("button", { name: "Keep this reading", exact: true })).toBeEnabled();
+  await expect(story.getByText("Saved on this device.", { exact: true })).toHaveCount(0);
+  await samples.press("ArrowLeft");
+  await expect(story.getByRole("button", { name: "Kept", exact: true })).toHaveAttribute(
+    "aria-disabled",
+    "true",
+  );
+  await story.getByRole("button", { name: "Back to journey" }).click();
+  await story.getByRole("button", { name: "Back to Saved" }).click();
+  await expect(collection.getByRole("button", { name: "Reopen this moment" })).toBeFocused();
+});
+
+test("two Float readings retain separate notes, focus and scroll after a phone reload", async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 568 });
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await installFeeds(page, { presentation: "fresh", empty: true });
+  await page.route("https://erddap.marine.ie/**", (route) =>
+    route.fulfill({ json: { table: { rows: [] } } }),
+  );
+  const profile = "recorded/6901932/268/1792482240000";
+  await page.goto(`/#v=observe&story=float&choice=${profile}&chapter=200`);
+  const depth = page.getByRole("slider", { name: "Ascent depth" });
+  const note = page.getByRole("textbox", { name: "A note for this observation" });
+  const keep = page.getByRole("button", { name: "Keep this observation", exact: true });
+  await page.locator(".float-observation-note summary").click();
+  await note.fill("Deep sample");
+  await keep.click();
+  await depth.press("ArrowRight");
+  await expect(note).toHaveValue("");
+  await note.fill("Next sample");
+  await keep.click();
+  await depth.press("ArrowLeft");
+  await expect(note).toHaveValue("Deep sample");
+  await note.fill("Edited deep sample");
+  await page.getByRole("button", { name: "Save note", exact: true }).click();
+  await page.reload();
+  await expect(depth).toHaveValue("200");
+  await page.locator("#open-saved-observations").click();
+  const collection = page.getByRole("region", { name: "Saved observations", exact: true });
+  await expect(collection.getByRole("article")).toHaveCount(2);
+  for (const [index, message] of [
+    [201, "Next sample"],
+    [200, "Edited deep sample"],
+  ] as const) {
+    const entry = page.locator(`[id="saved-entry-float:${profile}:${index}"]`);
+    await entry.scrollIntoViewIfNeeded();
+    const scroll = await collection.evaluate((el) => el.scrollTop);
+    await entry.click();
+    await expect(depth).toHaveValue(String(index));
+    if (!(await note.isVisible())) await page.locator(".float-observation-note summary").click();
+    await expect(note).toHaveValue(message);
+    await page.getByRole("button", { name: "Back to Saved", exact: true }).click();
+    await expect(entry).toBeFocused();
+    expect(Math.abs((await collection.evaluate((el) => el.scrollTop)) - scroll)).toBeLessThan(2);
+  }
+  const remove = collection.getByRole("button", { name: "Remove saved Float Dive" });
+  await remove.first().click();
+  await expect(collection.getByRole("article")).toHaveCount(1);
+  await collection.getByRole("button", { name: "Undo", exact: true }).click();
+  await expect(collection.getByRole("article")).toHaveCount(2);
+  await collection.getByText("Recent journeys", { exact: true }).click();
+  const recent = collection.locator("#saved-entry-recent-float");
+  await recent.click();
+  await page.getByRole("button", { name: "Back to Saved", exact: true }).click();
+  await expect(recent).toBeFocused();
+  await collection.getByRole("button", { name: "Close saved observations" }).click();
+  await expect(depth).toHaveValue("200");
+});
+
+test("Saved can close while its first download is pending and opens cleanly after it arrives", async ({
+  page,
+}) => {
+  await installFeeds(page, { presentation: "fresh", empty: true });
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  let release!: () => void;
+  const hold = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  await page.route(/\/SavedCollection(?:-|\.)/, async (route) => {
+    await hold;
+    await route.continue();
+  });
+  await page.goto("/");
+  const open = page.locator("#open-saved-observations");
+  const collection = page.getByRole("region", { name: "Saved observations", exact: true });
+  try {
+    await open.click();
+    await expect(collection.getByRole("heading", { name: "What you noticed." })).toBeFocused();
+    await expect(collection.getByRole("status")).toHaveText("Opening saved readings…");
+    await page.keyboard.press("Escape");
+    await expect(collection).toHaveCount(0);
+    await expect(open).toBeFocused();
+  } finally {
+    release();
+  }
+  await open.click();
+  await expect(collection.getByRole("button", { name: "Browse stories" })).toBeVisible();
+  await expect(collection.getByRole("heading", { name: "What you noticed." })).toBeFocused();
 });

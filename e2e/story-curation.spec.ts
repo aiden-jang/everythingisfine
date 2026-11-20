@@ -67,7 +67,7 @@ test("a shared story gives context, holds its moment, and ends with a finding @d
   await page.goto("/#v=observe&story=aral&t=1325376000000&p=map");
   const panel = page.getByRole("region", { name: "Vanishing Sea", exact: true });
   await expect(panel.getByRole("complementary", { name: "About this shared view" })).toContainText(
-    "Opened paused",
+    "Opened paused at the 2011 annual water classification",
   );
   await expect(panel.getByRole("button", { name: "Play", exact: true })).toBeVisible();
   const slider = panel.getByRole("slider");
@@ -78,6 +78,9 @@ test("a shared story gives context, holds its moment, and ends with a finding @d
   await expect(panel.getByRole("region", { name: "What this view showed" })).toContainText(
     "Missing observations are not dry land",
   );
+  const year = panel.getByRole("region", { name: "What this view showed" }).locator("time");
+  await expect(year).toHaveText("2021");
+  await expect(year).toHaveAttribute("datetime", "2021");
   await expect(panel.getByText("Up next", { exact: true })).toBeVisible();
   await panel.getByRole("region", { name: "What this view showed" }).scrollIntoViewIfNeeded();
   if (process.env["EIF_CAPTURE_UI"])

@@ -1,4 +1,5 @@
 import { antipodeCross, antipodeOf, FRONT_ARCS, smallCircle } from "../geo/antipode";
+import { layerTime } from "./layerTime";
 import { motionArrow, type MotionSample } from "../geo/plateMotion";
 import type { Mark } from "../globe/marks";
 import { flame, here as hereTicks, spiral, volcano, waves } from "../globe/shapes";
@@ -72,6 +73,8 @@ export function marksFor({
       anchor: at(storm),
       id: `cyclone:${storm.id}`,
       caption: storm.name,
+      observationTime:
+        storm.startedAt === null ? "Start time unavailable" : `Started ${layerTime(storm.startedAt)}`,
       label: by(
         storm.peakKmh === null ? storm.name : `${storm.name} · ${Math.round(storm.peakKmh)} km/h`,
         storm.source,
@@ -79,12 +82,12 @@ export function marksFor({
     });
   }
   for (const v of volcanoes) {
-    // No date in the label. The one thing that has to be said about a volcano here is that it is not live,
-    // and that is a sentence rather than a tooltip.
     out.push({
       points: volcano(v.lon, v.lat),
       anchor: at(v),
       id: `volcano:${v.id}`,
+      observationTime:
+        v.endedAt === null ? "Episode end time unavailable" : `Episode ended ${layerTime(v.endedAt)}`,
       label: by(v.country ? `${v.name} · ${v.country}` : v.name, v.source),
     });
   }
@@ -93,6 +96,7 @@ export function marksFor({
       points: flame(f.lon, f.lat),
       anchor: at(f),
       id: `fire:${f.id}`,
+      observationTime: f.startedAt === null ? "Start time unavailable" : `Started ${layerTime(f.startedAt)}`,
       // Area in km2 to match the legend's unit, from hectares, and omitted rather than guessed at zero.
       label: by(
         f.hectares === null
@@ -111,6 +115,8 @@ export function marksFor({
         points: row,
         anchor: at(f),
         id: `flood:${f.id}`,
+        observationTime:
+          f.startedAt === null ? "Start time unavailable" : `Started ${layerTime(f.startedAt)}`,
         label: by(f.country || "Flood", f.source),
       });
     }

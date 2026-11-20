@@ -13,10 +13,24 @@ import { isGlobalRadar } from "../radar/radarCamera";
 import { journeys } from "./catalogue";
 import { useVisitMemory } from "../visitor/useVisitMemory";
 import type { Visit } from "../visitor/library";
+import { captureCollection, type CollectionPosition } from "../visitor/collectionReturn";
 
+interface BrowseOrigin {
+  route: ReturnType<ObservatoryProps["views"]["navigation"]["capture"]>;
+  camera: ReturnType<ObservatoryProps["explorer"]["read"]>;
+  scroll: number;
+  scrollTarget: string;
+  collection?: CollectionPosition;
+  previous?: BrowseOrigin;
+  flat: boolean;
+  label: string;
+  trigger: string;
+}
 const Navigation = createContext<{
   returnLabel: string | undefined;
   hasReturnOrigin: boolean;
+  restoredCollection: CollectionPosition | null;
+  dismissRestoration: () => void;
   openSkyAt: (city: string, trigger: string) => void;
   openRadar: (at: number | undefined, map: boolean) => void;
   returnToBrowse: () => boolean;
@@ -43,6 +57,7 @@ export const useStoryNavigation = () => useContext(Navigation);
 
 export function StoryNavigation({ children, ...props }: ObservatoryProps & { children: ReactNode }) {
   const panelReturn = usePanelReturn();
+  const [restoredCollection, setRestoredCollection] = useState<CollectionPosition | null>(null);
   const [completion, setCompletion] = useState<{ id: string; complete: boolean } | null>(null);
   const reportCompletion = useCallback((id: string, complete: boolean) => {
     setCompletion((previous) =>
@@ -53,15 +68,7 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
     camera: ReturnType<ObservatoryProps["explorer"]["read"]>;
     flat: boolean;
   } | null>(null);
-  const origin = useRef<{
-    route: ReturnType<ObservatoryProps["views"]["navigation"]["capture"]>;
-    camera: ReturnType<ObservatoryProps["explorer"]["read"]>;
-    scroll: number;
-    scrollTarget: string;
-    flat: boolean;
-    label: string;
-    trigger: string;
-  } | null>(null);
+  const origin = useRef<BrowseOrigin | null>(null);
   const [route, setRoute] = useState<{ id: string; step: number } | null>(null);
   const { observations: deck, tonight, sun, floatDive } = props.views;
   const active =
@@ -90,7 +97,8 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
   const unavailable = (id: string) =>
     !props.ready ? "Story playback needs the globe." : id === "aurora" ? props.aurora.unavailable : null;
   function rememberOrigin(trigger: string) {
-    if (active !== null || origin.current) return;
+    const collection = captureCollection(trigger);
+    if (!collection && (active !== null || origin.current)) return;
     const scrollTarget = props.views.observing ? "observatory-intro" : "chrome-rail";
     origin.current = {
       route: props.views.navigation.capture(),
@@ -98,11 +106,15 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
       scroll: document.getElementById(scrollTarget)?.scrollTop ?? 0,
       scrollTarget,
       flat: previewOrigin.current?.flat ?? props.explorer.flat,
-      label: (props.views.observing ? props.views.browser.open : props.views.browser.pane === "stories")
-        ? "Back to stories"
-        : props.views.observing
-          ? "Back to home"
-          : "Back to layers",
+      ...(collection ? { collection } : {}),
+      ...(collection && origin.current ? { previous: origin.current } : {}),
+      label: collection
+        ? "Back to Saved"
+        : (props.views.observing ? props.views.browser.open : props.views.browser.pane === "stories")
+          ? "Back to stories"
+          : props.views.observing
+            ? "Back to home"
+            : "Back to layers",
       trigger,
     };
   }
@@ -117,6 +129,7 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
     if (!story || unavailable(id)) return;
     panelReturn.cancel();
     rememberOrigin(trigger);
+    setRestoredCollection(null);
     previewOrigin.current = null;
     reportCompletion(id, false);
     const standalone = ["sky", "meteors", "moonfall", "aurora", "sun", "radar", "float"].includes(id);
@@ -165,7 +178,7 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
       showCatalogue(false, focus);
       return true;
     }
-    origin.current = null;
+    origin.current = saved.previous ?? null;
     props.views.visitCheckpoint.current();
     if (active === "radar" && props.radar.view && isGlobalRadar(props.radar.view.region))
       props.explorer.radarTime(props.radar.view.selectedAt ?? null);
@@ -173,6 +186,11 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
     props.views.navigation.restore(saved.route);
     props.explorer.restore(saved.camera, saved.flat);
     setRoute(null);
+    if (saved.collection) {
+      setRestoredCollection(saved.collection);
+      requestAnimationFrame(() => document.getElementById(saved.scrollTarget)?.scrollTo(0, saved.scroll));
+      return true;
+    }
     panelReturn.restore({
       scrollTarget: saved.scrollTarget,
       scroll: saved.scroll,
@@ -211,6 +229,8 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
       value={{
         active,
         hasReturnOrigin: origin.current !== null,
+        restoredCollection,
+        dismissRestoration: () => setRestoredCollection(null),
         completed: completion?.id === active && completion.complete,
         completion: reportCompletion,
         browsingStories: props.views.observing

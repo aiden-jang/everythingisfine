@@ -59,7 +59,7 @@ export const storyFindings: Record<string, string> = {
   bloom:
     "Chlorophyll helps reveal seasonal ocean changes. It is a proxy for phytoplankton abundance, not a species identification.",
   reef: "Accumulated heat stress indicates conditions associated with bleaching risk. It is not confirmation of bleaching or coral mortality.",
-  aral: "A fixed early reference makes the changing water footprint visible. Missing observations are not dry land, and the reference is not the pre-diversion shoreline.",
+  aral: "Water remained in separate basins inside the 1984–1986 shoreline. Missing observations are not dry land.",
   spring:
     "Vegetation greenness changes through the seasons. Each frame combines 16 days of observations rather than recording one instant.",
   fault:

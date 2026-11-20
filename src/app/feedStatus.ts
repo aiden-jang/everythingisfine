@@ -66,17 +66,19 @@ export function feedStatus(
   const arrived = rows.filter(({ state }) => state === "ok").length;
   const total = rows.filter(({ state }) => state !== "off").length;
   const settling = rows.some(({ state }) => state === "pending");
+  const failed = rows.filter(({ state }) => state === "failed").length;
   return {
     arrived,
     total,
     settling,
     rows,
-    phrase:
-      arrived === 0 && settling
-        ? "connecting"
-        : arrived === total
-          ? "All feeds available"
-          : `${arrived} of ${total} feeds available`,
+    phrase: settling
+      ? failed
+        ? `${failed} unavailable · checking`
+        : "Checking feeds"
+      : arrived === total
+        ? "All feeds available"
+        : `${arrived} of ${total} feeds available`,
     silent: silentFeeds(
       Object.fromEntries(Object.entries(answered).map(([key, state]) => [key, state !== "failed"])) as Record<
         HazardLayer,

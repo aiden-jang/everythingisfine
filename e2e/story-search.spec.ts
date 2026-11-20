@@ -26,10 +26,11 @@ for (const [id, query, back] of [
         .click();
     const search = page.getByRole("searchbox", { name: "Find a story" });
     await expect(search).toBeInViewport({ ratio: 1 });
-    await search.fill(query);
+    const words = id === "float" ? "underwater" : id === "moonfall" ? "moon landing" : query;
+    await search.fill(words);
     await page.locator(`#search-story-${id}`).click();
     await page.getByRole("button", { name: back, exact: true }).click();
-    await expect(search).toHaveValue(query);
+    await expect(search).toHaveValue(words);
     await expect(page.locator(`#search-story-${id}`)).toBeFocused();
   });
 }

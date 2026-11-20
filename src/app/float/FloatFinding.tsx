@@ -1,21 +1,22 @@
 import { useId, useMemo, type ReactNode } from "react";
 import type { FloatDiveView } from "./floatPlayback";
-import { PROFILE_CHART, profileGeometry, profileTakeaway } from "./profileGeometry";
+import { PROFILE_CHART, profileGeometry, type profileTakeaway } from "./profileGeometry";
 
 export function FloatFinding({
   view,
+  finding,
   onClose,
   notice,
   children,
 }: {
   view: FloatDiveView;
+  finding: ReturnType<typeof profileTakeaway>["finding"];
   onClose: () => void;
   notice: boolean;
   children: ReactNode;
 }) {
   const id = useId();
   const { samples } = view.profile;
-  const finding = useMemo(() => profileTakeaway(samples).finding, [samples]);
   const plot = useMemo(() => profileGeometry(samples, "temperature"), [samples]);
   const point = plot.points[finding.index]!;
   const { width, height, left, right, top, bottom } = PROFILE_CHART;
@@ -63,8 +64,20 @@ export function FloatFinding({
             <text x={(left + right) / 2} y="209" textAnchor="middle">
               Temperature (°C)
             </text>
-            <polyline points={plot.line} className="float-profile-line" data-field="temperature" />
+            <polyline
+              pathLength="1"
+              points={plot.line}
+              className="float-profile-line"
+              data-field="temperature"
+            />
             <path d={`M${left} ${point.y}H${right}`} className="float-profile-selection" />
+            <text
+              x={point.x}
+              y={point.y < top + 20 ? point.y + 18 : point.y - 10}
+              textAnchor={point.x > (left + right) / 2 ? "end" : "start"}
+            >
+              {Math.round(samples[finding.index]!.depth).toLocaleString()} m
+            </text>
             <circle cx={point.x} cy={point.y} r="4.5" className="float-finding-sample" />
           </svg>
           <small>{samples.length.toLocaleString()} measured samples. One location and one date.</small>

@@ -33,7 +33,7 @@ export const findingTitles: Record<string, string> = {
   nino: "A warm layer in motion.",
   bloom: "A season seen from orbit.",
   reef: "Heat accumulated over time.",
-  aral: "A changing water footprint.",
+  aral: "One sea, separate basins.",
   spring: "The season moves north.",
   fault: "Offsets along a rupture.",
   dust: "A plume with depth.",

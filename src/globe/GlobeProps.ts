@@ -33,6 +33,7 @@ export interface GlobeProps {
   onReplay?: (state: { at: number; revealed: number } | null) => void;
   flat?: boolean;
   globePresentation?: GlobePresentation;
+  landing?: boolean;
   rotateLanding?: boolean;
   /** Draw earthquakes at their own depth. Only means anything on the globe, and the shader fades it with
    * the morph, so unwrapping the map lifts every event back to the surface as one motion. */

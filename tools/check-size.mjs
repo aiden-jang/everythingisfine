@@ -8,7 +8,7 @@ const MAX_STATE = 12;
 // Existing exceptions are pinned and must shrink with their files.
 const ALREADY_OVER = {
   "src/App.tsx": { lines: 1463, state: 12 },
-  "src/globe/Globe.tsx": { lines: 656 },
+  "src/globe/Globe.tsx": { lines: 620 },
   "src/globe/scene.ts": { lines: 639 },
   "src/app/MagnitudeFilter.tsx": { lines: 530 },
   "src/geo/land.ts": { lines: 477 },

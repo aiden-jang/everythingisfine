@@ -5,7 +5,6 @@ import { ARGO_DOI, ARGO_PROVIDER, type ArgoStation } from "../../sources/argo";
 import { useObservatoryEscape } from "../useObservatoryEscape";
 import type { FloatDiveView } from "./floatPlayback";
 import { useArgoProfiles } from "./useArgoProfiles";
-import { ShareMoment } from "../observations/StorySession";
 import { FloatTitle } from "./FloatChapter";
 import { FloatMeasurements } from "./FloatMeasurements";
 import { floatMoment } from "./floatMoment";
@@ -75,8 +74,9 @@ export function FloatDivePanel({
           <time dateTime={new Date(view.profile.at).toISOString()}>{date.format(view.profile.at)} UTC</time>
         </p>
       )}
-      {view && <FloatMeasurements view={view} sound={!pending && !problem} onClose={onClose} />}
-      {view && <ShareMoment current={() => floatMoment(view, projection.map)} />}
+      {view && (
+        <FloatMeasurements view={view} map={projection.map} sound={!pending && !problem} onClose={onClose} />
+      )}
       <div className="float-meta">
         {pending ? (
           <p role="status">Checking this profile’s readings…</p>

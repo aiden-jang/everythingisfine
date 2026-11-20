@@ -10,6 +10,7 @@ export function createTapGesture() {
     },
     move(event: Pointer) {
       if (start && Math.hypot(event.clientX - start.x, event.clientY - start.y) > 5) start = null;
+      return pointers.size > 0 && start === null;
     },
     up(event: Pointer) {
       const clicked =

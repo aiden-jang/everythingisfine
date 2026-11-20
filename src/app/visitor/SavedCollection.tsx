@@ -1,10 +1,9 @@
-import { useId, useLayoutEffect, useRef, useState } from "react";
-import { createPortal } from "react-dom";
+import { useId, useLayoutEffect, useState } from "react";
 import { useStoryNavigation } from "../journeys/StoryNavigation";
+import { restoreCollection } from "./collectionReturn";
 import { visitEvidence } from "./visitEvidence";
 import { EvidenceCard } from "./EvidenceCard";
 import { savedVisitKey, type Visit } from "./library";
-import { exportEvidence } from "./exportEvidence";
 
 const noteDrafts = new Map<string, string>();
 
@@ -22,7 +21,7 @@ function KeptItem({ visit, onClose }: { visit: Visit; onClose: () => void }) {
   return (
     <div className="kept-item">
       <EvidenceCard evidence={evidence} />
-      <details className="kept-note">
+      <details className="kept-note" id={`saved-note-${key}`}>
         <summary>
           {note ? "Your note" : "Add a thought (optional)"}
           {hasDraft && <span className="note-draft"> · Unsaved draft</span>}
@@ -69,10 +68,11 @@ function KeptItem({ visit, onClose }: { visit: Visit; onClose: () => void }) {
       <div className="kept-actions">
         <button
           type="button"
+          id={`saved-entry-${key}`}
           disabled={!!navigation.unavailable(visit.id)}
           onClick={() => {
+            navigation.resume(visit, `saved-entry-${key}`);
             onClose();
-            navigation.resume(visit, "open-saved-observations");
           }}
         >
           Reopen this moment
@@ -84,6 +84,7 @@ function KeptItem({ visit, onClose }: { visit: Visit; onClose: () => void }) {
             setExporting(true);
             setStatus("");
             try {
+              const { exportEvidence } = await import("./exportEvidence");
               await exportEvidence(evidence);
               setStatus("Evidence card downloaded.");
             } catch {
@@ -116,36 +117,14 @@ function KeptItem({ visit, onClose }: { visit: Visit; onClose: () => void }) {
 
 export function SavedCollection({ onClose }: { onClose: () => void }) {
   const navigation = useStoryNavigation();
-  const heading = useRef<HTMLHeadingElement>(null);
-  useLayoutEffect(() => heading.current?.focus({ preventScroll: true }), []);
+  const restore = navigation?.restoredCollection;
+  useLayoutEffect(() => {
+    if (restore) restoreCollection(restore);
+  }, [restore]);
   if (!navigation) return null;
   const { library } = navigation;
-  return createPortal(
-    <section
-      id="saved-observations"
-      className="saved-collection"
-      aria-label="Saved observations"
-      data-empty={library.saved.length === 0 || undefined}
-      onKeyDown={(event) => {
-        if (event.key === "Escape") {
-          event.preventDefault();
-          event.stopPropagation();
-          onClose();
-        }
-      }}
-    >
-      <div className="saved-collection-heading">
-        <h2 ref={heading} tabIndex={-1}>
-          What you noticed.
-        </h2>
-        <button type="button" onClick={onClose} aria-label="Close saved observations">
-          Close
-        </button>
-      </div>
-      <div className="saved-readings-heading">
-        <h3>Saved readings</h3>
-        <p>Kept on this device.</p>
-      </div>
+  return (
+    <>
       {!library.saved.length && (
         <div className="saved-empty">
           <p>Keep a reading from any story that offers one.</p>
@@ -174,15 +153,17 @@ export function SavedCollection({ onClose }: { onClose: () => void }) {
         )}
       </div>
       {library.recent.length > 0 && (
-        <details className="saved-recent">
+        <details className="saved-recent" id="saved-recent-journeys">
           <summary>Recent journeys</summary>
           {library.recent.map((visit) => (
             <button
               type="button"
+              id={`saved-entry-recent-${visit.id}`}
               key={visit.id}
+              disabled={!!navigation.unavailable(visit.id)}
               onClick={() => {
+                navigation.resume(visit, `saved-entry-recent-${visit.id}`, true);
                 onClose();
-                navigation.resume(visit, "open-saved-observations", true);
               }}
             >
               {visitEvidence(visit).title}
@@ -190,7 +171,6 @@ export function SavedCollection({ onClose }: { onClose: () => void }) {
           ))}
         </details>
       )}
-    </section>,
-    document.querySelector(".frame") ?? document.body,
+    </>
   );
 }

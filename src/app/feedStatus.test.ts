@@ -66,14 +66,27 @@ describe("what the header dot may claim", () => {
 });
 
 describe("the phrase under the dot", () => {
-  it("says connecting only while nothing at all has arrived", () => {
+  it("identifies initial checks before anything arrives", () => {
     expect(feedStatus(streams({ kind: "idle" }, { kind: "idle" }), layers("pending")).phrase).toBe(
-      "connecting",
+      "Checking feeds",
     );
   });
 
   it("counts what is in while the slow layers are still coming", () => {
-    expect(feedStatus(streams(LIVE, LIVE), layers("pending")).phrase).toBe("2 of 7 feeds available");
+    expect(feedStatus(streams(LIVE, LIVE), layers("pending"))).toMatchObject({
+      phrase: "Checking feeds",
+      arrived: 2,
+      total: 7,
+    });
+  });
+
+  it("names a confirmed failure separately while other sources are still being checked", () => {
+    expect(feedStatus(streams(DOWN, LIVE), layers("pending"))).toMatchObject({
+      phrase: "1 unavailable · checking",
+      arrived: 1,
+      total: 7,
+      settling: true,
+    });
   });
 
   it("names the shortfall once everything has answered", () => {

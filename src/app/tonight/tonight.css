@@ -505,3 +505,47 @@
   color: var(--color-ink);
   border-bottom: 1px solid var(--color-faint);
 }
+
+.tonight-compass .compass-disclosure {
+  display: none;
+}
+@media (max-width: 599px) and (max-height: 700px), (orientation: landscape) and (max-height: 480px) {
+  .tonight-compass .compass-disclosure {
+    display: inline-block;
+    min-height: 44px;
+    padding-inline: 8px;
+    pointer-events: auto;
+    border-radius: 5px;
+  }
+  .tonight-compass .observatory-actions {
+    display: none;
+  }
+  .tonight-compass .observatory-actions[data-open] {
+    display: flex;
+    position: absolute;
+    bottom: 100%;
+    right: 0;
+    padding: 3px;
+    border-radius: 6px;
+    background: var(--color-void);
+  }
+}
+
+@media (orientation: landscape) and (max-height: 480px) and (min-width: 600px) {
+  .observatory-stage .stage-readout.tonight-compass {
+    display: flex;
+    flex-wrap: nowrap;
+    justify-content: space-between;
+    inset: calc(var(--stage-inset) + 58px) var(--stage-inset) auto;
+    min-height: 44px;
+    padding: 0;
+    background: transparent;
+  }
+  .tonight-compass[data-open-compass] > span {
+    visibility: hidden;
+  }
+  .tonight-compass .observatory-actions[data-open] {
+    inset: 50% auto auto 0;
+    transform: translateY(-50%);
+  }
+}

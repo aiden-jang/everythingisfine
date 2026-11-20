@@ -1,3 +1,4 @@
+import { useEffect, useId, useRef, useState } from "react";
 import { StoryProjection } from "../observations/StoryProjection";
 import { bearingLabel, type TonightView } from "../../geo/tonight";
 
@@ -21,7 +22,19 @@ export function TonightCompass({
   orbit: boolean;
   onOrbit: (orbit: boolean) => void;
 }): JSX.Element {
+  const [directions, setDirections] = useState(false);
+  const menu = useId();
+  const toggle = useRef<HTMLButtonElement>(null);
   const fromEarth = projection.map || orbit;
+  const compass = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!directions) return;
+    const dismissOutside = (event: PointerEvent) => {
+      if (!compass.current?.contains(event.target as Node)) setDirections(false);
+    };
+    document.addEventListener("pointerdown", dismissOutside, true);
+    return () => document.removeEventListener("pointerdown", dismissOutside, true);
+  }, [directions]);
   const target = view?.bodies.find(({ name }) => name === view.targetName);
   return (
     <div
@@ -91,7 +104,22 @@ export function TonightCompass({
         </StoryProjection>
       )}
       {view && !fromEarth && (
-        <div className="stage-readout tonight-compass">
+        <div
+          className="stage-readout tonight-compass"
+          ref={compass}
+          data-open-compass={directions || undefined}
+          onBlur={(e) => {
+            if (directions && e.relatedTarget instanceof Node && !e.currentTarget.contains(e.relatedTarget))
+              setDirections(false);
+          }}
+          onKeyDown={(e) => {
+            if (e.key !== "Escape" || !directions) return;
+            e.preventDefault();
+            e.stopPropagation();
+            setDirections(false);
+            toggle.current?.focus({ preventScroll: true });
+          }}
+        >
           <span>
             Facing {bearingLabel(view.look.azimuth)} · {Math.round(view.look.azimuth) % 360}°
             {target && (
@@ -100,14 +128,39 @@ export function TonightCompass({
               </small>
             )}
           </span>
-          <div className="observatory-actions" role="group" aria-label="Look direction">
+          <button
+            className="compass-disclosure"
+            ref={toggle}
+            type="button"
+            aria-controls={menu}
+            aria-expanded={directions}
+            onClick={(event) => {
+              event.currentTarget.focus({ preventScroll: true });
+              setDirections(!directions);
+            }}
+          >
+            Directions
+          </button>
+          <div
+            id={menu}
+            className="observatory-actions"
+            role="group"
+            aria-label="Look direction"
+            data-open={directions || undefined}
+          >
             {bearings.map(({ short, name, azimuth }) => (
               <button
                 key={short}
                 type="button"
                 aria-label={`Look ${name}`}
                 aria-pressed={view.look.azimuth === azimuth && view.look.altitude === 16}
-                onClick={() => onView({ ...view, look: { azimuth, altitude: 16 } })}
+                onClick={() => {
+                  onView({ ...view, look: { azimuth, altitude: 16 } });
+                  if (toggle.current?.getClientRects().length) {
+                    setDirections(false);
+                    toggle.current.focus({ preventScroll: true });
+                  }
+                }}
               >
                 {short}
               </button>

@@ -1,3 +1,4 @@
+import { StoryFinding } from "../journeys/StoryFinding";
 import { useStoryCompletion } from "../journeys/useStoryCompletion";
 import { StoryLoading } from "../StoryLoading";
 import { useJourneyGestures } from "../journeyCamera";
@@ -19,6 +20,7 @@ import { point } from "./types";
 import { StoryOverlay } from "./StoryOverlay";
 import { StoryCompass } from "./StoryCompass";
 import { StoryChoices } from "./StoryChoices";
+import { useShorelineComparison } from "./useShorelineComparison";
 import { StorySources } from "./StorySources";
 import { useTerrainSection } from "./useTerrainSection";
 
@@ -124,14 +126,18 @@ export function StoryPlayer({
   );
   const time = frame.timeLabel ?? format.format(frame.at) + " UTC";
   const duration = Math.max(1, data.frames.length - 1);
-  useStoryCompletion(!busy && status === "ready" && !clock.playing && clock.position >= duration);
+  const finished = !busy && status === "ready" && !clock.playing && clock.position >= duration;
+  useStoryCompletion(finished);
+  const shoreline = useShorelineComparison(id === "aral" && finished, frame.at);
+  const displayedImage = shoreline.image ?? element;
+  const comparingShoreline = id === "aral" && finished;
   useLayoutEffect(() => {
     if (frame.raster && (!element || element.src !== new URL(frame.raster.url, location.href).href)) return;
     onView({
       kind: "observation",
       frame: viewFrame,
       target,
-      image: element,
+      image: displayedImage,
       moonImage: lunarImage.element,
       onPick: section.pick,
       ...(data.lens && !localSky ? { lens: data.lens } : {}),
@@ -169,6 +175,7 @@ export function StoryPlayer({
     section.chapter,
     target,
     element,
+    displayedImage,
     data.lens,
     data.terrain,
     arrive,
@@ -204,11 +211,22 @@ export function StoryPlayer({
       title={meta.title}
       location={localSky ? `${city.name} · ${new Date(frame.at).getUTCFullYear()} sky` : meta.location}
       subtitle={meta.summary}
-      status={localSky ? `${localSky.targetName} from ${city.name}` : caption}
-      at={<time dateTime={new Date(frame.at).toISOString()}>{time}</time>}
+      finding={id !== "aral"}
+      status={comparingShoreline ? null : localSky ? `${localSky.targetName} from ${city.name}` : caption}
+      at={
+        comparingShoreline ? undefined : (
+          <time dateTime={frame.dateTime ?? new Date(frame.at).toISOString()}>{time}</time>
+        )
+      }
+      sharedMoment={
+        initial?.at !== undefined && id === "aral" ? { ...initial, at: data.frames[start]!.at } : undefined
+      }
       sources={<StorySources id={id} />}
       inset={
-        <StoryOverlay localSky={localSky} data={data} frame={frame} site={site} chooseSite={chooseSite} />
+        <>
+          <StoryOverlay localSky={localSky} data={data} frame={frame} site={site} chooseSite={chooseSite} />
+          {shoreline.labels}
+        </>
       }
     >
       <StoryChoices
@@ -290,6 +308,11 @@ export function StoryPlayer({
           (id === "fire" ? "Detection time" : id === "comet" ? "July 2020 · UTC" : "Observation time")
         }
       />
+      {comparingShoreline && (
+        <StoryFinding id={id} completed>
+          {shoreline.controls}
+        </StoryFinding>
+      )}
       {frame.measurements && (
         <dl className="observation-values">
           {frame.measurements.map((m) => (

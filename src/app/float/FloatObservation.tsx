@@ -5,10 +5,16 @@ import type { FloatDiveView } from "./floatPlayback";
 function ObservationEditor({ view, sampleIndex }: { view: FloatDiveView; sampleIndex?: number | undefined }) {
   const navigation = useStoryNavigation();
   const profile = `${view.source}/${view.profile.id}`;
-  const kept = navigation?.library.saved.find(({ id }) => id === "float");
-  const [note, setNote] = useState(() =>
-    kept?.position.float?.profile === profile ? (kept.observation?.note ?? "") : "",
+  const index = sampleIndex ?? view.read().index;
+  const kept = navigation?.library.saved.find(
+    ({ id, position }) =>
+      id === "float" && position.float?.profile === profile && position.float.index === index,
   );
+  const savedNote = kept?.note ?? kept?.observation?.note ?? "";
+  const [drafts, setDrafts] = useState<Record<number, string>>({});
+  const [lastAttempt, setLastAttempt] = useState<number | null>(null);
+  const note = drafts[index] ?? savedNote;
+  const changed = note.trim() !== savedNote;
   const noteId = useId();
   if (!navigation || navigation.active !== "float") return null;
   const sample = sampleIndex === undefined ? undefined : view.profile.samples[sampleIndex];
@@ -18,13 +24,17 @@ function ObservationEditor({ view, sampleIndex }: { view: FloatDiveView; sampleI
       <div>
         <button
           type="button"
+          aria-disabled={Boolean(kept && !changed)}
           onClick={() => {
+            if (kept && !changed) return;
             const current = navigation.current();
-            const index = sampleIndex ?? view.read().index;
+            view.pause();
             const reading = view.profile.samples[index];
             if (current?.id !== "float" || !reading) return;
-            navigation.library.save({
+            setLastAttempt(index);
+            const saved = navigation.library.save({
               ...current,
+              note: note.trim(),
               position: {
                 ...current.position,
                 float: {
@@ -41,9 +51,22 @@ function ObservationEditor({ view, sampleIndex }: { view: FloatDiveView; sampleI
                 ...(note.trim() ? { note: note.trim() } : {}),
               },
             });
+            if (saved && drafts[index] !== undefined) {
+              setDrafts((previous) => {
+                const next = { ...previous };
+                delete next[index];
+                return next;
+              });
+            }
           }}
         >
-          {kept ? "Update kept observation" : "Keep this observation"}
+          {kept
+            ? changed
+              ? "Save note"
+              : "Kept"
+            : sample
+              ? `Keep the ${Math.round(sample.depth).toLocaleString()} m reading`
+              : "Keep this observation"}
         </button>
         {sample && (
           <small>
@@ -53,7 +76,7 @@ function ObservationEditor({ view, sampleIndex }: { view: FloatDiveView; sampleI
         )}
       </div>
       <details className="float-observation-note">
-        <summary>Add a note (optional)</summary>
+        <summary onClick={() => view.pause()}>{savedNote ? "Your note" : "Add a note (optional)"}</summary>
         <label htmlFor={noteId}>
           A note for this observation <span>(optional)</span>
         </label>
@@ -62,13 +85,17 @@ function ObservationEditor({ view, sampleIndex }: { view: FloatDiveView; sampleI
           value={note}
           maxLength={280}
           rows={2}
-          onChange={(event) => setNote(event.currentTarget.value.slice(0, 280))}
+          onFocus={() => view.pause()}
+          onChange={(event) => {
+            const text = event.currentTarget.value.slice(0, 280);
+            setDrafts((previous) => ({ ...previous, [index]: text }));
+          }}
           placeholder="What did you notice?"
         />
         <p>Notes stay on this device. {note.length}/280 characters.</p>
       </details>
       <span role="status" aria-label="Kept observation status">
-        {navigation.library.notice}
+        {lastAttempt === index ? navigation.library.notice : ""}
       </span>
     </section>
   );

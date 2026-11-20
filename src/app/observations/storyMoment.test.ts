@@ -42,6 +42,8 @@ test("story search spans scenes, handles accents, and requires every search term
   expect(findStories("kilauea").map((s) => s.id)).toContain("kilauea");
   expect(findStories("comet").map((s) => s.id)).toContain("comet");
   expect(findStories("California GRACE").map((s) => s.id)).toEqual(["water"]);
+  expect(findStories("moon landing").map((story) => story.id)).toContain("moonfall");
+  expect(findStories("underwater").map((story) => story.id)).toContain("float");
   expect(findStories("comet volcano")).toEqual([]);
   expect(findStories("   ")).toEqual([]);
 });

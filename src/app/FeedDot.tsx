@@ -1,4 +1,7 @@
 import { useEffect, useId, useRef, type JSX } from "react";
+import { useStoryNavigation } from "./journeys/StoryNavigation";
+import { useStorySource } from "./observations/StorySourceStatus";
+import { observations } from "./observations/catalogue";
 import { layerTime } from "./layerTime";
 import { feedSourceLinks, type FeedStatus, type FeedRow } from "./feedStatus";
 import "./feed-status.css";
@@ -17,9 +20,14 @@ export function FeedDot({
   feeds: FeedStatus;
   archiveFrom: number | null;
 }): JSX.Element {
+  const active = useStoryNavigation()?.active ?? null;
+  const story = useStorySource(active);
+  const source = story ? observations[story.id] : null;
+  const storyFailed = story?.state === "failed";
   const id = `feed-status-${useId()}`;
   const trigger = useRef<HTMLButtonElement>(null);
   const panel = useRef<HTMLDivElement>(null);
+  const storyHeading = useRef<HTMLHeadingElement>(null);
   const position = () => {
     const rect = trigger.current?.getBoundingClientRect();
     if (!rect || !panel.current) return;
@@ -46,7 +54,7 @@ export function FeedDot({
     );
   }
   const unavailable = feeds.rows.filter(({ state }) => state === "failed").length;
-  const state = unavailable ? "failed" : feeds.settling ? "pending" : "ok";
+  const state = unavailable || storyFailed ? "failed" : feeds.settling ? "pending" : "ok";
   return (
     <>
       <button
@@ -55,17 +63,27 @@ export function FeedDot({
         ref={trigger}
         {...{ popovertarget: id }}
         aria-controls={id}
+        data-story-failed={storyFailed || undefined}
         onClick={position}
       >
         <span className="feed-indicator" data-state={state} aria-hidden="true" />
         <span className="sr-only">Feed status,</span>
-        <span className="feed-wide">{feeds.phrase}</span>
+        <span className="feed-wide">
+          {storyFailed
+            ? "Story source unavailable"
+            : active && feeds.phrase === "All feeds available"
+              ? "Background feeds available"
+              : feeds.phrase}
+        </span>
         <span className="feed-count">
           <span>
             {feeds.arrived}/{feeds.total}
           </span>
           <span className="sr-only">
-            {feeds.arrived === 0 && feeds.settling ? "connecting" : "available"}
+            {" available"}
+            {feeds.settling && unavailable > 0 ? `, ${unavailable} unavailable` : ""}
+            {feeds.settling ? ", checking remaining feeds" : ""}
+            {storyFailed && source ? `. ${source.title} source unavailable` : ""}
           </span>
         </span>
         <svg width="9" height="6" viewBox="0 0 9 6" fill="none" aria-hidden="true">
@@ -81,8 +99,42 @@ export function FeedDot({
         role="region"
         aria-labelledby={`${id}-title`}
       >
+        {story && source && (
+          <section className="story-source-status" aria-label={`${source.title} source`}>
+            <h2 ref={storyHeading} tabIndex={-1}>
+              {source.title}
+            </h2>
+            <p role="status">
+              {source.source} ·{" "}
+              {
+                {
+                  loading: "Checking",
+                  ready: "Data loaded",
+                  empty: "No readings for this selection",
+                  failed: "Unavailable",
+                }[story.state]
+              }
+            </p>
+            {storyFailed && (
+              <button
+                type="button"
+                onClick={() => {
+                  storyHeading.current?.focus({ preventScroll: true });
+                  story.retry();
+                }}
+                aria-label={`Retry ${source.title} source`}
+              >
+                Retry source
+              </button>
+            )}
+          </section>
+        )}
         <h2 id={`${id}-title`}>Background feed status</h2>
-        <p className="feed-scope">Checks for this view. Paused and off feeds are outside the count.</p>
+        <p className="feed-scope">
+          {active
+            ? "The count covers enabled background layers."
+            : "Checks for this view. Paused and off feeds are outside the count."}
+        </p>
         <ul>
           {feeds.rows.map(({ id: key, label, state, message }) => (
             <li key={key}>

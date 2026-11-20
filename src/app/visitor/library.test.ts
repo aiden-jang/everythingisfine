@@ -31,6 +31,18 @@ describe("local visit library", () => {
     expect(loaded.saved).toEqual([visit]);
     expect(loaded.recent[0]?.position.moment?.at).toBe(Date.UTC(2005, 7, 30));
   });
+  it("keeps separate Float samples and edits only the note for the same reading", () => {
+    const first = observation;
+    const second: Visit = {
+      ...first,
+      position: { float: { ...first.position.float!, index: 62 } },
+      note: "Next depth",
+    };
+    let library = readLibrary(JSON.stringify({ version: 1, saved: [first] }));
+    library = rememberVisit(library, second, "saved");
+    library = rememberVisit(library, { ...second, note: "Revised note" }, "saved");
+    expect(readLibrary(JSON.stringify(library)).saved).toEqual([{ ...second, note: "Revised note" }, first]);
+  });
   it("bounds storage and rejects corrupt, unknown and future-version payloads", () => {
     for (const text of [
       "{",

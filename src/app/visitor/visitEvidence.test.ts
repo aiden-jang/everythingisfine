@@ -47,3 +47,14 @@ describe("source-stamped kept evidence", () => {
       expect(readVisit({ ...visit, note })?.note).toBeUndefined();
   });
 });
+
+it("shows only the classification year on a saved Aral view", () => {
+  const at = Date.UTC(2021, 5, 1, 12);
+  expect(
+    visitEvidence({ id: "aral", seen: at, position: { moment: { id: "aral", at, map: true } } }),
+  ).toMatchObject({
+    time: "2021",
+    kind: "Annual water classification",
+    source: "European Commission JRC · Global Surface Water",
+  });
+});

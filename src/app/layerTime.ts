@@ -9,3 +9,7 @@ const clock = new Intl.DateTimeFormat("en-GB", {
 });
 
 export const layerTime = (at: number): string => `${clock.format(at)} UTC`;
+
+export function storyObservationTime(story: string, at: number): string {
+  return story === "aral" ? String(new Date(at).getUTCFullYear()) : layerTime(at);
+}

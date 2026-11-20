@@ -3,7 +3,7 @@ import { useStoryNavigation } from "../journeys/StoryNavigation";
 import { searchStories } from "../storyIndex";
 import { savedVisitKey, type Visit } from "./library";
 import "./visitor.css";
-import { layerTime } from "../layerTime";
+import { layerTime, storyObservationTime } from "../layerTime";
 import { useRef } from "react";
 
 const title = (id: string) => searchStories.find((story) => story.id === id)?.title ?? id;
@@ -26,7 +26,7 @@ export function visitNote(visit: Visit) {
   if (visit.id === "kilauea" && moment?.chapter === "compare")
     return `Kapoho Bay · Shoreline divider at ${moment.choice ?? "50"}%`;
   const at = moment?.at ?? visit.position.radar?.at;
-  if (at !== undefined) return layerTime(at);
+  if (at !== undefined) return storyObservationTime(visit.id, at);
   if (visit.position.float) return "Saved float profile and depth";
   return "Opens the latest available view";
 }

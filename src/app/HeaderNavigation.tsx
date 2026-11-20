@@ -1,20 +1,24 @@
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { useStoryNavigation } from "./journeys/StoryNavigation";
-import { SavedBoundary, SavedFallback } from "./visitor/SavedBoundary";
+import { SavedBoundary, SavedPanel } from "./visitor/SavedBoundary";
 import "./header-navigation.css";
 import "./visitor/saved-collection.css";
 
-const SavedCollection = lazy(() =>
-  import("./visitor/SavedCollection").then((module) => ({ default: module.SavedCollection })),
-);
+const loadCollection = () => import("./visitor/SavedCollection");
+const warmCollection = () => {
+  void loadCollection().catch(() => {});
+};
+const SavedCollection = lazy(() => loadCollection().then((module) => ({ default: module.SavedCollection })));
 
 export function HeaderNavigation({ exploring }: { exploring: boolean }) {
   const navigation = useStoryNavigation();
-  const [saved, setSaved] = useState(false);
+  const [opened, setSaved] = useState(false);
   const trigger = useRef<HTMLButtonElement>(null);
   useEffect(() => setSaved(false), [navigation?.active, navigation?.browsingStories]);
   if (!navigation) return null;
+  const saved = opened || !!navigation.restoredCollection;
   const close = () => {
+    navigation.dismissRestoration();
     setSaved(false);
     trigger.current?.focus({ preventScroll: true });
   };
@@ -28,6 +32,7 @@ export function HeaderNavigation({ exploring }: { exploring: boolean }) {
         aria-description="Open Layers and Stories, or return to your previous Explore view"
         onClick={() => {
           setSaved(false);
+          navigation.dismissRestoration();
           navigation.explore();
         }}
       >
@@ -51,6 +56,7 @@ export function HeaderNavigation({ exploring }: { exploring: boolean }) {
         aria-label="Find a story"
         onClick={() => {
           setSaved(false);
+          navigation.dismissRestoration();
           navigation.browse(true);
         }}
       >
@@ -68,7 +74,9 @@ export function HeaderNavigation({ exploring }: { exploring: boolean }) {
         aria-label="Saved observations and recent visits"
         aria-expanded={saved}
         aria-controls={saved ? "saved-observations" : undefined}
-        onClick={() => setSaved((value) => !value)}
+        onPointerEnter={warmCollection}
+        onFocus={warmCollection}
+        onClick={() => (saved ? close() : setSaved(true))}
       >
         <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
           <path d="M6 3h12v18l-6-4-6 4Z" fill="none" stroke="currentColor" strokeWidth="1.5" />
@@ -76,20 +84,19 @@ export function HeaderNavigation({ exploring }: { exploring: boolean }) {
         <span>Saved</span>
       </button>
       {saved && (
-        <SavedBoundary onClose={close}>
-          <Suspense
-            fallback={
-              <SavedFallback onClose={close}>
-                <p role="status">Opening your saved observations…</p>
-                <button type="button" onClick={close}>
-                  Back to the world
-                </button>
-              </SavedFallback>
-            }
-          >
-            <SavedCollection onClose={close} />
-          </Suspense>
-        </SavedBoundary>
+        <SavedPanel count={navigation.library.saved.length} onClose={close}>
+          <SavedBoundary>
+            <Suspense
+              fallback={
+                <div className="saved-pending" role="status">
+                  Opening saved readings…
+                </div>
+              }
+            >
+              <SavedCollection onClose={close} />
+            </Suspense>
+          </SavedBoundary>
+        </SavedPanel>
       )}
     </>
   );

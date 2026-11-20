@@ -1,5 +1,6 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
+import { StorySourceProvider } from "./app/observations/StorySourceStatus";
 import { App } from "./App";
 import "./index.css";
 
@@ -35,7 +36,9 @@ async function start() {
   }
   createRoot(root!).render(
     <StrictMode>
-      <App />
+      <StorySourceProvider>
+        <App />
+      </StorySourceProvider>
     </StrictMode>,
   );
 }

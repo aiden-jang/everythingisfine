@@ -59,6 +59,20 @@
   border-top: 0;
   padding-top: 4px;
 }
+@keyframes measured-profile-reveal {
+  from {
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .float-finding-chart polyline {
+    stroke-dasharray: 1;
+    animation: measured-profile-reveal 560ms ease-out both;
+  }
+}
 .float-finding-chart text {
   fill: var(--color-dim);
   font: 12px var(--font-mono);

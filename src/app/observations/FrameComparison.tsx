@@ -69,7 +69,9 @@ export function FrameComparison({
               onClick={() => choose(valid[side])}
             >
               <strong>{side === "before" ? "Earlier" : "Selected"}</strong>
-              <time dateTime={new Date(frames[valid[side]]!.at).toISOString()}>
+              <time
+                dateTime={frames[valid[side]]!.dateTime ?? new Date(frames[valid[side]]!.at).toISOString()}
+              >
                 {frames[valid[side]]!.timeLabel ?? layerTime(frames[valid[side]]!.at)}
               </time>
             </button>

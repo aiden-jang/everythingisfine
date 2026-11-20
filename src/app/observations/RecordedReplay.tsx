@@ -1,3 +1,4 @@
+import type { StoryMoment } from "./storyMoment";
 import { SharedStory } from "./SharedStory";
 import { ExperienceEnding } from "../journeys/ExperienceEnding";
 import { lazy, useLayoutEffect, useRef, type ReactNode } from "react";
@@ -62,6 +63,7 @@ export function ReplayPanel({
   save = true,
   className = "",
   sharing = true,
+  sharedMoment,
   evidence,
 }: Omit<ReplayProps, "onView"> & {
   title: string;
@@ -78,6 +80,7 @@ export function ReplayPanel({
   save?: boolean;
   className?: string;
   sharing?: boolean;
+  sharedMoment?: StoryMoment | undefined;
   evidence?: ReactNode;
 }): JSX.Element {
   const back = useRef<HTMLButtonElement>(null);
@@ -126,7 +129,7 @@ export function ReplayPanel({
               </div>
             </div>
             <p className="observation-note">{subtitle}</p>
-            <SharedStory />
+            <SharedStory moment={sharedMoment} />
             {children}
             {sharing && <ShareMoment />}
             {ending && <ExperienceEnding showFinding={finding} showSave={save} />}

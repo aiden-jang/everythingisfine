@@ -81,6 +81,7 @@ export async function aralStory(): Promise<EarthStoryData> {
   const frames = data.frames.map((f): StoryFrame => ({
     at: date(`${f.year}-06-01`),
     timeLabel: `${f.year} · annual water classification`,
+    dateTime: String(f.year),
     caption: "The early water boundary stays in place as the sea retreats",
     raster: { url: atlasImage(f.image), bounds: data.bounds },
     measurements: [{ label: "Missing observations inside reference", value: `${f.missing}%` }],
@@ -94,6 +95,7 @@ export async function aralStory(): Promise<EarthStoryData> {
       { color: "#e6e1c5", label: "1984–1986 observed-water boundary" },
       { color: "#3987b2", label: "Permanent water" },
       { color: "#70c0cb", label: "Seasonal water" },
+      { color: "#b299b4", label: "Hatched · no observation inside the reference" },
     ],
   };
 }

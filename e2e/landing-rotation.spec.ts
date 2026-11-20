@@ -238,3 +238,82 @@ for (const [width, height] of [
       await page.screenshot({ path: test.info().outputPath(`landing-zoomed-out-${width}.png`) });
   });
 }
+
+test.describe("landing marker inspection", () => {
+  test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, reducedMotion: "reduce" });
+  const point = { lon: 145, lat: 12 };
+  test.beforeEach(async ({ page }) => {
+    const at = Date.now() - 12 * 60_000;
+    await installFeeds(page, {
+      presentation: "fresh",
+      count: 0,
+      usgs: [
+        {
+          id: "preview-sample",
+          properties: {
+            mag: 5.2,
+            magType: "mw",
+            place: "Observed offshore",
+            time: at,
+            updated: at,
+            type: "earthquake",
+            net: "us",
+          },
+          geometry: { type: "Point", coordinates: [point.lon, point.lat, 8] },
+        },
+      ],
+    });
+    await page.goto("/#at=145,12,1&p=globe&v=observe");
+    await expect.poll(() => camera(page)).toEqual({ ...point, zoom: 1 });
+  });
+
+  test("landing markers preview a timestamp and open on the second tap @dev", async ({ page }) => {
+    const globe = page.getByRole("button", { name: "Explore visible observations" });
+    const label = page.locator("#globe-marker-preview");
+    await expect(globe).toBeVisible();
+    const markerPosition = () =>
+      page.evaluate(({ lon, lat }) => {
+        const debug = window as unknown as {
+          __globe: Controls;
+          __hitTest: (x: number, y: number) => string | null;
+        };
+        const p = debug.__globe.project(lon, lat);
+        if (!p || !debug.__hitTest(p.x, p.y) || document.elementFromPoint(p.x, p.y)?.tagName !== "CANVAS")
+          return null;
+        return p;
+      }, point);
+    await expect.poll(markerPosition).not.toBeNull();
+    const projected = (await markerPosition())!;
+    await page.mouse.move(projected.x, projected.y);
+    await expect(label).toContainText("Observed offshore");
+    await expect(label).toContainText("UTC");
+    await page.mouse.move(0, 0);
+    await expect(label).toBeEmpty();
+    await page.touchscreen.tap(projected.x, projected.y);
+    await expect(label).toContainText("Tap again to open");
+    await expect(page.locator(".frame")).toHaveAttribute("data-presentation", "observe");
+    await page.touchscreen.tap(projected.x, projected.y);
+    await expect(page.locator(".frame")).toHaveAttribute("data-presentation", "explore");
+    await expect(label).toBeEmpty();
+  });
+
+  test("a keyboard visitor can dismiss and open a landing marker @dev", async ({ page }) => {
+    const globe = page.getByRole("button", { name: "Explore visible observations" });
+    const label = page.locator("#globe-marker-preview");
+    await globe.focus();
+    await expect
+      .poll(async () => {
+        await globe.press("ArrowRight");
+        return label.textContent();
+      })
+      .toContain("Observed offshore");
+    await globe.press("Escape");
+    await expect(label).toBeEmpty();
+    expect(await camera(page)).toEqual({ ...point, zoom: 1 });
+    await globe.press("ArrowRight");
+    await expect(label).toContainText("Observed offshore");
+    await globe.press("Enter");
+    await expect(page.locator(".frame")).toHaveAttribute("data-presentation", "explore");
+    await expect(page.locator("#globe-marker-preview")).toBeEmpty();
+  });
+});

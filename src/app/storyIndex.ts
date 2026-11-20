@@ -83,7 +83,7 @@ export const searchStories: readonly SearchStory[] = [
     title: "Moonfall",
     summary: "Descend to Apollo 17 and follow the rover route.",
     scene: "night",
-    keywords: "moon lunar NASA 1972",
+    keywords: "moon landing lunar Apollo astronaut NASA 1972",
   },
   {
     id: "meteors",
@@ -118,7 +118,7 @@ export const searchStories: readonly SearchStory[] = [
     title: "Float Dive",
     summary: "Rise through an Argo temperature and salinity profile.",
     scene: "live",
-    keywords: "ocean water",
+    keywords: "ocean water underwater diving submarine temperature depth",
   },
 ];
 export const normalizeStoryQuery = (query: string) =>

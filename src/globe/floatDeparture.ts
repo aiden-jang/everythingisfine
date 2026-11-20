@@ -55,7 +55,9 @@ export function createFloatDeparture(
     (event) => {
       // Camera input listens on the window. Panel shortcuts and scrubber arrows leave the shot alone.
       if (
-        (document.activeElement === document.body || document.activeElement?.id === "globe-view") &&
+        (document.activeElement === document.body ||
+          document.activeElement === canvas ||
+          document.activeElement?.id === "globe-view") &&
         ["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "+", "=", "-", "_", "0"].includes(event.key)
       )
         interrupt();

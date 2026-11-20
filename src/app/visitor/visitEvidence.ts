@@ -1,7 +1,8 @@
 import { lunarTraverses } from "../../sources/moonfall/traverses";
 import type { Visit } from "./library";
+import { earthStories } from "../earth-stories/catalogue";
 import { searchStories } from "../storyIndex";
-import { layerTime } from "../layerTime";
+import { layerTime, storyObservationTime } from "../layerTime";
 import tonga from "../tonga/tonga.json";
 import { skyCities } from "../tonight/cities";
 import { skyBodies } from "../../geo/tonight";
@@ -78,6 +79,19 @@ export function visitEvidence(visit: Visit): VisitEvidence {
       time: layerTime(moment.at),
       place: station?.name ?? "Hunga Tonga–Hunga Haʻapai",
       detail: "No station reading at this saved time. Reopen the journey to inspect the available record.",
+    };
+  }
+  if (visit.id === "aral" && moment?.at !== undefined) {
+    const year = storyObservationTime(visit.id, moment.at);
+    return {
+      ...base,
+      place: "Aral Sea",
+      time: year,
+      kind: "Annual water classification",
+      reading: "Observed water extent",
+      detail: "Seasonal and permanent water against the 1984–1986 observed shoreline.",
+      source: earthStories.aral.source,
+      url: earthStories.aral.url,
     };
   }
   const solar = visit.position.solar;

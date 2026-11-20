@@ -36,6 +36,7 @@ export interface Mark {
    * because the globe knows about polylines and deliberately nothing about cyclones. */
   label?: string;
   caption?: string;
+  observationTime?: string;
 }
 
 /** The zoom the glyph sizes in `shapes.ts` are tuned for. Chosen by looking: at 2.5 the flames read as what

@@ -158,6 +158,7 @@ for (const width of [1440, 390])
     await expect(depth).toBeVisible();
     await depth.press("End");
     const lastDepth = await depth.getAttribute("aria-valuetext");
+    await expect(dive.getByRole("button", { name: "Share this finding" })).toBeVisible();
     const finding = dive.getByRole("region", { name: "What this profile showed" });
     await expect(finding.getByRole("heading")).toHaveText("The warmest water was below the surface.");
     await expect(finding).toContainText("6.90 °C at 62 m");

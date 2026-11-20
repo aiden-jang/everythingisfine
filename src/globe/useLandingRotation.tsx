@@ -63,7 +63,7 @@ export function useLandingRotation(presentation: GlobePresentation, preference: 
         };
         const key = (event: KeyboardEvent) => {
           const active = document.activeElement;
-          if (active && active !== document.body && active.id !== "globe-view") return;
+          if (active && active !== document.body && active !== canvas && active.id !== "globe-view") return;
           if (
             !event.metaKey &&
             !event.ctrlKey &&

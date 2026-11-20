@@ -37,6 +37,7 @@ export interface Measurement {
 export interface ObservationFrame {
   at: number;
   timeLabel?: string;
+  dateTime?: string;
   sequence?: boolean;
   reconstruction?: boolean;
   photograph?: { url: string; alt: string };
