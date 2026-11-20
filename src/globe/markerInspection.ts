@@ -1,3 +1,7 @@
+import { magnitude } from "../app/format";
+import { layerTime } from "../app/layerTime";
+import type { MarkerHit } from "./quakePicking";
+import { createMarkerPicker, type MarkerChoice } from "./markerPicker";
 import type { Feed } from "../app/feed";
 import { matches } from "../data/filter";
 import type { GlobeProps } from "./GlobeProps";
@@ -28,6 +32,7 @@ export function attachMarkerInspection(
   interrupt: () => void,
 ) {
   const tap = createTapGesture();
+  const listeners = new AbortController();
   let preview: MarkerTarget | null = null;
   let pending: MarkerTarget | null = null;
   let timer: ReturnType<typeof setTimeout> | undefined;
@@ -57,9 +62,38 @@ export function attachMarkerInspection(
       selectMark?.(null);
     }
   };
+  const picker = createMarkerPicker(canvas, open, () => show(null), listeners.signal);
+  const describe = (target: MarkerTarget): MarkerChoice | null => {
+    if (target.kind === "quake") {
+      const reading = feed.store.get(target.id)?.primary;
+      return reading
+        ? { target, place: `${magnitude(reading)} ${reading.place}`, time: layerTime(reading.time) }
+        : null;
+    }
+    const mark = read().marks.find((candidate) => candidate.id === target.id && candidate.anchor);
+    const place = mark?.caption ?? mark?.label;
+    if (!place) return null;
+    return { target, place, time: mark?.observationTime ?? "" };
+  };
+  const crowded = (e: PointerEvent, quakeHits: MarkerHit[], markHits: MarkerHit[]) => {
+    const hits = [
+      ...quakeHits.map(({ id, score }) => ({ target: { kind: "quake" as const, id }, score })),
+      ...markHits.map(({ id, score }) => ({ target: { kind: "mark" as const, id }, score })),
+    ].sort((a, b) => a.score - b.score);
+    const choices: MarkerChoice[] = [];
+    for (const { target } of hits) {
+      if (choices.some((choice) => same(choice.target, target))) continue;
+      const choice = describe(target);
+      if (choice) choices.push(choice);
+      if (choices.length === 3) break;
+    }
+    if (choices.length < 2) return false;
+    display(null);
+    return picker.show(e.clientX, e.clientY, choices);
+  };
   const move = (e: PointerEvent) => {
     const dragging = tap.move(e);
-    if (read().inspection?.kind === "sequence") return;
+    if (picker.open || read().inspection?.kind === "sequence") return;
     if (landing() && (dragging || e.buttons)) {
       if (dragging) display(null);
       return;
@@ -82,7 +116,14 @@ export function attachMarkerInspection(
   const up = (e: PointerEvent) => {
     const morph = scene.controls.morph();
     if (!tap.up(e) || (morph > 0 && morph < 1)) return;
-    const target = pick(e, e.pointerType === "mouse" ? undefined : TOUCH_SLOP_PX);
+    const slop = e.pointerType === "mouse" ? undefined : TOUCH_SLOP_PX;
+    const quakeHits: MarkerHit[] = [];
+    const markHits: MarkerHit[] = [];
+    const quake = scene.hitTest(e.clientX, e.clientY, feed.store, read().filters, now(), slop, quakeHits);
+    const mark = scene.hitMark(e.clientX, e.clientY, slop, markHits);
+    if (!e.shiftKey && crowded(e, quakeHits, markHits)) return;
+    const target: MarkerTarget | null =
+      quake !== null ? { kind: "quake", id: quake } : mark !== null ? { kind: "mark", id: mark } : null;
     if (landing() && e.pointerType !== "mouse" && target && !same(target, touchChoice))
       return display(target, true);
     if (target) return open(target);
@@ -93,14 +134,17 @@ export function attachMarkerInspection(
     const point = place && !e.shiftKey ? scene.controls.pick(e.clientX, e.clientY) : null;
     if (point) place?.(point);
   };
-  const clear = () => display(null);
+  const clear = () => {
+    picker.close();
+    display(null);
+  };
   const cancel = (e: PointerEvent) => {
     tap.cancel(e);
     clear();
   };
   const leave = (e: PointerEvent) => {
     // Touch emits leave after every tap, including the tap that opens the label.
-    if (e.pointerType !== "touch") clear();
+    if (e.pointerType !== "touch" && !picker.open) clear();
   };
   const step = (direction: number) => {
     const state = read();
@@ -159,7 +203,6 @@ export function attachMarkerInspection(
     e.preventDefault();
     e.stopPropagation();
   };
-  const listeners = new AbortController();
   const options = { signal: listeners.signal };
   canvas.addEventListener("pointermove", move, options);
   canvas.addEventListener("pointerdown", down, options);
@@ -168,13 +211,14 @@ export function attachMarkerInspection(
   canvas.addEventListener("pointerleave", leave, options);
   canvas.addEventListener("wheel", clear, { ...options, passive: true });
   canvas.addEventListener("focus", focus, options);
-  canvas.addEventListener("blur", clear, options);
+  canvas.addEventListener("blur", () => display(null), options);
   canvas.addEventListener("keydown", key, options);
   return {
     clear,
     dispose() {
       clearTimeout(timer);
       listeners.abort();
+      picker.dispose();
     },
   };
 }

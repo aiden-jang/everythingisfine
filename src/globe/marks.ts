@@ -1,3 +1,4 @@
+import type { MarkerHit } from "./quakePicking";
 import { BufferAttribute, BufferGeometry, LineBasicMaterial, LineSegments } from "three";
 import { DEG } from "../geo/sphere";
 import { morphable } from "./morph";
@@ -245,6 +246,7 @@ export function pickMark(
   at: { x: number; y: number },
   project: (lon: number, lat: number) => { x: number; y: number } | null,
   slopPx: number,
+  hits?: MarkerHit[],
 ): string | null {
   let best: string | null = null;
   let bestD = Infinity;
@@ -254,7 +256,9 @@ export function pickMark(
     // Null means round the back of the globe, which is not clickable however near the pointer looks.
     if (!on) continue;
     const d = Math.hypot(on.x - at.x, on.y - at.y);
-    if (d > slopPx || d >= bestD) continue;
+    if (d > slopPx) continue;
+    hits?.push({ id: mark.id, score: d });
+    if (d >= bestD) continue;
     bestD = d;
     best = mark.id;
   }

@@ -28,9 +28,11 @@ const detections: ObservationMark[] = trace.map(([elapsed, lon, lat]) => ({
   color: 0xb79af2,
 }));
 
+export type FlashPhase = "infrared" | "replay" | "extent" | "first" | "inspect";
+
 export function flashGeography(
   { at, camera }: ReturnType<typeof flashFrame>,
-  phase: "infrared" | "replay" | "extent" | "inspect",
+  phase: FlashPhase,
   moving: boolean,
 ): Pick<ObservationView, "frame" | "follow"> {
   const before = at < 0;
@@ -40,13 +42,17 @@ export function flashGeography(
   const to = inspecting ? Math.min(DURATION, from + BIN) : at + 0.001;
   const markWindow =
     inspecting || (phase === "replay" && !complete) ? { from, to, showAhead: inspecting } : undefined;
+  const opening = phase === "first";
+  const rasterAt = opening ? DURATION : at;
   return {
     frame: {
       at: Math.round(flashStart + Math.max(0, at)),
       paths: boundaries,
       ...(before ? {} : { marks: detections }),
-      ...(markWindow && { markWindow }),
-      raster: { ...raster, opacity: raster.opacity! - Math.min(1, Math.max(0, at) / 2200) * 0.47 },
+      ...(opening
+        ? { markWindow: { from: 0, to: BIN - 0.001, showAhead: false } }
+        : markWindow && { markWindow }),
+      raster: { ...raster, opacity: raster.opacity! - Math.min(1, Math.max(0, rasterAt) / 2200) * 0.47 },
     },
     follow: moving
       ? {

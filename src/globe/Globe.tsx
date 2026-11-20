@@ -244,8 +244,10 @@ export function Globe({
       const rawDt = (now - last) / 1000;
       const dt = animationDelta(rawDt);
       last = now;
-      const moving = globe.controls.step(dt);
-      const rotating = hovered === null && rotation.step(dt, moving || globe.controls.morph() > 0);
+      // Keep the marker and its picker aligned even if a camera spring was still active.
+      const choosing = el.hasAttribute("data-marker-picker");
+      const moving = !choosing && globe.controls.step(dt);
+      const rotating = !choosing && !hovered && rotation.step(dt, moving || globe.controls.morph() > 0);
       globe.controls.apply();
       let replaying = false;
       if (replay && !replay.done()) {
@@ -481,7 +483,6 @@ export function Globe({
       if (fronts.length > 0) wake();
       else redraw();
     };
-
     const inspectionInput = attachMarkerInspection(
       el,
       globe,
@@ -507,7 +508,6 @@ export function Globe({
     );
     clearInspection.current = inspectionInput.clear;
     presentationRef.current = globe.setPresentation;
-
     const detach = globe.controls.attach(() => {
       readout.show();
       wake();

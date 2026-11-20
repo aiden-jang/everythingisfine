@@ -320,3 +320,55 @@ test.describe("landing marker inspection", () => {
     await expect(page.locator("#globe-marker-preview")).toBeEmpty();
   });
 });
+
+test("crowded observations offer three choices without moving either projection @dev", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  const point = { lon: 145, lat: 12 };
+  const places = ["North of Guam", "East of Guam", "South of Guam", "Offshore Guam"];
+  await installFeeds(page, {
+    presentation: "fresh",
+    count: 0,
+    usgs: places.map((place, index) => {
+      const time = Date.now() - (index + 1) * 600_000;
+      return {
+        id: `crowd-${index}`,
+        properties: { mag: 5.2, place, time, updated: time, magType: "mw", type: "earthquake", net: "us" },
+        geometry: { type: "Point", coordinates: [145 + index * 0.05, 12, 8] },
+      };
+    }),
+  });
+  const world = page.locator("#globe-view");
+  for (const projection of ["globe", "map"]) {
+    await page.goto(
+      `/?projection=${projection}#at=145,12,1&p=${projection}&v=${projection === "map" ? "explore" : "observe"}`,
+    );
+    await expect.poll(() => camera(page)).toEqual({ ...point, zoom: 1 });
+    const position = () =>
+      page.evaluate(({ lon, lat }) => {
+        const debug = window as unknown as {
+          __globe: Controls;
+          __hitTest: (x: number, y: number) => string | null;
+        };
+        const p = debug.__globe.project(lon, lat);
+        if (!p || !debug.__hitTest(p.x, p.y) || document.elementFromPoint(p.x, p.y)?.tagName !== "CANVAS")
+          return null;
+        return p;
+      }, point);
+    await expect.poll(position).not.toBeNull();
+    const projected = (await position())!;
+    await page.mouse.click(projected.x, projected.y);
+    const picker = page.getByRole("group", { name: "Nearby observations" });
+    const choices = picker.getByRole("button", { name: /M 5\.2.*Guam.*UTC/ });
+    await expect(choices).toHaveCount(3);
+    await expect(choices.first()).toBeFocused();
+    await still(page);
+    await page.keyboard.press("Escape");
+    await expect(picker).toBeHidden();
+    await expect(projection === "map" ? world : world.locator("canvas")).toBeFocused();
+    await page.mouse.click(projected.x, projected.y);
+    await choices.nth(1).press("Enter");
+    await expect(picker).toBeHidden();
+    await expect(page.getByRole("heading", { name: /East of Guam/ }).first()).toBeVisible();
+  }
+});

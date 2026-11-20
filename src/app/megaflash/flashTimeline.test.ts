@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { flashGeography } from "./flashGlobe";
 import {
+  BIN,
   DURATION,
+  elapsedFor,
   FINAL_STEP,
   FLIGHT_END,
   flashFrame,
@@ -35,6 +37,17 @@ describe("Megaflash", () => {
     expect(finish.follow).toBeUndefined();
     expect(first.frame.markWindow).toEqual({ from: 250, to: 500, showAhead: true });
     expect(finish.frame.markWindow).toEqual({ from: 7250, to: DURATION, showAhead: true });
+  });
+
+  it("compares just the first quarter-second against the whole flash at the same framing", () => {
+    const first = flashGeography(flashFrame(elapsedFor(0), true), "first", false);
+    const full = flashGeography({ at: DURATION, camera: overview }, "extent", false);
+    expect(first.frame.markWindow).toEqual({ from: 0, to: BIN - 0.001, showAhead: false });
+    expect(full.frame.markWindow).toBeUndefined();
+    expect(first.frame.marks).toBe(full.frame.marks);
+    expect(first.frame.raster).toEqual(full.frame.raster);
+    expect(first.follow).toBeUndefined();
+    expect(full.follow).toBeUndefined();
   });
 
   it("lets the keyboard scrub from the pre-flash scan to the published duration", () => {

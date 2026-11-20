@@ -3,7 +3,7 @@ import { PlaybackButton } from "../PlaybackButton";
 import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { ReplayPanel, type ReplayProps } from "../observations/RecordedReplay";
 import { StoryDock } from "../observations/StoryDock";
-import { flashGeography, flashLens, flashStart, flashTarget } from "./flashGlobe";
+import { flashGeography, flashLens, flashStart, flashTarget, type FlashPhase } from "./flashGlobe";
 import {
   DURATION,
   elapsedFor,
@@ -27,7 +27,7 @@ interface Playback {
   elapsed: number;
   playing: boolean;
   fixed: boolean;
-  phase: "infrared" | "replay" | "extent" | "inspect";
+  phase: FlashPhase;
 }
 
 const still = (at: number, phase: Playback["phase"]): Playback => ({
@@ -38,6 +38,7 @@ const still = (at: number, phase: Playback["phase"]): Playback => ({
 });
 const infraredView = () => still(timeAtStep(-1), "infrared");
 const overview = () => still(DURATION, "extent");
+const opening = () => still(0, "first");
 const fixedTarget = { ...flashTarget };
 const flight = (): Playback => ({ elapsed: 0, playing: true, fixed: false, phase: "replay" });
 
@@ -48,6 +49,7 @@ export function MegaflashStage({ onView, ...panel }: ReplayProps): JSX.Element {
   const [view, setView] = useState<Playback>(() => {
     if (!initial) return matchMedia(MOTION).matches ? overview() : infraredView();
     if (initial.chapter === "infrared") return infraredView();
+    if (initial.chapter === "first") return opening();
     if (initial.chapter === "extent") return overview();
     const offset = Math.max(0, Math.min(DURATION, (initial.at ?? flashStart) - flashStart));
     const at = timeAtStep(stepAt(offset));
@@ -148,7 +150,9 @@ export function MegaflashStage({ onView, ...panel }: ReplayProps): JSX.Element {
   const before = at < 0;
   const complete = at >= DURATION;
   const inspecting = view.phase === "inspect";
-  const finished = view.phase === "extent" || inspecting;
+  const first = view.phase === "first";
+  const comparing = view.phase === "extent" || first;
+  const finished = comparing || inspecting;
   const kept =
     inspecting &&
     navigation?.library.saved.some(
@@ -158,7 +162,7 @@ export function MegaflashStage({ onView, ...panel }: ReplayProps): JSX.Element {
         position.moment.at === Math.round(flashStart + at),
     );
   useStoryCompletion(finished);
-  const label = flashTime(at);
+  const label = first ? "First 0.25 s" : flashTime(at);
   const progress = before ? -1 : stepAt(at);
   const scanCaption = before
     ? waiting
@@ -215,13 +219,15 @@ export function MegaflashStage({ onView, ...panel }: ReplayProps): JSX.Element {
             <span data-observation-anchor="" data-lon={trace[0]![1]} data-lat={trace[0]![2]}>
               Eastern Texas
             </span>
-            <span data-observation-anchor="" data-lon={-94.6} data-lat={39.08}>
-              Near Kansas City
-            </span>
+            {!first && (
+              <span data-observation-anchor="" data-lon={-94.6} data-lat={39.08}>
+                Near Kansas City
+              </span>
+            )}
           </div>
         )
       }
-      at={finished ? <strong>829 ± 8 km</strong> : <span>{label}</span>}
+      at={finished && !first ? <strong>829 ± 8 km</strong> : <span>{label}</span>}
       sources={
         <>
           <a href="https://doi.org/10.1175/BAMS-D-25-0037.1" target="_blank" rel="noreferrer">
@@ -272,10 +278,22 @@ export function MegaflashStage({ onView, ...panel }: ReplayProps): JSX.Element {
             </span>
           </div>
         </div>
+        {comparing && (
+          <div className="archive-scene-controls" role="group" aria-label="Compare optical detections">
+            <button type="button" aria-pressed={first} onClick={() => update(opening())}>
+              First detections
+            </button>
+            <button type="button" aria-pressed={!first} onClick={() => update(overview())}>
+              Full flash
+            </button>
+          </div>
+        )}
         {finished && (
           <p className="flash-finding">
             <strong>829 ± 8 km</strong>
-            <span>WMO-certified span · 7.39 s elapsed</span>
+            <span>
+              {first ? "Full flash span · showing the first 0.25 s" : "WMO-certified span · 7.39 s elapsed"}
+            </span>
           </p>
         )}
         <StoryDock label="Megaflash playback" deferOnShortPhone={!openedPlayback.current}>
@@ -316,8 +334,8 @@ export function MegaflashStage({ onView, ...panel }: ReplayProps): JSX.Element {
               Follow the flash
             </button>
           )}
-          {view.phase === "extent" && (
-            <button type="button" className="recorded-primary" onClick={() => inspect(DURATION)}>
+          {comparing && (
+            <button type="button" className="recorded-primary" onClick={() => inspect(at)}>
               Inspect pulses
             </button>
           )}
@@ -339,7 +357,7 @@ export function MegaflashStage({ onView, ...panel }: ReplayProps): JSX.Element {
               Before flash
             </button>
           )}
-          {view.phase !== "extent" && (
+          {!comparing && (
             <button
               type="button"
               className="archive-scene-button"

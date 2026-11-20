@@ -31,7 +31,7 @@ import {
 } from "three";
 import { buildLand, RADIUS_GRATICULE, RADIUS_SPHERE, type LandGeometry } from "../geo/land";
 import type { RampName } from "./ramp";
-import { DEG, distanceKm, graticule } from "../geo/sphere";
+import { DEG, graticule } from "../geo/sphere";
 import { buildPlates, orderByProximity } from "../geo/plates";
 import { subsolarPoint } from "../geo/sun";
 import { lunarEclipse, solarEclipse } from "../geo/eclipse";
@@ -41,10 +41,9 @@ import { createMoon } from "./moon";
 import { createFigures } from "./figures";
 import { createPlanets } from "./planets";
 import { attachLonLat, MAP_HALF_WIDTH, mapRepeatSpacing, morphable, SPHERE_PHI_START } from "./morph";
-import { matches } from "../data/filter";
-import type { Filters, SourceId } from "../data/types";
+import type { Filters } from "../data/types";
 import { createControls, type Controls } from "./controls";
-import { createEventLayer, type EventLayer, markerRadiusPx, sinkFraction } from "./events";
+import { createEventLayer, type EventLayer, markerRadiusPx } from "./events";
 import { createRingLayer, type RingLayer } from "./rings";
 import { createSlabLayer } from "./slab";
 import type { SlabPoint } from "../geo/slab";
@@ -53,25 +52,14 @@ import { createMarkLayer, pickMark, type Mark } from "./marks";
 import type { Aurora } from "../sources/aurora";
 import { fitGlobeCamera, visibleMapCopies } from "./globeFraming";
 
+import { pickQuake, type HitStore, type MarkerHit } from "./quakePicking";
+
 export type GlobeMoment = number | EclipseFrame | null;
-
-export interface HitStore {
-  forEach: (fn: (quake: HitQuake) => void) => void;
-}
-
-export interface HitQuake {
-  key: string;
-  readings: readonly { source: SourceId }[];
-  primary: { lon: number; lat: number; magnitude: number; time: number; depthKm: number };
-}
 
 /* A small earthquake's marker is under 4px across, so the target needs padding to be hittable at all. */
 const HIT_SLOP_PX = 4;
 /* Marks are outlines, not filled discs. Asking a pointer to land on a stroke feels broken. */
 const MARK_SLOP_PX = 18;
-
-/* Nearest on the sphere is not nearest on screen near the limb, so a few candidates get projected. */
-const SHORTLIST = 8;
 
 /* The globe's palette, brightest last: sea, land, graticule, coast, plates. See ARCHITECTURE.md#srcglobescenets. */
 const COLOR_SPHERE = 0x102730;
@@ -156,8 +144,9 @@ export interface Globe {
     filters: Filters,
     now: number,
     slopPx?: number,
+    hits?: MarkerHit[],
   ) => string | null;
-  hitMark: (clientX: number, clientY: number, slopPx?: number) => string | null;
+  hitMark: (clientX: number, clientY: number, slopPx?: number, hits?: MarkerHit[]) => string | null;
   stats: LandGeometry["stats"];
 }
 
@@ -472,54 +461,26 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
       },
     },
     /* What is under the pointer, answered geographically first and in pixels second. See ARCHITECTURE.md#srcglobescenets. */
-    hitTest: (clientX, clientY, store, filters, now, slopPx = HIT_SLOP_PX) => {
-      if (!catalogue.visible || !presentation.acceptsLivePicks()) return null;
-      const under = controls.pick(clientX, clientY);
-      if (!under) return null;
-      const near: { key: string; lon: number; lat: number; magnitude: number; depthKm: number }[] = [];
-      let worst = Infinity;
-      store.forEach((quake) => {
-        if (!matches(quake as never, filters, now) || !events.includesTime(quake.primary.time)) return;
-        const { lon, lat, magnitude, depthKm } = quake.primary;
-        const km = distanceKm(under.lon, under.lat, lon, lat);
-        if (near.length >= SHORTLIST && km >= worst) return;
-        near.push({ key: quake.key, lon, lat, magnitude, depthKm });
-        near.sort(
-          (a, b) =>
-            distanceKm(under.lon, under.lat, a.lon, a.lat) - distanceKm(under.lon, under.lat, b.lon, b.lat),
-        );
-        if (near.length > SHORTLIST) near.pop();
-        const last = near[near.length - 1]!;
-        worst = distanceKm(under.lon, under.lat, last.lon, last.lat);
-      });
-      let bestKey: string | null = null;
-      let bestScore = Infinity;
-      for (const candidate of near) {
-        // Pick at the drawn depth, not the epicentre above it; flat projection has no sink.
-        const at = controls.project(
-          candidate.lon,
-          candidate.lat,
-          1 - sinkFraction(candidate.depthKm) * sink * (1 - controls.morph()),
-        );
-        if (!at) continue;
-        const d = Math.hypot(at.x - clientX, at.y - clientY);
-        // Use the shader's radius so picking cannot drift from the drawing.
-        const radius = markerRadiusPx(candidate.magnitude, markerScale());
-        if (d > radius + slopPx) continue;
-        // Ranked by how far outside the marker the pointer is, so a big marker does not win simply for
-        // being big when the pointer is squarely inside a small one on top of it.
-        const score = d - radius;
-        if (score < bestScore) {
-          bestScore = score;
-          bestKey = candidate.key;
-        }
-      }
-      return bestKey;
-    },
-    /* Picked by their anchor, at a wider slop than the markers. See `MARK_SLOP_PX`. */
-    hitMark: (clientX, clientY, slopPx = MARK_SLOP_PX) =>
+    hitTest: (clientX, clientY, store, filters, now, slopPx = HIT_SLOP_PX, hits) =>
       catalogue.visible && presentation.acceptsLivePicks()
-        ? pickMark(heldMarks, { x: clientX, y: clientY }, controls.project, slopPx)
+        ? pickQuake(
+            clientX,
+            clientY,
+            store,
+            filters,
+            now,
+            slopPx,
+            controls,
+            sink,
+            events.includesTime,
+            (magnitude) => markerRadiusPx(magnitude, markerScale()),
+            hits,
+          )
+        : null,
+    /* Picked by their anchor, at a wider slop than the markers. See `MARK_SLOP_PX`. */
+    hitMark: (clientX, clientY, slopPx = MARK_SLOP_PX, hits) =>
+      catalogue.visible && presentation.acceptsLivePicks()
+        ? pickMark(heldMarks, { x: clientX, y: clientY }, controls.project, slopPx, hits)
         : null,
     events,
     rings,

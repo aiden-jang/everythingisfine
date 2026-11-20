@@ -61,3 +61,30 @@ test("Megaflash starts on the storm and keeps the full trace and keyboard scrub 
   await expect(page.getByRole("group", { name: "Megaflash on the map" })).toContainText("829 ± 8 km");
   expect(await canvas.evaluate((el, prior) => el === prior, original)).toBe(true);
 });
+
+test("Megaflash compares the opening detections with the full flash in both projections", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 780 });
+  await installFeeds(page, { presentation: "fresh", empty: true });
+  await page.goto("/#v=observe&story=megaflash&chapter=extent");
+  const panel = page.getByRole("region", { name: "Megaflash", exact: true });
+  const comparison = panel.getByRole("group", { name: "Compare optical detections" });
+  const first = comparison.getByRole("button", { name: "First detections" });
+  const full = comparison.getByRole("button", { name: "Full flash" });
+  const time = panel.getByRole("slider", { name: "Flash elapsed time" });
+  const canvas = await page.locator("#globe-view canvas").elementHandle();
+  await expect(full).toHaveAttribute("aria-pressed", "true");
+  await first.press("Enter");
+  await expect(first).toHaveAttribute("aria-pressed", "true");
+  await expect(time).toHaveAttribute("aria-valuetext", "First 0.25 s");
+  await expect(page).toHaveURL(/chapter=first/);
+  await panel.getByRole("button", { name: "Map", exact: true }).click();
+  await expect(page.getByRole("group", { name: "Megaflash on the map" })).toBeVisible();
+  await expect(first).toHaveAttribute("aria-pressed", "true");
+  await full.click();
+  await expect(full).toHaveAttribute("aria-pressed", "true");
+  await expect(time).toHaveAttribute("aria-valuetext", "7.39 s");
+  await expect(page).toHaveURL(/chapter=extent/);
+  expect(await canvas?.evaluate((el) => el === document.querySelector("#globe-view canvas"))).toBe(true);
+});
