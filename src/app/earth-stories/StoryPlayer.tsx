@@ -128,7 +128,7 @@ export function StoryPlayer({
   const duration = Math.max(1, data.frames.length - 1);
   const finished = !busy && status === "ready" && !clock.playing && clock.position >= duration;
   useStoryCompletion(finished);
-  const shoreline = useShorelineComparison(id === "aral" && finished, frame.at);
+  const shoreline = useShorelineComparison(id === "aral" && finished, frame.at, panel.map, frame.raster?.url);
   const displayedImage = shoreline.image ?? element;
   const comparingShoreline = id === "aral" && finished;
   useLayoutEffect(() => {
@@ -143,6 +143,7 @@ export function StoryPlayer({
       ...(data.lens && !localSky ? { lens: data.lens } : {}),
       ...(data.terrain ? { terrain: { grid: data.terrain, progress: clock.position / duration } } : {}),
       arrive,
+      ...(shoreline.framing ? { comparisonFrame: shoreline.framing } : {}),
       sky: localSky,
       ...(frame.section && curtainImage.element
         ? { curtain: { ...frame.section, down: true, image: curtainImage.element } }
@@ -176,6 +177,7 @@ export function StoryPlayer({
     target,
     element,
     displayedImage,
+    shoreline.framing,
     data.lens,
     data.terrain,
     arrive,

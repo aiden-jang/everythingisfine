@@ -77,8 +77,9 @@ a phone viewport, and keep screenshots and recordings outside Git.
   recorded example, the ascent ends at 3 m and the warmest sample is at 62 m. Derive both from
   the selected profile. Inspecting, sharing and reopening should agree about the selected sample.
 - **Vanishing Sea.** Hold the camera while the early observed shoreline becomes legible
-  against the final water extent. Label each period at its outline. Replay the comparison
-  without restarting the journey. Keep missing observations distinguishable from dry land.
+  against the final water extent. Try jumping straight to 2021 during the opening flight and
+  switching between globe and map. Each reveal should start with both periods registered to
+  the same view. Label each period at its outline. Replay without restarting the journey. Keep missing observations distinguishable from dry land.
 - **Landing globe.** Reveal one real observation's place and time when a visitor pauses over
   its marker, focuses it or taps it. Make opening the detail deliberate. Dragging must still
   orbit the globe. Dismissing the annotation should preserve the camera. Try a quiet area and

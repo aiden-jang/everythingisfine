@@ -1,17 +1,29 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useObservationImage } from "../observations/useObservationData";
+import type { ObservationView } from "../observations/types";
 import { atlasImage } from "./atlasArchive";
 
-export function useShorelineComparison(finished: boolean, at: number) {
+export function useShorelineComparison(finished: boolean, at: number, map: boolean, waterUrl?: string) {
+  const [registered, register] = useState<ObservationView["comparisonFrame"]>();
+  const framing = useMemo(() => {
+    if (!finished) return undefined;
+    const frame = { map, onReady: () => register(frame) };
+    return frame;
+  }, [finished, map]);
+  const ready = !!framing && registered === framing;
+  const lastReveal = useRef<number | null>(null);
   const [pass, replay] = useState(0);
   const [reference, showReference] = useState(false);
   const outline = useObservationImage(finished ? atlasImage("aral-reference.webp") : undefined);
   useEffect(() => {
     const motion = matchMedia("(prefers-reduced-motion: reduce)");
-    if (!finished || !outline.element || motion.matches) {
+    if (!finished) lastReveal.current = null;
+    if (!ready || !outline.element || motion.matches) {
       showReference(false);
       return;
     }
+    if (lastReveal.current === pass) return;
+    lastReveal.current = pass;
     showReference(true);
     const end = () => showReference(false);
     const timer = window.setTimeout(end, 1400);
@@ -20,12 +32,13 @@ export function useShorelineComparison(finished: boolean, at: number) {
       window.clearTimeout(timer);
       motion.removeEventListener("change", end);
     };
-  }, [finished, outline.element, pass]);
-  const early = finished && reference && !!outline.element;
+  }, [finished, ready, outline.element, pass]);
+  const early = ready && reference && !!outline.element;
   const year = new Date(at).getUTCFullYear();
   return {
+    framing,
     image: early ? outline.element : null,
-    labels: finished && (
+    labels: ready && (
       <div className="shoreline-labels" aria-hidden="true">
         <span data-observation-anchor="" data-lon="60.975" data-lat="45.925">
           1984–86 shoreline
@@ -41,7 +54,7 @@ export function useShorelineComparison(finished: boolean, at: number) {
       <div className="shoreline-comparison">
         <button
           type="button"
-          disabled={outline.status === "loading"}
+          disabled={outline.status === "loading" || !ready}
           onClick={() => {
             if (outline.status === "failed") outline.retry();
             else if (early || matchMedia("(prefers-reduced-motion: reduce)").matches) showReference(!early);
@@ -55,8 +68,22 @@ export function useShorelineComparison(finished: boolean, at: number) {
               : "Compare shorelines"}
         </button>
         <span role="status">
-          {early ? "1984–1986 observed shoreline" : `Early shoreline with ${year} water`}
+          {!ready
+            ? "Framing the shoreline…"
+            : early
+              ? "1984–1986 observed shoreline"
+              : `Early shoreline with ${year} water`}
         </span>
+        <div className="shoreline-source-images">
+          <a href={atlasImage("aral-reference.webp")} target="_blank" rel="noreferrer">
+            Open 1984–86 shoreline image
+          </a>
+          {waterUrl && (
+            <a href={waterUrl} target="_blank" rel="noreferrer">
+              Open {year} water image
+            </a>
+          )}
+        </div>
       </div>
     ),
   };

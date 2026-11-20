@@ -189,6 +189,21 @@
   display: grid;
   justify-items: start;
 }
+.shoreline-source-images,
+.zones:has(.globe-unavailable) .shoreline-comparison > :is(button, span) {
+  display: none;
+}
+.zones:has(.globe-unavailable) .shoreline-source-images {
+  display: grid;
+  justify-items: start;
+  gap: 4px;
+}
+.shoreline-source-images a {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  text-decoration: underline;
+}
 .shoreline-comparison span {
   font-size: 12px;
 }

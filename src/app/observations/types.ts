@@ -132,6 +132,8 @@ export interface ObservationView {
   follow?: ReplayCamera | undefined;
   shadow?: { point: GeoPoint; pose: CameraState } | undefined;
   arrive?: (scale: number, reduced: boolean) => void;
+  /** Called once the requested projection, flight and regional lens are all in place. */
+  comparisonFrame?: { map: boolean; onReady: () => void };
 }
 
 export interface ObservationOption {

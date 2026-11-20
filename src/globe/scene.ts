@@ -142,7 +142,7 @@ export interface Globe {
   cutawayOpen: () => boolean;
   beginRegroup: (reduced: boolean) => void;
   cancelRegroup: () => void;
-  stepPresentation: (dt: number, reduced: boolean, elapsed?: number) => boolean;
+  stepPresentation: (dt: number, reduced: boolean, elapsed?: number, cameraMoving?: boolean) => boolean;
   /** Surface or true depth. Held here too, because the hit test cannot read a shader uniform. */
   setDepthSink: (on: boolean) => void;
   plates: {
@@ -413,10 +413,10 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
     cutawayOpen: cutaway.isOpen,
     beginRegroup: regroup.begin,
     cancelRegroup: regroup.cancel,
-    stepPresentation: (dt, reduced, elapsed = dt) => {
+    stepPresentation: (dt, reduced, elapsed = dt, cameraMoving = true) => {
       quietMotion = reduced;
       const illuminating = lights.step(dt, reduced);
-      const presenting = presentation.step(dt, reduced, elapsed);
+      const presenting = presentation.step(dt, reduced, elapsed, cameraMoving);
       const cutting = cutaway.step(dt, reduced, morph.value, !controls.diveReady());
       const tracing = figures.step(dt, reduced, !controls.skyReady());
       const grouping = regroup.step(dt, reduced);

@@ -78,6 +78,8 @@ export function createScenePresentation(
   let chase: ObservationView["shadow"];
   let lens: ObservationView["lens"];
   let lensReveal = 0;
+  let comparisonFrame: ObservationView["comparisonFrame"];
+  let registeredFrame: ObservationView["comparisonFrame"];
   let replay: ObservationView["follow"];
   let replayBank = 0;
   let replayPitch = 0;
@@ -87,7 +89,7 @@ export function createScenePresentation(
   let overviewRadar = false;
   let liveFocus: LayerEmphasis | null = null;
 
-  function step(dt: number, reduced: boolean, elapsed = dt) {
+  function step(dt: number, reduced: boolean, elapsed = dt, cameraMoving = true) {
     dayline.value = showDayline ? lights.reveal.value : 0;
     veil?.trace(controls.auroraSweep());
     const zoom = controls.state().zoom;
@@ -133,6 +135,17 @@ export function createScenePresentation(
       }
     }
     if (rotate && !following) controls.apply();
+    if (
+      comparisonFrame &&
+      registeredFrame !== comparisonFrame &&
+      controls.morph() === Number(comparisonFrame.map) &&
+      arrival.ready() &&
+      (!lens || lensReveal === 1) &&
+      (!guided || (!cameraMoving && !following && !easing))
+    ) {
+      registeredFrame = comparisonFrame;
+      comparisonFrame.onReady();
+    }
     return (
       focusingLayers ||
       revealingRadar ||
@@ -193,6 +206,8 @@ export function createScenePresentation(
     );
     const guided = controls.guidance.following();
     const returningFromArchive = arrival.set(observation);
+    comparisonFrame = observation?.comparisonFrame;
+    if (!comparisonFrame) registeredFrame = undefined;
     if (lens !== observation?.lens) lensReveal = 0;
     lens = observation?.lens;
     replay = observation?.follow;

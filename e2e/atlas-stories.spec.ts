@@ -320,3 +320,45 @@ test("Pacific radar opens from the forecast and returns to the retained forecast
   );
   expect(await canvas!.evaluate((node) => node === document.querySelector("#globe-view canvas"))).toBe(true);
 });
+
+test("an early final-year jump compares the shorelines in a steady frame on globe and map", async ({
+  page,
+}) => {
+  await installFeeds(page, { presentation: "fresh", empty: true });
+  await page.emulateMedia({ reducedMotion: "no-preference" });
+  await page.setViewportSize({ width: 1200, height: 800 });
+  await page.goto("/#v=observe&story=aral");
+  const panel = page.getByRole("region", { name: "Vanishing Sea", exact: true });
+  const shorelineDrift = () =>
+    page.evaluate(
+      () =>
+        new Promise<number>((resolve) => {
+          let origin: { x: number; y: number } | undefined;
+          let drift = 0;
+          function measure() {
+            const anchor = document.querySelector<HTMLElement>(".shoreline-labels span");
+            if (anchor?.style.visibility === "visible") {
+              const point = anchor.getBoundingClientRect();
+              if (!anchor.nextElementSibling) origin ??= { x: point.x, y: point.y };
+              if (origin) {
+                drift = Math.max(drift, Math.hypot(point.x - origin.x, point.y - origin.y));
+                if (anchor.nextElementSibling) {
+                  resolve(drift);
+                  return;
+                }
+              }
+            }
+            requestAnimationFrame(measure);
+          }
+          measure();
+        }),
+    );
+  const globe = shorelineDrift();
+  await panel.getByRole("button", { name: "Recent archive", exact: true }).press("Enter");
+  expect(await globe).toBeLessThan(2);
+  const comparison = panel.getByRole("button", { name: "Compare shorelines", exact: true });
+  await panel.getByRole("button", { name: "Map", exact: true }).press("Enter");
+  const map = shorelineDrift();
+  await comparison.click();
+  expect(await map).toBeLessThan(2);
+});

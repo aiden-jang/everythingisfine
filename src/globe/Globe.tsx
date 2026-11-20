@@ -324,7 +324,7 @@ export function Globe({
           live.current.focus,
         );
       }
-      const presenting = globe.stepPresentation(dt, reducedMotion.matches, rawDt);
+      const presenting = globe.stepPresentation(dt, reducedMotion.matches, rawDt, moving);
       draw();
       placeOverlays();
       readout.update(globe.controls.state());
