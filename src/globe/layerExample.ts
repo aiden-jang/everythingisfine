@@ -20,11 +20,6 @@ type Example = {
 export function createLayerExample(canvas: HTMLCanvasElement, globe: ReturnType<typeof createGlobe>) {
   const { controls } = globe;
   const root = canvas.closest(".zones");
-  const geometry = globe.events.object.geometry;
-  const coordinates = geometry.getAttribute("aLonLat");
-  const clusters = geometry.getAttribute("aCluster");
-  const magnitudes = geometry.getAttribute("aMag");
-  const depths = geometry.getAttribute("aSink");
   let node: HTMLElement | null = null;
   let selection: Example | null = null;
   let started = 0;
@@ -47,6 +42,11 @@ export function createLayerExample(canvas: HTMLCanvasElement, globe: ReturnType<
       return;
     }
     const layer = node.dataset["layerExample"]!;
+    const geometry = globe.events.object.geometry;
+    const coordinates = geometry.getAttribute("aLonLat");
+    const clusters = geometry.getAttribute("aCluster");
+    const magnitudes = geometry.getAttribute("aMag");
+    const depths = geometry.getAttribute("aSink");
     const bounds = sceneCueBounds(canvas, box);
     const morph = controls.morph();
     const project = ({ lon, lat, size, quake }: Example) => {

@@ -15,7 +15,7 @@ it("moves a stable hover label without rebuilding its DOM on every animation fra
   vi.stubGlobal("document", { createElement });
   let x = 100;
   const args = {
-    el: { getBoundingClientRect: () => ({ left: 0, top: 0 }) },
+    el: { closest: () => null, getBoundingClientRect: () => ({ left: 0, top: 0 }) },
     globe: { controls: { project: () => ({ x, y: 100 }), morph: () => 0 } },
     feed: { store: new Map() },
     clockAt: Date.now,
