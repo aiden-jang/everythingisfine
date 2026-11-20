@@ -252,30 +252,30 @@ export function ShadowChase({
                 <label htmlFor={timeline}>{local ? "Local eclipse time" : "Shadow time"}</label>
                 <time dateTime={new Date(at).toISOString()}>{time}</time>
               </div>
-              <input
-                id={timeline}
-                type="range"
-                className="scrub-slider"
-                min={0}
-                max={Math.ceil((end - start) / 1000)}
-                value={Math.round((at - start) / 1000)}
-                step={1}
-                aria-valuetext={time}
-                onChange={(e) => clock.seek(Math.min(end, start + e.currentTarget.valueAsNumber * 1000))}
-                onKeyDown={(e) => {
-                  if (
-                    e.key !== "ArrowLeft" &&
-                    e.key !== "ArrowRight" &&
-                    e.key !== "ArrowDown" &&
-                    e.key !== "ArrowUp"
-                  )
-                    return;
-                  e.preventDefault();
-                  const dir = e.key === "ArrowLeft" || e.key === "ArrowDown" ? -1 : 1;
-                  clock.seek(Math.max(start, Math.min(end, at + dir * (local ? 15_000 : 120_000))));
-                }}
-              />
-              <div className="observatory-actions shadow-actions">
+              <div className="shadow-seek">
+                <input
+                  id={timeline}
+                  type="range"
+                  className="scrub-slider"
+                  min={0}
+                  max={Math.ceil((end - start) / 1000)}
+                  value={Math.round((at - start) / 1000)}
+                  step={1}
+                  aria-valuetext={time}
+                  onChange={(e) => clock.seek(Math.min(end, start + e.currentTarget.valueAsNumber * 1000))}
+                  onKeyDown={(e) => {
+                    if (
+                      e.key !== "ArrowLeft" &&
+                      e.key !== "ArrowRight" &&
+                      e.key !== "ArrowDown" &&
+                      e.key !== "ArrowUp"
+                    )
+                      return;
+                    e.preventDefault();
+                    const dir = e.key === "ArrowLeft" || e.key === "ArrowDown" ? -1 : 1;
+                    clock.seek(Math.max(start, Math.min(end, at + dir * (local ? 15_000 : 120_000))));
+                  }}
+                />
                 <PlaybackButton
                   playing={clock.playing}
                   ended={at >= end}
@@ -284,6 +284,8 @@ export function ShadowChase({
                     else clock.toggle();
                   }}
                 />
+              </div>
+              <div className="observatory-actions shadow-actions">
                 {local ? (
                   <button type="button" onClick={() => clock.seek(circumstances!.peak)}>
                     Peak eclipse

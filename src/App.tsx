@@ -211,7 +211,7 @@ export function App(): JSX.Element {
     shared.event || shared.day ? "quake:" : (shared.mark ?? undefined),
     archived || archiveBusy,
     shared,
-    observatory.browsingStories,
+    observatory.browsingStories || observatory.localReadings,
   );
   const onGlobe = useMemo(() => visibleHazards(inWindow, mapLayers.visible), [inWindow, mapLayers.visible]);
   const hazardTally = useMemo(() => {
@@ -882,7 +882,7 @@ export function App(): JSX.Element {
     !section &&
     !markSubject &&
     !(shownQuake && pinned)
-      ? cloneElement(marksFilter, { part: chromeFloats ? "key" : "embedded-key" })
+      ? cloneElement(marksFilter, { part: "embedded-key" })
       : null;
 
   const { rows: reaches, note: sourceNote } = earthquakeReach(snapshot, now, filters.windowMs);
@@ -1381,18 +1381,7 @@ export function App(): JSX.Element {
               />
             </Suspense>
             <div className="canvas-information pointer-events-none absolute inset-x-0 bottom-0 z-[1] flex flex-wrap items-end justify-start gap-x-6 gap-y-3 p-4 md:left-[var(--rail-w)]">
-              {!observatory.observing && (
-                <LayerReadout
-                  controls={mapLayers}
-                  compact={!chromeFloats}
-                  legend={!chromeFloats && marksKey}
-                />
-              )}
-              {chromeFloats && marksKey && (
-                <div className="canvas-legend pointer-events-auto ml-auto bg-deck/40 p-3 backdrop-blur-2xl backdrop-saturate-50">
-                  {marksKey}
-                </div>
-              )}
+              {!observatory.observing && <LayerReadout controls={mapLayers} withLegend legend={marksKey} />}
 
               <EclipseReplayControls playback={chase} />
               <WaveReplayControls replay={inspection} />

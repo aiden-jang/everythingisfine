@@ -1,10 +1,9 @@
-import { useId, useState, useSyncExternalStore } from "react";
+import { useId, useState } from "react";
 import { useStoryNavigation } from "../journeys/StoryNavigation";
 import type { FloatDiveView } from "./floatPlayback";
 
 function ObservationEditor({ view, sampleIndex }: { view: FloatDiveView; sampleIndex?: number | undefined }) {
   const navigation = useStoryNavigation();
-  const { index } = useSyncExternalStore(view.subscribe, view.read);
   const profile = `${view.source}/${view.profile.id}`;
   const kept = navigation?.library.saved.find(({ id }) => id === "float");
   const [note, setNote] = useState(() =>
@@ -12,7 +11,6 @@ function ObservationEditor({ view, sampleIndex }: { view: FloatDiveView; sampleI
   );
   const noteId = useId();
   if (!navigation || navigation.active !== "float") return null;
-  const sample = view.profile.samples[sampleIndex ?? index]!;
 
   return (
     <section className="float-observation" aria-label="Keep an observation">
@@ -46,10 +44,6 @@ function ObservationEditor({ view, sampleIndex }: { view: FloatDiveView; sampleI
         >
           {kept ? "Update kept observation" : "Keep this observation"}
         </button>
-        <small>
-          {Math.round(sample.depth).toLocaleString()} m · {sample.temperature.toFixed(2)} °C ·{" "}
-          {sample.salinity.toFixed(3)} salinity
-        </small>
       </div>
       <details className="float-observation-note">
         <summary>Add a note (optional)</summary>

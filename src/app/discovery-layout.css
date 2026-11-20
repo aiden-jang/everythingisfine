@@ -57,7 +57,7 @@
 
 .story-category button {
   display: grid;
-  grid-template-rows: 20px 1fr;
+  grid-template-rows: 20px minmax(2.4em, 1fr);
   justify-items: center;
   gap: 3px;
   padding: 4px 2px 7px;
@@ -68,6 +68,7 @@
   line-height: 1.2;
   text-align: center;
   text-wrap: balance;
+  align-items: start;
   cursor: pointer;
 }
 

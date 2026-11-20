@@ -109,10 +109,9 @@ test("phone sheet offers three sizes without losing the globe or covering its co
   await page.getByRole("button", { name: "Sources & legend", exact: true }).click();
   await expect(legend).toBeInViewport({ ratio: 1 });
   await page.setViewportSize({ width: 812, height: 375 });
-  await expect(legend).toHaveCount(0);
-  const desktopLegend = page.locator(".canvas-legend details").first();
-  await desktopLegend.getByText("Legend", { exact: true }).click();
-  await expect(desktopLegend).toHaveAttribute("open", "");
+  await expect(legend).toBeInViewport({ ratio: 1 });
+  await expect(legend.getByRole("heading", { name: "Legend", exact: true })).toBeVisible();
+  await legend.getByRole("button", { name: "Close sources and legend", exact: true }).click();
 });
 
 for (const width of [1440, 812, 390]) {
@@ -192,12 +191,12 @@ for (const width of [1440, 812, 390]) {
     expect(await panelSurface()).toEqual(layerSurface);
     const stories = page.getByRole("tabpanel", { name: "Stories", exact: true });
     const category = stories.getByRole("group", { name: "Story categories", exact: true });
-    const allStories = category.getByRole("button", { name: "All stories", exact: true });
+    const allStories = category.getByRole("button", { name: "All topics", exact: true });
     const afterDark = category.getByRole("button", { name: "After Dark", exact: true });
     const search = stories.getByRole("searchbox", { name: "Find a story", exact: true });
     await expect(category).toBeInViewport({ ratio: 1 });
     await expect(category.getByRole("button")).toHaveText([
-      "All stories",
+      "All topics",
       "Earth",
       "Below the Surface",
       "After Dark",
@@ -207,7 +206,7 @@ for (const width of [1440, 812, 390]) {
     const categoryBox = await category.boundingBox();
     const searchBox = await search.boundingBox();
     await page.emulateMedia({ reducedMotion: "no-preference" });
-    for (const name of ["Earth", "Below the Surface", "After Dark", "All stories"]) {
+    for (const name of ["Earth", "Below the Surface", "After Dark", "All topics"]) {
       const filter = category.getByRole("button", { name, exact: true });
       await filter.click();
       await expect(filter).toHaveAttribute("aria-pressed", "true");

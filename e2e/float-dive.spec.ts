@@ -140,6 +140,7 @@ for (const width of [1440, 390])
       route.fulfill({ json: { table: { rows: [] } } }),
     );
     await page.addInitScript(() => {
+      Object.defineProperty(navigator, "canShare", { value: () => false });
       Object.defineProperty(navigator, "clipboard", {
         value: { writeText: () => Promise.reject(new Error("Unavailable")) },
       });

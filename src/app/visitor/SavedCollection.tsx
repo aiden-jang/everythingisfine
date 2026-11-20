@@ -125,6 +125,7 @@ export function SavedCollection({ onClose }: { onClose: () => void }) {
       id="saved-observations"
       className="saved-collection"
       aria-label="Saved observations"
+      data-empty={library.saved.length === 0 || undefined}
       onKeyDown={(event) => {
         if (event.key === "Escape") {
           event.preventDefault();

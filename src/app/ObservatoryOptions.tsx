@@ -75,47 +75,56 @@ export function ObservatoryOptions({
             panel.current?.hidePopover();
         }}
       >
-        <button
-          autoFocus
-          type="button"
-          aria-pressed={rotation.enabled}
-          onClick={() => rotation.set(!rotation.enabled)}
-        >
-          Auto-rotate globe <span>{rotation.enabled ? "On" : "Off"}</span>
-        </button>
-        <p>
-          {rotation.enabled && reduced
-            ? "Enabled for the landing page. Paused by reduced motion."
-            : "Landing page only. Drag to pause rotation."}
-        </p>
-        <button
-          type="button"
-          id="capture-still"
-          onClick={() => {
-            panel.current?.hidePopover();
-            saveStill();
-          }}
-          disabled={saving || !ready}
-          aria-describedby={!ready ? `${id}-capture-note` : undefined}
-        >
-          {saving ? "Saving image" : "Save image"}
-        </button>
-        <RecordButton
-          clip={clip}
-          ready={ready}
-          unavailableNote={`${id}-capture-note`}
-          close={() => panel.current?.hidePopover()}
-        />
-        {!ready && <p id={`${id}-capture-note`}>Image and video capture are unavailable for this view.</p>}
-        <FullscreenButton />
-        <div
-          className="explorer-view-options"
-          onClick={(event) => {
-            if ((event.target as Element).closest("button")) panel.current?.hidePopover();
-          }}
-        >
-          {children}
-        </div>
+        <section className="view-option-group" aria-label="Motion">
+          <h2>Motion</h2>
+          <button
+            autoFocus
+            type="button"
+            aria-pressed={rotation.enabled}
+            onClick={() => rotation.set(!rotation.enabled)}
+          >
+            Auto-rotate globe <span>{rotation.enabled ? "On" : "Off"}</span>
+          </button>
+          <p>
+            {rotation.enabled && reduced
+              ? "Enabled for the landing page. Paused by reduced motion."
+              : "Landing page only. Drag to pause rotation."}
+          </p>
+        </section>
+        <section className="view-option-group" aria-label="Capture">
+          <h2>Capture</h2>
+          <button
+            type="button"
+            id="capture-still"
+            onClick={() => {
+              panel.current?.hidePopover();
+              saveStill();
+            }}
+            disabled={saving || !ready}
+            aria-describedby={!ready ? `${id}-capture-note` : undefined}
+          >
+            {saving ? "Saving image" : "Save image"}
+          </button>
+          <RecordButton
+            clip={clip}
+            ready={ready}
+            unavailableNote={`${id}-capture-note`}
+            close={() => panel.current?.hidePopover()}
+          />
+          {!ready && <p id={`${id}-capture-note`}>Image and video capture are unavailable for this view.</p>}
+          <FullscreenButton />
+        </section>
+        <section className="view-option-group" aria-label="Globe controls">
+          <h2>Globe controls</h2>
+          <div
+            className="explorer-view-options"
+            onClick={(event) => {
+              if ((event.target as Element).closest("button")) panel.current?.hidePopover();
+            }}
+          >
+            {children}
+          </div>
+        </section>
       </div>
     </>
   );

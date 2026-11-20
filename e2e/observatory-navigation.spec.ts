@@ -40,7 +40,7 @@ test("a shared scene opens the same category in a fresh browser @dev", async ({ 
     await expect(
       other
         .getByRole("group", { name: "Story categories" })
-        .getByRole("button", { name: "All stories", exact: true }),
+        .getByRole("button", { name: "All topics", exact: true }),
     ).toHaveAttribute("aria-pressed", "true");
     await other
       .getByRole("button", { name: "meanwhile. Earth, ocean & sky, back to the Observatory" })

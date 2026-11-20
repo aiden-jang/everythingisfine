@@ -126,8 +126,14 @@
   .frame[data-presentation="observe"] .zones[data-tonga-phase] {
     grid-template-areas: "canvas" "welcome";
     grid-template-rows: minmax(180px, 1fr) minmax(0, min(58dvh, 470px, calc(100dvh - 284px)));
-    padding-bottom: 44px;
+    padding-bottom: calc(60px + env(safe-area-inset-bottom));
   }
+  .frame[data-tonga-opening]
+    .zones:is(:not([data-tonga-phase]), [data-tonga-phase="discover"], [data-tonga-phase="follow"]) {
+    grid-template-rows: clamp(170px, 34dvh, 420px) minmax(0, 1fr);
+    padding-bottom: 0;
+  }
+
   .zones:is([data-tonga-phase="inspect"], [data-tonga-phase="shared"], [data-tonga-phase="kept"])
     .observatory-sidebar {
     visibility: hidden;
@@ -308,6 +314,30 @@
   margin: auto;
   object-fit: contain;
 }
+.tonga-scan-frame {
+  position: absolute;
+  inset: 40px 18px 90px;
+  display: grid;
+  place-content: center;
+  container-type: size;
+  pointer-events: none;
+}
+.zones[data-tonga-phase="follow"] .tonga-scan-frame .replay-inset {
+  position: static;
+  display: block;
+  margin: 0;
+  max-width: min(100cqw, 740px);
+  max-height: calc(100cqh - 24px);
+}
+.tonga-scan-frame figcaption {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 2px 8px;
+  padding: 4px 0;
+  color: var(--color-ink);
+  font-size: 11px;
+}
 .zones[data-tonga-phase="discover"] .replay-inset {
   inset: auto 5% 16% auto;
   width: min(38%, 410px);
@@ -318,6 +348,11 @@
   justify-content: center;
 }
 @media (max-width: 599px) {
+  .frame[data-tonga-opening]
+    .zones:is(:not([data-tonga-phase]), [data-tonga-phase="discover"], [data-tonga-phase="follow"]) {
+    grid-template-rows: clamp(170px, 31dvh, 270px) minmax(0, 1fr);
+  }
+
   .zones[data-tonga-phase="follow"] .replay-inset {
     inset-block: 28px 68px;
     max-height: calc(100% - 96px);
@@ -325,29 +360,14 @@
   .zones[data-tonga-phase="follow"]:has(.replay-inset) .camera-recenter {
     inset: auto auto calc(var(--stage-inset, 9px) + 5px) 16px;
   }
-  .zones[data-tonga-phase="follow"]:has(.replay-inset) .replay-stage .stage-readout {
-    top: 6px;
-    bottom: auto;
-    display: flex;
-    gap: 4px 8px;
-    justify-content: flex-start;
-    max-width: calc(100% - 42px);
+  .tonga-scan-frame {
+    inset: 8px 14px 62px;
+  }
+  .tonga-scan-frame figcaption {
+    font-size: 9px;
   }
   .zones[data-tonga-phase="follow"]:has(.replay-inset) .replay-stage .stage-ident {
     display: none;
-  }
-  .zones[data-tonga-phase="follow"] .story-dock {
-    grid-template-columns: minmax(0, 1fr) minmax(92px, max-content);
-    column-gap: 12px;
-  }
-  .zones[data-tonga-phase="follow"] .story-dock-time {
-    grid-column: 1 / -1;
-  }
-  .zones[data-tonga-phase="follow"] .story-dock .archive-scene-controls {
-    justify-content: flex-end;
-  }
-  .zones[data-tonga-phase="follow"] .story-playback {
-    width: 100%;
   }
   .zones[data-tonga-phase="discover"] .replay-inset {
     inset: 18px 16px auto auto;
@@ -390,5 +410,57 @@
   }
   .zones[data-tonga-phase="follow"] .tonga-narrative p {
     margin-block: 10px 12px;
+  }
+}
+
+@media (600px <= width <= 899px) {
+  .tonga-scan-frame {
+    inset: 36px 92px 62px 24px;
+  }
+}
+
+@media (max-width: 599px), (max-width: 899px) and (min-height: 621px) {
+  .zones[data-tonga-phase="follow"] .story-dock {
+    grid-template-columns: minmax(0, 1fr) minmax(92px, max-content);
+    column-gap: 12px;
+  }
+  .zones[data-tonga-phase="follow"] .story-dock-time {
+    grid-column: 1 / -1;
+  }
+  .zones[data-tonga-phase="follow"] .story-dock .archive-scene-controls {
+    justify-content: flex-end;
+  }
+  .zones[data-tonga-phase="follow"] .story-playback {
+    width: 100%;
+  }
+}
+
+@media (max-width: 599px) and (max-height: 700px) {
+  .frame[data-tonga-opening]
+    .zones:is(:not([data-tonga-phase]), [data-tonga-phase="discover"], [data-tonga-phase="follow"]) {
+    grid-template-rows: clamp(160px, 28dvh, 186px) minmax(0, 1fr);
+  }
+  .zones[data-tonga-phase="follow"] .observatory-intro {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 8px;
+  }
+  .zones[data-tonga-phase="follow"] .observation-heading {
+    grid-area: 1 / 2;
+  }
+  .zones[data-tonga-phase="follow"] .tonga-narrative {
+    display: contents;
+  }
+  .zones[data-tonga-phase="follow"] .tonga-narrative h3 {
+    grid-area: 1 / 1;
+    align-self: center;
+    font-size: clamp(28px, 9.5vw, 37px);
+  }
+  .zones[data-tonga-phase="follow"] .observatory-intro > :not(.observation-heading, .tonga-narrative),
+  .zones[data-tonga-phase="follow"] .tonga-narrative p {
+    grid-column: 1 / -1;
+  }
+  .zones[data-tonga-phase="follow"] .tonga-narrative p {
+    margin: 0 0 4px;
+    font-size: 13px;
   }
 }

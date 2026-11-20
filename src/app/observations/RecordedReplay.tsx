@@ -104,10 +104,12 @@ export function ReplayPanel({
           <span className="stage-rule" aria-hidden="true" />
           {location}
         </div>
-        <div className="stage-readout">
-          <span>{status}</span>
-          {at}
-        </div>
+        {(status || at) && (
+          <div className="stage-readout">
+            <span>{status}</span>
+            {at}
+          </div>
+        )}
         <StoryProjection map={map} onMap={onMap} />
       </div>
       {evidence}

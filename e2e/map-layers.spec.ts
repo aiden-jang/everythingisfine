@@ -122,7 +122,7 @@ test("a quiet landing opens the story catalogue and each scene remains available
   await scenes.getByRole("button", { name: "Earth", exact: true }).click();
   await expect(scenes.locator('[aria-pressed="true"]')).toHaveCount(1);
   await page.goBack();
-  await expect(scenes.getByRole("button", { name: "All stories", exact: true })).toHaveAttribute(
+  await expect(scenes.getByRole("button", { name: "All topics", exact: true })).toHaveAttribute(
     "aria-pressed",
     "true",
   );
@@ -219,7 +219,7 @@ test("the full catalogue returns to its original entry after a story @dev", asyn
   await page.getByRole("tab", { name: "Stories", exact: true }).click();
   const allStories = page
     .getByRole("group", { name: "Story categories", exact: true })
-    .getByRole("button", { name: "All stories", exact: true });
+    .getByRole("button", { name: "All topics", exact: true });
   await page.getByRole("button", { name: /^View all \d+ stories$/ }).click();
   const radar = page.getByRole("button", { name: "Storm Radar", exact: true });
   await radar.click();

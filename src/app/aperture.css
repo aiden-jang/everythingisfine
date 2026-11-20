@@ -189,15 +189,42 @@
   --explorer-surface: color-mix(in srgb, var(--color-deck) 82%, var(--color-void));
   --explorer-edge: color-mix(in srgb, var(--explorer-surface) 64%, transparent);
   background: linear-gradient(90deg, var(--explorer-surface) calc(100% - 64px), var(--explorer-edge));
-  scrollbar-color: color-mix(in srgb, var(--color-faint) 58%, var(--color-deck)) transparent;
+  --explore-scroll-thumb: color-mix(in srgb, var(--color-faint) 16%, transparent);
+  scrollbar-color: var(--explore-scroll-thumb) transparent;
+}
+.frame[data-presentation="explore"] #chrome-rail:is(:focus-visible, [data-scrolling]) {
+  --explore-scroll-thumb: color-mix(in srgb, var(--color-faint) 51%, transparent);
+}
+@supports selector(::-webkit-scrollbar) {
+  .frame[data-presentation="explore"] #chrome-rail {
+    scrollbar-color: auto;
+    scrollbar-width: auto;
+  }
+  .frame[data-presentation="explore"] #chrome-rail::-webkit-scrollbar {
+    width: 6px;
+  }
+  .frame[data-presentation="explore"] #chrome-rail::-webkit-scrollbar-thumb {
+    border-radius: 6px;
+    background: var(--explore-scroll-thumb);
+    background-clip: padding-box;
+    border-inline: 1px solid transparent;
+  }
+  .frame[data-presentation="explore"] #chrome-rail::-webkit-scrollbar-thumb:hover {
+    background-color: color-mix(in srgb, var(--color-faint) 65%, transparent);
+  }
+}
+@media (forced-colors: active) {
+  .frame[data-presentation="explore"] #chrome-rail {
+    scrollbar-color: auto;
+    scrollbar-width: thin;
+  }
 }
 .frame[data-presentation="explore"] #chrome-rail[data-scrolled] :is(.explorer-tabs, .story-tools) {
-  background: var(--explorer-surface);
-}
-.frame[data-presentation="explore"] #chrome-rail[data-scrolled] .story-tools {
-  box-shadow:
-    calc(-1 * var(--explorer-pad)) 0 var(--explorer-surface),
-    calc(var(--explorer-pad) / 2) 0 10px -3px var(--explorer-surface);
+  background: linear-gradient(
+    90deg,
+    var(--explorer-surface) 68%,
+    color-mix(in srgb, var(--explorer-surface) 82%, transparent)
+  );
 }
 @media (min-width: 900px) {
   .frame[data-presentation="explore"] #chrome-rail {
@@ -210,8 +237,8 @@
       transparent
     );
   }
-  .frame[data-presentation="explore"] #chrome-rail[data-scrolled] .explorer-tabs {
-    background: linear-gradient(90deg, var(--explorer-surface) calc(100% - var(--explorer-pad)), transparent);
+  .frame[data-presentation="explore"] #chrome-rail[data-scrolled] :is(.explorer-tabs, .story-tools) {
+    background: linear-gradient(90deg, var(--explorer-surface) 73%, transparent);
   }
 }
 @media (max-width: 767px) {

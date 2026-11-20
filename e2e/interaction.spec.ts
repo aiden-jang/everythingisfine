@@ -1507,7 +1507,8 @@ test("the key folds away and the controls do not go with it", async ({ page }) =
   await openLayer(page);
 
   const only = (text: string) => page.getByText(text).filter({ visible: true });
-  const key = only("Legend");
+  const key = page.getByRole("button", { name: "Sources & legend", exact: true });
+  const closeKey = page.getByRole("button", { name: "Close sources and legend", exact: true });
   const explanation = only("Larger marks = higher magnitude");
   const slider = page.locator("#mag");
 
@@ -1518,6 +1519,8 @@ test("the key folds away and the controls do not go with it", async ({ page }) =
   await expect(explanation).toBeVisible();
   await expect(slider).toBeVisible();
 
+  await closeKey.click();
+
   // The feeds fold on their own, because they are set once. Behind the fold, not gone.
   const feeds = only("Earthquake display & sky guides");
   await expect(feeds).toBeVisible();
@@ -1526,8 +1529,6 @@ test("the key folds away and the controls do not go with it", async ({ page }) =
   await expect(usgs).toBeHidden();
   await feeds.click();
   await expect(usgs).toBeVisible();
-
-  await key.click();
   await expect(explanation).toHaveCount(0);
   await expect(slider).toBeVisible();
 
@@ -1538,7 +1539,7 @@ test("the key folds away and the controls do not go with it", async ({ page }) =
   await expect(only("Larger marks = higher magnitude")).toHaveCount(0);
   await expect(page.locator("#mag")).toBeVisible();
 
-  await only("Legend").click();
+  await key.click();
   await expect(only("Larger marks = higher magnitude")).toBeVisible();
 });
 
@@ -1773,7 +1774,7 @@ test("fullscreen makes the window bigger and takes nothing away", async ({ page 
         head: shown("#chrome-head"),
         rail: shown("#chrome-rail"),
         hints: shown(".key-hints"),
-        key: document.body.innerText.includes("Legend"),
+        key: shown("#globe-view .layer-times-toggle"),
         panels: document.querySelectorAll(".zone-panel").length,
         full: document.fullscreenElement ? document.fullscreenElement.className : "",
       };
@@ -1808,7 +1809,13 @@ test("fullscreen makes the window bigger and takes nothing away", async ({ page 
   const pinned = await chrome();
   expect(pinned.panels, "an event still opens its panel").toBeGreaterThan(0);
   // The key and the panel are the same edge, so the key stands down. That rule is not fullscreen's.
-  expect(pinned.key, "the key yields to the panel, as it does everywhere").toBe(false);
+  expect(pinned.key, "source times remain available beside the pinned event").toBe(true);
+  await page.getByRole("button", { name: "Sources & legend", exact: true }).click();
+  await expect(
+    page
+      .getByRole("region", { name: "Sources & legend", exact: true })
+      .getByRole("heading", { name: "Legend", exact: true }),
+  ).toHaveCount(0);
 
   await page.evaluate(() => document.exitFullscreen());
   await expect.poll(async () => (await chrome()).full, { timeout: 10_000 }).toBe("");
@@ -2070,23 +2077,16 @@ test("the marks key is reachable at every width", async ({ page }) => {
   ] as const) {
     await page.setViewportSize({ width: w, height: h });
     await page.waitForTimeout(400);
-    const toggle =
-      w < 768
-        ? page.getByRole("button", { name: "Sources & legend", exact: true })
-        : page.getByText("Legend", { exact: true }).filter({ visible: true });
+    const toggle = page.getByRole("button", { name: "Sources & legend", exact: true });
     await expect(toggle, `visible copies of the key at ${w}x${h}`).toHaveCount(1);
     await expect(toggle).toBeInViewport({ ratio: 1 });
     await toggle.click();
-    const openKey =
-      w < 768
-        ? page.getByRole("region", { name: "Sources & legend", exact: true })
-        : page.locator(".canvas-legend");
+    const openKey = page.getByRole("region", { name: "Sources & legend", exact: true });
     await expect(openKey).toBeInViewport({ ratio: 1 });
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     if (w === 320 && process.env["EIF_CAPTURE_UI"])
       await page.screenshot({ path: test.info().outputPath("phone-map-legend.png") });
-    if (w < 768) await page.getByRole("button", { name: "Close sources and legend", exact: true }).click();
-    else await toggle.click();
+    await page.getByRole("button", { name: "Close sources and legend", exact: true }).click();
   }
 });
 

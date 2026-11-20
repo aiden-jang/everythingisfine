@@ -89,11 +89,15 @@ function TraverseControls({ view, wake }: { view: MoonfallView; wake: () => void
   return (
     <>
       <div className="moonfall-finding">
-        <h3>{flying ? "Toward the Moon." : (stop?.name ?? route.title)}</h3>
+        <h3>
+          {flying
+            ? "Toward the Moon."
+            : (stop?.name ?? (meters <= 0 ? "Landing site" : "Along the traverse"))}
+        </h3>
         <p className="moonfall-description">
           {flying
             ? "The approach leads to the Apollo 17 landing site."
-            : `Apollo 17 · ${route.day} 1972 · Traverse ${eva + 1}`}
+            : `Apollo 17 · ${route.day} 1972 · Traverse ${eva + 1} to ${route.title}`}
         </p>
         {stop && navigation && (
           <div className="observatory-actions moonfall-actions">

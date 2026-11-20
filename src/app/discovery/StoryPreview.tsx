@@ -187,14 +187,11 @@ export function StoryPreview({ children, scope }: { children: ReactNode; scope: 
                 data-lon={place.lon}
                 data-lat={place.lat}
                 aria-hidden="true"
-              >
-                <i />
-                {place.label}
-              </span>
+              />
               <div className="discovery-preview-caption">
                 <span>
                   {place.label}
-                  <small>{pinned ? "Located" : "Story location preview"}</small>
+                  {!pinned && <small>Location preview</small>}
                 </span>
                 {!pinned && (
                   <button type="button" onClick={() => locate(place)}>

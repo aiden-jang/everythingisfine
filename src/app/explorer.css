@@ -331,11 +331,6 @@
   text-align: left;
   cursor: pointer;
 }
-.explorer-view-options {
-  border-top: 1px solid var(--color-hairline);
-  margin-top: 8px;
-  padding-top: 8px;
-}
 .explorer-view-options:empty {
   display: none;
 }
@@ -621,12 +616,17 @@
     height: auto;
     --scene-hud-top: 8px;
   }
-  .projection-current {
-    display: none;
-  }
   .projection-switch {
-    padding: 0;
-    border: 0;
+    gap: 2px;
+    padding: 2px;
+    background: var(--color-deck);
+  }
+  .projection-switch :is(.projection-current, button) {
+    width: 44px;
+    min-width: 44px;
+    min-height: 44px;
+    padding-inline: 3px;
+    font-size: 11px;
   }
   .zone-head .projection-switch button {
     height: 44px;

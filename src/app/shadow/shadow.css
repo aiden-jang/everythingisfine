@@ -75,7 +75,17 @@
   font-variant-numeric: tabular-nums;
 }
 
+.shadow-seek {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+}
+.shadow-seek .scrub-slider {
+  min-width: 0;
+}
 .shadow-timeline .story-playback {
+  padding-inline: 8px;
   min-height: 44px;
   border: 1px solid var(--color-hairline);
   border-radius: 7px;

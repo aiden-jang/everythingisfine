@@ -82,8 +82,9 @@ export function FeedDot({
         aria-labelledby={`${id}-title`}
       >
         <h2 id={`${id}-title`}>Background feed status</h2>
+        <p className="feed-scope">Checks for this view. Paused and off feeds are outside the count.</p>
         <ul>
-          {feeds.rows.map(({ id: key, label, state, lastCheck, message }) => (
+          {feeds.rows.map(({ id: key, label, state, message }) => (
             <li key={key}>
               <span id={`${id}-${key}-state`} className="feed-row-state" title={LABEL[state]}>
                 <span className="feed-indicator" data-state={state} aria-hidden="true" />
@@ -103,16 +104,7 @@ export function FeedDot({
                     ? "Unavailable"
                     : (message?.replace(/^Available · /, "") ?? (state === "pending" ? "Checking" : "Off"))}
                 </small>
-              ) : (
-                lastCheck !== undefined && (
-                  <span className="feed-row-detail" title={`Last successful check: ${layerTime(lastCheck)}`}>
-                    <span className="feed-time-label">Checked</span>{" "}
-                    <time dateTime={new Date(lastCheck).toISOString()}>
-                      {new Date(lastCheck).toISOString().slice(11, 16)} UTC
-                    </time>
-                  </span>
-                )
-              )}
+              ) : null}
             </li>
           ))}
         </ul>
@@ -120,7 +112,21 @@ export function FeedDot({
           <summary>About these feeds</summary>
           <p>Filled dot: available. Ring: checking. Diamond: unavailable. Dash: off.</p>
           <p>Available means the source answered. Coverage varies by place and time.</p>
-          <p>The count excludes inactive feeds. Stories check their own sources when opened.</p>
+          <p>Stories check their own sources when opened.</p>
+          <dl className="feed-check-times">
+            {feeds.rows.flatMap(({ id, label, lastCheck }) =>
+              lastCheck === undefined
+                ? []
+                : [
+                    <div key={id}>
+                      <dt>{label}</dt>
+                      <dd>
+                        <time dateTime={new Date(lastCheck).toISOString()}>{layerTime(lastCheck)}</time>
+                      </dd>
+                    </div>,
+                  ],
+            )}
+          </dl>
         </details>
       </div>
     </>

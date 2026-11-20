@@ -27,7 +27,7 @@
 }
 
 .tonight-invitation h3 {
-  max-width: 10ch;
+  max-width: 100%;
   font-family: "Alumni Sans", var(--font-sans);
   font-size: clamp(38px, 4.5vw, 54px);
   font-weight: 600;
@@ -484,6 +484,7 @@
     display: flex;
     flex-wrap: nowrap;
     justify-content: space-between;
+    gap: 6px 12px;
   }
 
   .observatory-stage[data-stage="tonight"]:has(.story-projection) .stage-ident {

@@ -1,4 +1,4 @@
-import { useId, useRef, type ReactNode } from "react";
+import { useEffect, useId, useRef, type ReactNode } from "react";
 import { layerTime } from "./layerTime";
 import { RadarCanvasCredit } from "./CanvasFooter";
 import type { useMapLayers } from "./useMapLayers";
@@ -6,19 +6,28 @@ import type { WeatherLayerId } from "./weatherLayers";
 
 export function LayerReadout({
   controls,
-  compact = false,
+  withLegend = false,
   legend,
 }: {
   controls: ReturnType<typeof useMapLayers>;
-  compact?: boolean;
+  withLegend?: boolean;
   legend?: ReactNode;
 }): JSX.Element | null {
   const id = `layer-times-${useId()}`;
   const panel = useRef<HTMLDivElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
-  if (!controls.active || controls.suspended) return null;
+  useEffect(() => {
+    const resize = () => {
+      if (panel.current?.matches(":popover-open") && trigger.current) {
+        positionReadout(trigger.current, panel.current);
+      }
+    };
+    window.addEventListener("resize", resize);
+    return () => window.removeEventListener("resize", resize);
+  }, []);
+  if (controls.suspended || (!controls.active && !legend)) return null;
   const weather = (["wind", "lightning"] as WeatherLayerId[]).filter(
-    (id) => controls.enabled[id] && controls.weather[id]?.frame,
+    (id) => controls.active && controls.enabled[id] && controls.weather[id]?.frame,
   );
   const hasTimes = weather.length > 0 || Boolean(controls.radar);
   if (!hasTimes && !legend) return null;
@@ -32,12 +41,17 @@ export function LayerReadout({
       <button
         ref={trigger}
         className="layer-times-toggle"
-        aria-label={compact ? "Sources & legend" : "Sources & times"}
+        aria-label={withLegend ? "Sources & legend" : "Sources & times"}
         type="button"
         {...{ popovertarget: id }}
+        onClick={() => {
+          if (trigger.current && panel.current) positionReadout(trigger.current, panel.current);
+        }}
       >
-        {compact ? (
-          <span>Sources & legend</span>
+        {withLegend ? (
+          <span>
+            Sources<span className="layer-times-suffix"> &amp; legend</span>
+          </span>
         ) : (
           <span>
             Sources<span className="layer-times-suffix"> &amp; times</span>
@@ -50,10 +64,10 @@ export function LayerReadout({
       <div
         ref={panel}
         id={id}
-        className={compact ? "layer-times-popover globe-info-popover" : "layer-times-popover"}
+        className={withLegend ? "layer-times-popover globe-info-popover" : "layer-times-popover"}
         {...{ popover: "auto" }}
-        role={compact ? "region" : "group"}
-        aria-label={compact ? "Sources & legend" : "Weather layer times"}
+        role={withLegend ? "region" : "group"}
+        aria-label={withLegend ? "Sources & legend" : "Weather layer times"}
         onKeyDown={(event) => {
           if (event.key === "Escape") {
             event.preventDefault();
@@ -63,17 +77,17 @@ export function LayerReadout({
         }}
       >
         <div className="layer-times-heading">
-          {compact && <h2>Sources & legend</h2>}
+          {withLegend && <h2>Sources & legend</h2>}
           <button
             type="button"
-            autoFocus={compact}
-            aria-label={compact ? "Close sources and legend" : "Close layer times"}
+            autoFocus={withLegend}
+            aria-label={withLegend ? "Close sources and legend" : "Close layer times"}
             onClick={close}
           >
             Close
           </button>
         </div>
-        {compact && hasTimes && <h3>Scan times</h3>}
+        {withLegend && hasTimes && <h3>Scan times</h3>}
         {controls.radar && (
           <span>
             RainViewer radar ·{" "}
@@ -104,4 +118,10 @@ export function LayerReadout({
       </div>
     </div>
   );
+}
+
+function positionReadout(trigger: HTMLButtonElement, panel: HTMLDivElement) {
+  const { top, left } = trigger.getBoundingClientRect();
+  panel.style.setProperty("--layer-times-bottom", `${Math.max(12, window.innerHeight - top + 8)}px`);
+  panel.style.setProperty("--layer-times-left", `${left}px`);
 }

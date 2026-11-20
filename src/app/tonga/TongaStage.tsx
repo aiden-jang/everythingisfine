@@ -1,7 +1,6 @@
 import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import { ExperienceEnding } from "../journeys/ExperienceEnding";
 import { useStoryCompletion } from "../journeys/useStoryCompletion";
-import { useWorldLayout } from "../useWorldLayout";
 import { ReplayPanel, type ReplayProps } from "../observations/RecordedReplay";
 import { TongaTimelineDock } from "./TongaTimelineDock";
 import { WorldEvidence } from "../observations/WorldEvidence";
@@ -94,7 +93,6 @@ export function TongaStage({ onView, ...panel }: ReplayProps): JSX.Element {
       if (zones) delete zones.dataset["tongaPhase"];
     };
   }, [phase]);
-  useWorldLayout(`tonga:${phase}`);
 
   const anchor = view.anchor;
   const framing = ["inspect", "shared", "kept"].includes(phase) ? station.peak : anchor;
@@ -171,6 +169,19 @@ export function TongaStage({ onView, ...panel }: ReplayProps): JSX.Element {
   const overview = phase === "discover";
   const inspecting = phase === "inspect" || phase === "shared";
 
+  const scanTime = <time dateTime={scan.at}>Scan {timeLabel(scan.minute)} UTC</time>;
+  const frameScan = phase === "follow" && orbitMix < 1 && hasImage && !isOrbit;
+  const image = (
+    <ReplayInset
+      canvasRef={scanCanvas}
+      label={caption}
+      width={sprite.width}
+      height={sprite.height}
+      opacity={1 - orbitMix}
+      paint={(ctx) => paintTongaScan(ctx, minute, images, vaporMix, anchor !== undefined)}
+    />
+  );
+
   return (
     <ReplayPanel
       {...panel}
@@ -181,33 +192,39 @@ export function TongaStage({ onView, ...panel }: ReplayProps): JSX.Element {
       location="Hunga Tonga–Hunga Haʻapai"
       subtitle="GOES-17 and ground pressure · 15 Jan 2022"
       status={
-        overview && !ready
-          ? "Approaching Hunga Tonga…"
-          : assets === "loading"
-            ? "Preparing satellite scans…"
-            : !isOrbit && !hasImage
-              ? "Satellite imagery unavailable for this chapter"
-              : caption
+        frameScan
+          ? null
+          : overview && !ready
+            ? "Approaching Hunga Tonga…"
+            : assets === "loading"
+              ? "Preparing satellite scans…"
+              : !isOrbit && !hasImage
+                ? "Satellite imagery unavailable for this chapter"
+                : caption
       }
       at={
-        hasImage && !isOrbit ? (
-          <time dateTime={scan.at}>Scan {timeLabel(scan.minute)} UTC</time>
+        frameScan ? null : hasImage && !isOrbit ? (
+          scanTime
         ) : (
           <time dateTime={timeIso(minute)}>{timeLabel(minute)} UTC</time>
         )
       }
       inset={
         <>
-          {(!overview || ready) && orbitMix < 1 && (hasInfrared || hasVapor) && (
-            <ReplayInset
-              canvasRef={scanCanvas}
-              label={caption}
-              width={sprite.width}
-              height={sprite.height}
-              opacity={1 - orbitMix}
-              paint={(ctx) => paintTongaScan(ctx, minute, images, vaporMix, anchor !== undefined)}
-            />
-          )}
+          {(!overview || ready) &&
+            orbitMix < 1 &&
+            (hasInfrared || hasVapor) &&
+            (frameScan ? (
+              <figure className="tonga-scan-frame">
+                {image}
+                <figcaption>
+                  <span>{caption}</span>
+                  {scanTime}
+                </figcaption>
+              </figure>
+            ) : (
+              image
+            ))}
           <TongaWorld
             phase={phase}
             station={station}

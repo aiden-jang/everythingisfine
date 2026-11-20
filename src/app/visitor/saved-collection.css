@@ -1,7 +1,8 @@
 .saved-collection {
   position: fixed;
   z-index: 12;
-  inset: 96px 24px 64px auto;
+  inset: calc(var(--head-h) + 20px) 24px auto auto;
+  max-height: calc(100dvh - var(--head-h) - 84px);
   width: min(760px, calc(100vw - 48px));
   overflow-y: auto;
   overscroll-behavior: contain;
@@ -11,6 +12,24 @@
   border: 1px solid var(--color-hairline);
   scrollbar-color: var(--color-faint) var(--color-void);
   scroll-padding-block: 24px;
+}
+.saved-collection[data-empty] {
+  width: min(420px, calc(100vw - 48px));
+  padding: 20px 24px;
+  border-radius: 12px;
+}
+.saved-collection[data-empty] h2 {
+  font-size: clamp(34px, 5vw, 48px);
+}
+.saved-collection[data-empty] .saved-empty {
+  margin-top: 12px;
+  gap: 2px;
+}
+.saved-collection[data-empty] .saved-collection-heading {
+  top: -20px;
+}
+.saved-evidence-list:empty {
+  display: none;
 }
 .saved-collection-heading {
   position: sticky;
@@ -180,7 +199,9 @@
   display: flex;
   align-items: center;
   gap: 16px;
-  margin-top: 24px;
+}
+.saved-feedback:has(button, span:not(:empty)) {
+  margin-top: 12px;
 }
 .saved-recent {
   margin-top: 20px;
@@ -215,8 +236,11 @@
   .saved-collection-heading {
     top: -24px;
   }
-  .saved-collection {
-    inset: 76px 0 max(60px, calc(48px + env(safe-area-inset-bottom)));
+  .saved-collection,
+  .saved-collection[data-empty] {
+    inset: auto 0 max(60px, calc(48px + env(safe-area-inset-bottom)));
+    max-height: calc(100dvh - var(--head-h) - 70px);
+    border-radius: 16px 16px 0 0;
     width: 100%;
     padding: 24px 20px;
     border-inline: 0;

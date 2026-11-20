@@ -38,7 +38,6 @@
 .discovery-preview {
   z-index: 4;
 }
-.discovery-pin,
 .place-labels > span {
   position: absolute;
   visibility: hidden;
@@ -51,18 +50,16 @@
   white-space: nowrap;
 }
 .discovery-pin {
-  padding: 8px 12px;
-  border: 1px solid var(--color-hairline);
-  border-radius: 5px;
-}
-.discovery-pin i {
   position: absolute;
-  width: 6px;
-  height: 6px;
-  left: calc(50% - 3px);
-  bottom: -12px;
-  border: 1px solid currentColor;
+  visibility: hidden;
+  transform: translate(-50%, -50%);
+  z-index: 2;
+  width: 9px;
+  height: 9px;
+  border: 1px solid var(--color-ink);
   border-radius: 50%;
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--color-ink) 26%, transparent);
+  pointer-events: none;
 }
 .discovery-preview-caption {
   position: absolute;
@@ -102,8 +99,10 @@
     inset: 0;
   }
   .discovery-preview-caption {
-    right: 16px;
-    top: 68px;
+    right: 12px;
+    top: calc(var(--head-h) + 8px);
+    gap: 8px;
+    padding: 4px 8px 4px 12px;
     bottom: auto;
   }
 }

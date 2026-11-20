@@ -104,17 +104,16 @@
 @media (max-width: 767px) {
   .canvas-information > .projection-switch {
     position: absolute;
-    inset: auto 12px var(--explore-control-clearance, 24px) auto;
+    inset: auto 12px calc(var(--explore-control-clearance, 24px) - 3px) auto;
     pointer-events: auto;
     background: var(--color-deck);
   }
   .canvas-information > .projection-switch button {
-    width: 60px;
+    width: 44px;
     height: 44px;
-    padding-inline: 8px;
-    border: 1px solid var(--color-hairline);
+    padding-inline: 3px;
     border-radius: 6px;
-    font-size: 13px;
+    font-size: 11px;
     color: var(--color-dim);
   }
 }

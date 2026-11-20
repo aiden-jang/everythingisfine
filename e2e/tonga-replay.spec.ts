@@ -124,7 +124,14 @@ test("Tonga’s reduced-motion archive can jump to measured station pulses on a 
   const camera = (await page.getByRole("button", { name: "Take control", exact: true }).boundingBox())!;
   const projection = (await replay.getByRole("group", { name: "Observation projection" }).boundingBox())!;
   expect(image.y + image.height + 4).toBeLessThanOrEqual(Math.min(camera.y, projection.y));
-  await replay.getByRole("combobox", { name: "Ground station" }).selectOption("SFO");
+  const stationPicker = replay.getByRole("combobox", { name: "Ground station" });
+  await stationPicker.scrollIntoViewIfNeeded();
+  const hit = await stationPicker.evaluate((control) => {
+    const { x, y, width, height } = control.getBoundingClientRect();
+    return document.elementFromPoint(x + width / 2, y + height / 2) === control;
+  });
+  expect(hit, "the station selector clears the fixed playback dock").toBe(true);
+  await stationPicker.selectOption("SFO");
   await expect(slider).toHaveAttribute("aria-valuetext", "12:03 UTC");
   await expect(replay.getByText("1022.76 hPa", { exact: true })).toBeVisible();
   const signal = replay.getByRole("group", { name: "San Francisco recorded pressure pulse" });

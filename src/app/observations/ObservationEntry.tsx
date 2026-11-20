@@ -7,8 +7,7 @@ import type { EarthScene } from "../useObservatory";
 import { RecordedReplay, type ReplayProps } from "./RecordedReplay";
 import { isReplay } from "./replays";
 import { StorySession } from "./StorySession";
-import { observations } from "./catalogue";
-import { earthStories } from "../earth-stories/catalogue";
+import { searchStories } from "../storyIndex";
 import { isEarthStory } from "../earth-stories/catalogue";
 import "../earth-stories/stories.css";
 import "./observations.css";
@@ -75,16 +74,10 @@ export function ObservationDeckShell({
     <StorySession.Provider key={`${entry}:${deck.revision}`} value={deck.session}>
       <Suspense
         fallback={
-          <div className="observatory-sidebar">
+          <div className="observatory-sidebar replay-sidebar">
             <section className="observatory-intro" aria-label="Opening story">
               <StoryLoading>
-                Opening{" "}
-                {isEarthStory(entry)
-                  ? earthStories[entry].title
-                  : entry in observations
-                    ? observations[entry as keyof typeof observations].title
-                    : "story"}
-                …
+                Opening {searchStories.find(({ id }) => id === entry)?.title ?? "story"}…
               </StoryLoading>
               <div className="observatory-actions">
                 <button type="button" onClick={close}>

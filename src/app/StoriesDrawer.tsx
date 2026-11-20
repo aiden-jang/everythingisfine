@@ -2,16 +2,14 @@ import { useReadingArrival } from "./useReadingArrival";
 import { useRef, type ReactNode } from "react";
 import { useStoryNavigation } from "./journeys/StoryNavigation";
 import { ContinueVisit } from "./visitor/ContinueVisit";
-import { StoryPreviewButton } from "./discovery/StoryPreview";
 import { VisitShelf } from "./visitor/VisitShelf";
 import { JourneyPicker } from "./journeys/JourneyPicker";
-import { StoryThumbnail } from "./StoryThumbnail";
-import type { useAuroraOverflight } from "./useAuroraOverflight";
+import { StoryRow } from "./StoryRow";
 import type { EarthScene, useObservatory } from "./useObservatory";
 import { StorySearch } from "./StorySearch";
 import { StoryPreview } from "./discovery/StoryPreview";
 import { FeaturedStory } from "./FeaturedStory";
-import { browseStories, featuredStoryId, storyButtonId, storyKind } from "./storyBrowse";
+import { browseStories, featuredStoryId, storyButtonId } from "./storyBrowse";
 import { searchStories } from "./storyIndex";
 import { APRIL_ECLIPSE_DAY } from "../geo/aprilEclipse";
 import "./stories.css";
@@ -26,7 +24,6 @@ export function StoriesDrawer({
   onPickDate,
   onSelect,
   onDismiss,
-  aurora,
   children,
   discoveries,
   filter,
@@ -46,7 +43,6 @@ export function StoriesDrawer({
   onPickDate: () => void;
   onSelect: () => void;
   onDismiss: () => void;
-  aurora: ReturnType<typeof useAuroraOverflight>;
 }) {
   const navigation = useStoryNavigation();
   const { expanded, expand } = browse;
@@ -116,13 +112,12 @@ export function StoriesDrawer({
         <StorySearch
           deck={deck}
           ready={ready}
-          aurora={aurora}
           scene={scene}
           filter={filter}
           results={results}
           onSearchAll={() => browse.select(null)}
         >
-          {deck.query.trim() && (
+          {deck.query.trim() && browse.sections.includes("visits") && (
             <button
               type="button"
               className="story-library-toggle"
@@ -137,7 +132,7 @@ export function StoriesDrawer({
           <section
             id="story-library-panel-visits"
             className="story-secondary"
-            aria-labelledby="story-library-visits"
+            aria-label="Saved and recent stories"
             hidden={!browse.sections.includes("visits")}
           >
             <VisitShelf />
@@ -154,36 +149,14 @@ export function StoriesDrawer({
                   {entries.map((story) => {
                     const id = storyButtonId(story.id);
                     return (
-                      <div className="story-choice" key={story.id}>
-                        <StoryThumbnail id={story.id} />
-                        <button
-                          id={id}
-                          type="button"
-                          aria-describedby={`${id}-note`}
-                          disabled={!ready || !!navigation?.unavailable(story.id)}
-                          onClick={() => navigation?.open(story.id, id, !!scene)}
-                        >
-                          {story.title}
-                        </button>
-                        <small id={`${id}-note`}>
-                          <span className="story-kind">{storyKind(story.id)}</span>
-                          <span className="story-promise">
-                            {navigation?.unavailable(story.id) ?? story.summary}
-                          </span>
-                        </small>
-                        <div className="story-row-preview">
-                          <StoryPreviewButton id={story.id} title={story.title} />
-                        </div>
-                        <svg
-                          className="story-choice-chevron"
-                          viewBox="0 0 16 16"
-                          width="16"
-                          height="16"
-                          aria-hidden="true"
-                        >
-                          <path d="m6 3 5 5-5 5" fill="none" stroke="currentColor" strokeWidth="1.5" />
-                        </svg>
-                      </div>
+                      <StoryRow
+                        key={story.id}
+                        story={story}
+                        buttonId={id}
+                        ready={ready}
+                        unavailable={navigation?.unavailable(story.id)}
+                        open={() => navigation?.open(story.id, id, !!scene)}
+                      />
                     );
                   })}
                 </div>

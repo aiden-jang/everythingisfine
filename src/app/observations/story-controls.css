@@ -192,8 +192,13 @@
 }
 
 @media (max-width: 899px) {
-  .replay-sidebar {
+  .observatory-sidebar.replay-sidebar {
+    padding-bottom: calc(60px + env(safe-area-inset-bottom));
     overflow: hidden;
+  }
+
+  .replay-sidebar > .observatory-intro {
+    overflow-y: auto;
   }
 
   .story-dock {
@@ -202,7 +207,22 @@
 }
 @media (max-width: 599px), (min-height: 621px) and (max-width: 899px) {
   .frame[data-presentation="observe"] .zones:has(.replay-sidebar) {
-    grid-template-rows: minmax(155px, 1fr) clamp(400px, 60dvh, 560px);
+    grid-template-rows: clamp(150px, 37dvh, 440px) minmax(0, 1fr);
+    overflow-y: hidden;
+  }
+}
+
+@media (max-width: 599px) and (max-height: 700px) {
+  .frame[data-presentation="observe"] .zones:has(.replay-sidebar) {
+    grid-template-rows: clamp(148px, 28dvh, 188px) minmax(0, 1fr);
+  }
+
+  .replay-sidebar > .observation-panel {
+    row-gap: 8px;
+  }
+
+  .replay-sidebar .observation-heading {
+    gap: 4px;
   }
 }
 

@@ -29,7 +29,6 @@ function Reading({ view, projection }: { view: FloatDiveView; projection: Projec
         </svg>
         <div className="float-instrument-reading" data-float-instrument>
           <span>{Math.round(sample.depth).toLocaleString()} m</span>
-          <small>{sample.temperature.toFixed(2)} °C</small>
         </div>
       </div>
     </>

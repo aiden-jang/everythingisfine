@@ -127,7 +127,6 @@ export function FloatMeasurements({
             </button>
           </div>
           <div className="float-playback-row">
-            <PlaybackButton playing={playing} ended={index === samples.length - 1} onClick={view.toggle} />
             <div className="float-track" data-inspecting={inspecting || undefined}>
               <div className="float-edges">
                 <span>{meters.format(samples[0]!.depth)} m</span>
@@ -152,6 +151,7 @@ export function FloatMeasurements({
                 </TimelineTrack>
               )}
             </div>
+            <PlaybackButton playing={playing} ended={index === samples.length - 1} onClick={view.toggle} />
             <button
               type="button"
               className="float-inspect-toggle"

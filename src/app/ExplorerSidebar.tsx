@@ -69,10 +69,20 @@ export function ExplorerSidebar({
   useLayoutEffect(() => {
     const rail = document.getElementById("chrome-rail");
     if (!rail) return;
-    const markScroll = () => rail.toggleAttribute("data-scrolled", rail.scrollTop > 0);
-    markScroll();
+    let idle = 0;
+    const markScroll = () => {
+      rail.toggleAttribute("data-scrolled", rail.scrollTop > 0);
+      rail.setAttribute("data-scrolling", "");
+      clearTimeout(idle);
+      idle = window.setTimeout(() => rail.removeAttribute("data-scrolling"), 650);
+    };
+    rail.toggleAttribute("data-scrolled", rail.scrollTop > 0);
     rail.addEventListener("scroll", markScroll, { passive: true });
-    return () => rail.removeEventListener("scroll", markScroll);
+    return () => {
+      rail.removeEventListener("scroll", markScroll);
+      rail.removeAttribute("data-scrolling");
+      clearTimeout(idle);
+    };
   }, []);
   const layerView = useRef<{ camera: ReturnType<typeof context.explorer.read>; flat: boolean } | null>(null);
   useLayoutEffect(() => {
@@ -172,7 +182,7 @@ export function ExplorerSidebar({
           }
           filter={
             <div className="story-category" role="group" aria-label="Story categories">
-              {[{ id: null, name: "All stories" }, ...OBSERVATORY_SCENES].map(({ id, name }) => (
+              {[{ id: null, name: "All topics" }, ...OBSERVATORY_SCENES].map(({ id, name }) => (
                 <button
                   key={name}
                   type="button"
@@ -190,7 +200,6 @@ export function ExplorerSidebar({
           }
           ready={context.ready}
           observations={observations}
-          aurora={context.aurora}
           discoveries={
             <Discoveries
               data={context.discoveries}

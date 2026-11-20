@@ -3,7 +3,7 @@ import { useSyncExternalStore } from "react";
 import type { MoonfallView } from "../../globe/moonfall/scene";
 
 export function MoonfallReadout({ view }: { view: MoonfallView }): JSX.Element {
-  const { phase, flying, eva, station } = useSyncExternalStore(view.subscribe, view.read);
+  const { phase, flying, eva, station, meters } = useSyncExternalStore(view.subscribe, view.read);
   return (
     <div className="observatory-stage" data-stage="moonfall" role="group" aria-label="Lunar view">
       <div className="stage-corners" aria-hidden="true">
@@ -20,7 +20,11 @@ export function MoonfallReadout({ view }: { view: MoonfallView }): JSX.Element {
         <span>{flying ? "Apollo 17 · 1972" : `Apollo 17 · Traverse ${eva + 1}`}</span>
         {!flying && (
           <span>
-            {station === null ? "Landing site · 20.19° N · 30.77° E" : lunarTraverses[eva]?.stations[station]}
+            {station === null
+              ? meters <= 0
+                ? "Landing site · 20.19° N · 30.77° E"
+                : "Along the traverse"
+              : lunarTraverses[eva]?.stations[station]}
           </span>
         )}
       </div>

@@ -95,10 +95,10 @@
 
 .feed-popover li {
   display: grid;
-  grid-template-columns: 7px minmax(0, 1fr) 84px;
+  grid-template-columns: 7px minmax(0, 1fr) auto;
   align-items: center;
   gap: 8px;
-  min-height: 44px;
+  min-height: 38px;
   border-top: 1px solid var(--color-hairline);
 }
 
@@ -110,7 +110,7 @@
 .feed-popover li a {
   display: flex;
   align-items: center;
-  min-height: 44px;
+  min-height: 38px;
   font-weight: 500;
   text-decoration: underline;
   text-decoration-color: var(--color-faint);
@@ -160,6 +160,9 @@
   .feed-count {
     display: inline;
   }
+  .feed-row-detail {
+    max-width: 68px;
+  }
 }
 
 @media (forced-colors: active) {
@@ -173,6 +176,17 @@
   }
 }
 
-.feed-time-label {
-  display: block;
+.feed-scope {
+  margin-top: 4px;
+  font-size: 12px;
+}
+.feed-check-times {
+  display: grid;
+  gap: 6px;
+  margin-top: 12px;
+  font-size: 11px;
+  color: var(--color-dim);
+}
+.feed-check-times dt {
+  color: var(--color-ink);
 }
