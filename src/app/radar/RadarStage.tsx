@@ -248,7 +248,11 @@ export function RadarStage({
             {statusMessage}
           </p>
         )}
-        {showingEarlier && <p className="radar-reading-date">Still showing {label(shown!.at)}.</p>}
+        {showingEarlier && (
+          <p className="radar-reading-date">
+            Still showing <time dateTime={new Date(shown!.at).toISOString()}>{label(shown!.at)}</time>.
+          </p>
+        )}
         <RadarTransport layer={layer} dock={dock}>
           <div className="radar-clock">
             <div className="radar-scan-reading">

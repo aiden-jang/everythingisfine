@@ -272,7 +272,7 @@ export function useObservatory(shared: Partial<Permalink>) {
       !sunActive &&
       tonightView !== "opening" &&
       floatView !== "opening" &&
-      (!radarView || !!radarView.image) &&
+      (!radarView || (!!radarView.image && radarView.at === radarView.selectedAt)) &&
       (!observations.entry ||
         (!!observations.view && observations.view.capture !== false && !observations.view.frame.photograph)),
     localReadings: radarView !== null || tonight || floatView !== null || !!observations.entry,

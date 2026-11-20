@@ -60,6 +60,9 @@ for (const width of [1440, 390]) {
     await slider.press("ArrowLeft");
     await expect(time).toHaveAttribute("datetime", new Date(times[1]!).toISOString());
     await expect(status).toContainText("This scan’s image is unavailable.");
+    const displayed = scene.getByText(/^Still showing .*UTC\.$/);
+    await expect(displayed).toBeVisible();
+    await expect(displayed.locator("time")).toHaveAttribute("datetime", new Date(times[2]!).toISOString());
     await expect(await saveImageButton(page)).toBeDisabled();
     missing = false;
     await scene.getByRole("button", { name: "Retry RainViewer" }).click();

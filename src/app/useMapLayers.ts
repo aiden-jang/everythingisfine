@@ -215,7 +215,7 @@ export function useMapLayers(
         .join(" · ") || null,
     canCapture:
       suspended ||
-      ((!radar || !!radar.image) &&
+      ((!radar || (!!radar.image && radarView?.at === radarView?.selectedAt)) &&
         (!active ||
           (["wind", "lightning"] as const).every(
             (id) =>
