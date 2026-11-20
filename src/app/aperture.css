@@ -500,3 +500,18 @@
   font-size: 12px;
   line-height: 1.45;
 }
+
+.frame[data-landing] #globe-marker-preview::after {
+  position: absolute;
+  left: var(--marker-connection);
+  width: 1px;
+  height: 12px;
+  background: color-mix(in srgb, var(--color-ink) 58%, transparent);
+  content: "";
+}
+.frame[data-landing] #globe-marker-preview[data-side="above"]::after {
+  top: 100%;
+}
+.frame[data-landing] #globe-marker-preview[data-side="below"]::after {
+  bottom: 100%;
+}

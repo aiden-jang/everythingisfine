@@ -211,9 +211,9 @@ export function App(): JSX.Element {
     shared.event || shared.day ? "quake:" : (shared.mark ?? undefined),
     archived || archiveBusy,
     shared,
-    observatory.browsingStories || observatory.localReadings,
+    observatory.browsingStories && !observatory.localReadings ? "catalogue" : observatory.localReadings,
   );
-  const onGlobe = useMemo(() => visibleHazards(inWindow, mapLayers.visible), [inWindow, mapLayers.visible]);
+  const onGlobe = useMemo(() => visibleHazards(inWindow, mapLayers.rendered), [inWindow, mapLayers.rendered]);
   const hazardTally = useMemo(() => {
     const held = archived
       ? {

@@ -473,10 +473,9 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
     },
     /* What is under the pointer, answered geographically first and in pixels second. See ARCHITECTURE.md#srcglobescenets. */
     hitTest: (clientX, clientY, store, filters, now, slopPx = HIT_SLOP_PX) => {
-      if (!catalogue.visible) return null;
+      if (!catalogue.visible || !presentation.acceptsLivePicks()) return null;
       const under = controls.pick(clientX, clientY);
       if (!under) return null;
-
       const near: { key: string; lon: number; lat: number; magnitude: number; depthKm: number }[] = [];
       let worst = Infinity;
       store.forEach((quake) => {
@@ -493,7 +492,6 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
         const last = near[near.length - 1]!;
         worst = distanceKm(under.lon, under.lat, last.lon, last.lat);
       });
-
       let bestKey: string | null = null;
       let bestScore = Infinity;
       for (const candidate of near) {
@@ -520,7 +518,9 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
     },
     /* Picked by their anchor, at a wider slop than the markers. See `MARK_SLOP_PX`. */
     hitMark: (clientX, clientY, slopPx = MARK_SLOP_PX) =>
-      catalogue.visible ? pickMark(heldMarks, { x: clientX, y: clientY }, controls.project, slopPx) : null,
+      catalogue.visible && presentation.acceptsLivePicks()
+        ? pickMark(heldMarks, { x: clientX, y: clientY }, controls.project, slopPx)
+        : null,
     events,
     rings,
     slab,

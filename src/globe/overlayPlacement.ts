@@ -184,7 +184,10 @@ export function overlayPlacement({
         if (landing) {
           const left = Math.max(8, Math.min(at.x - box.left - tipWidth / 2, box.width - tipWidth - 8));
           const top = at.y - box.top - tipHeight - 16;
-          node.style.transform = `translate(${left}px, ${top >= 8 ? top : at.y - box.top + 16}px)`;
+          const above = top >= 8;
+          node.dataset["side"] = above ? "above" : "below";
+          node.style.setProperty("--marker-connection", `${at.x - box.left - left}px`);
+          node.style.transform = `translate(${left}px, ${above ? top : at.y - box.top + 16}px)`;
           return;
         }
       }

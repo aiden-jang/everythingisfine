@@ -7,7 +7,7 @@ import { savedVisitKey, type Visit } from "./library";
 
 const noteDrafts = new Map<string, string>();
 
-function KeptItem({ visit, onClose }: { visit: Visit; onClose: () => void }) {
+function KeptItem({ visit, onClose, returned }: { visit: Visit; onClose: () => void; returned: boolean }) {
   const navigation = useStoryNavigation()!;
   const evidence = visitEvidence(visit);
   const key = savedVisitKey(visit);
@@ -19,7 +19,7 @@ function KeptItem({ visit, onClose }: { visit: Visit; onClose: () => void }) {
   const [status, setStatus] = useState("");
   const noteId = useId();
   return (
-    <div className="kept-item">
+    <div className="kept-item" data-returned={returned || undefined}>
       <EvidenceCard evidence={evidence} />
       <details className="kept-note" id={`saved-note-${key}`}>
         <summary>
@@ -141,7 +141,12 @@ export function SavedCollection({ onClose }: { onClose: () => void }) {
       )}
       <div className="saved-evidence-list">
         {library.saved.map((visit) => (
-          <KeptItem key={savedVisitKey(visit)} visit={visit} onClose={onClose} />
+          <KeptItem
+            key={savedVisitKey(visit)}
+            visit={visit}
+            onClose={onClose}
+            returned={restore?.focus === `saved-entry-${savedVisitKey(visit)}`}
+          />
         ))}
       </div>
       <div className="saved-feedback">

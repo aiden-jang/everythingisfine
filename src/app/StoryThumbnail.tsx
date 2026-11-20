@@ -27,7 +27,13 @@ export function storyKey(id: string): string {
   return aliases[key] ?? key;
 }
 
-export function StoryThumbnail({ id }: { id: string }): JSX.Element | null {
+export function StoryThumbnail({
+  id,
+  featured = false,
+}: {
+  id: string;
+  featured?: boolean;
+}): JSX.Element | null {
   const src = previews[storyKey(id)];
   return src ? (
     <img
@@ -37,7 +43,9 @@ export function StoryThumbnail({ id }: { id: string }): JSX.Element | null {
       alt=""
       width="64"
       height="56"
-      loading="lazy"
+      loading={featured ? "eager" : "lazy"}
+      data-featured-art={featured || undefined}
+      onLoad={featured ? (event) => event.currentTarget.setAttribute("data-art-ready", "") : undefined}
       decoding="async"
     />
   ) : null;

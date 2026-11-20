@@ -37,5 +37,14 @@ it("eases the other layers without changing which data is visible", () => {
   emphasis.step(null, 0, true);
   expect(emphasis.radar()).toBe(1);
   expect(weight.value).toBe(1);
+  expect(emphasis.step("catalogue", 0.05, false)).toBe(true);
+  const fading = weight.value as number;
+  expect(fading).toBeGreaterThan(0);
+  expect(fading).toBeLessThan(1);
+  expect(emphasis.step(null, 0.05, false)).toBe(true);
+  expect(weight.value).toBeGreaterThan(fading);
+  expect(emphasis.step("catalogue", 0, true)).toBe(false);
+  expect(weight.value).toBe(0);
+  expect(emphasis.radar()).toBe(0);
   regroup.dispose();
 });

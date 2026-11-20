@@ -91,6 +91,10 @@ Run the affected paths in desktop and phone browsers, including a short phone an
 view. Check both normal and reduced motion. Interrupt a transition with Back, switch projection
 during inspection, and try rapid repeated input. Watch the camera, focused control, scroll
 position and selected measurement together. Keep the same globe canvas throughout the visit.
+From a search result, locate a story, switch to Map, open it from the preview and go Back.
+The leader line should follow the same point and Back should restore the originating control.
+While scrubbing radar with an interrupted connection, check the requested time at the thumb
+and the visible scan’s separate timestamp until the replacement image is ready.
 On a cold load, check for controls moving under a pointer or a finger. On a return visit,
 verify the actual saved value and note as well as the screen that opens. Distinguish browser
 emulation from checks on physical devices when reporting results.

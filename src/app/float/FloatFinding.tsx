@@ -78,6 +78,7 @@ export function FloatFinding({
             >
               {Math.round(samples[finding.index]!.depth).toLocaleString()} m
             </text>
+            <circle cx={point.x} cy={point.y} r="8" className="float-finding-halo" aria-hidden="true" />
             <circle cx={point.x} cy={point.y} r="4.5" className="float-finding-sample" />
           </svg>
           <small>{samples.length.toLocaleString()} measured samples. One location and one date.</small>

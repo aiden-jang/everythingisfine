@@ -142,7 +142,12 @@ export function FloatMeasurements({
                   {meters.format(sample.depth)} m · inspect the profile above
                 </p>
               ) : (
-                <TimelineTrack max={samples.length - 1} current={index} kept={kept}>
+                <TimelineTrack
+                  max={samples.length - 1}
+                  current={index}
+                  kept={kept}
+                  valueLabel={`${meters.format(sample.depth)} m`}
+                >
                   <input
                     type="range"
                     className="scrub-slider float-scrub"

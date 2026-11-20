@@ -6,11 +6,15 @@ export function useReadingArrival(
   key: string,
   motion: "drift" | "fade" = "drift",
 ) {
-  const previous = useRef(key);
+  const previous = useRef<{ key: string; panel: HTMLElement | null; animation: Animation | null }>({
+    key,
+    panel: null,
+    animation: null,
+  });
   useLayoutEffect(() => {
-    if (previous.current === key) return;
-    previous.current = key;
-    const animation = revealReadings(panel.current, motion);
-    return () => animation?.cancel();
+    if (previous.current.key === key) return;
+    if (previous.current.panel !== panel.current) previous.current.animation?.cancel();
+    previous.current = { key, panel: panel.current, animation: revealReadings(panel.current, motion) };
   }, [key, panel, motion]);
+  useLayoutEffect(() => () => previous.current.animation?.cancel(), []);
 }

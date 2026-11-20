@@ -474,3 +474,13 @@
     font-size: 13px;
   }
 }
+
+.zones:has(.pressure-sample-slider:is(:active, :focus-visible))
+  [data-evidence-source="true"]
+  .tonga-station-point {
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--color-ink) 36%, transparent);
+}
+.tonga-chart-field:has(.pressure-sample-slider:is(:active, :focus-visible)) .tonga-chart-dot {
+  stroke: var(--color-ink);
+  stroke-width: 1.5px;
+}

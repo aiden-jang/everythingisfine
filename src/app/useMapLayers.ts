@@ -23,8 +23,20 @@ export function useMapLayers(
   target?: string,
   archived = false,
   shared: SharedLayers = {},
-  suspended = false,
+  cover: boolean | "catalogue" = false,
 ) {
+  const suspended = !!cover;
+  const catalogue = cover === "catalogue";
+  const [catalogueSettled, setCatalogueSettled] = useState(catalogue);
+  useEffect(() => {
+    if (!catalogue) {
+      setCatalogueSettled(false);
+      return;
+    }
+    const timer = window.setTimeout(() => setCatalogueSettled(true), 280);
+    return () => window.clearTimeout(timer);
+  }, [catalogue]);
+  const fading = catalogue && !catalogueSettled && !matchMedia("(prefers-reduced-motion: reduce)").matches;
   const [savedLayers, setEnabled] = useState(() =>
     readMapLayers(shared.layers ? JSON.stringify(shared.layers) : stored("mapLayers"), target),
   );
@@ -65,6 +77,7 @@ export function useMapLayers(
         : enabled,
     [enabled, suspended],
   );
+  const rendered = fading ? enabled : visible;
   useEffect(() => {
     if (archived) setIsolated(null);
   }, [archived]);
@@ -103,8 +116,8 @@ export function useMapLayers(
     setEnabled(next);
   }, []);
   const globeFilters = useMemo(
-    () => (visible.earthquakes ? filters : { ...filters, sources: new Set<"usgs" | "emsc">() }),
-    [filters, visible.earthquakes],
+    () => (rendered.earthquakes ? filters : { ...filters, sources: new Set<"usgs" | "emsc">() }),
+    [filters, rendered.earthquakes],
   );
   const radarCaption =
     suspended || radar?.at === undefined ? null : `Weather data by RainViewer · radar ${layerTime(radar.at)}`;
@@ -118,10 +131,17 @@ export function useMapLayers(
   const emphasis = active && subject && enabled[subject] ? subject : null;
   const presentation = useMemo<MapLayerPresentation | null>(
     () =>
-      !suspended && (radar || observation || emphasis)
-        ? { kind: "map-layers", radar, observation, emphasis }
-        : null,
-    [radar, observation, suspended, emphasis],
+      catalogue
+        ? {
+            kind: "map-layers",
+            radar: fading ? radar : null,
+            observation: fading ? observation : null,
+            emphasis: "catalogue",
+          }
+        : !suspended && (radar || observation || emphasis)
+          ? { kind: "map-layers", radar, observation, emphasis }
+          : null,
+    [catalogue, fading, radar, observation, suspended, emphasis],
   );
   const compose = useMemo(() => composeMapLayers(presentation), [presentation]);
   const feeds: FeedRow[] = [
@@ -147,6 +167,7 @@ export function useMapLayers(
   return {
     enabled,
     visible,
+    rendered,
     suspended,
     inspector,
     inspect,

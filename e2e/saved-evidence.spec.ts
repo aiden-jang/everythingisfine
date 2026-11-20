@@ -90,6 +90,7 @@ test("a kept pressure reading exports its source card and reopens the same stati
   await story.getByRole("button", { name: "Back to journey" }).click();
   await story.getByRole("button", { name: "Back to Saved" }).click();
   await expect(collection.getByRole("button", { name: "Reopen this moment" })).toBeFocused();
+  await expect(collection.locator(".kept-item[data-returned]")).toContainText("1017.75 hPa");
 });
 
 test("two Float readings retain separate notes, focus and scroll after a phone reload", async ({ page }) => {

@@ -117,3 +117,24 @@
   min-inline-size: 115px;
   text-align: start;
 }
+
+.keep-mark {
+  display: inline-block;
+  margin-inline-end: 7px;
+  vertical-align: -0.16em;
+  stroke: currentColor;
+  stroke-width: 1.45;
+  stroke-linejoin: round;
+  fill: transparent;
+}
+.keep-mark[data-kept="true"] {
+  fill: currentColor;
+}
+.visit-save > button:has(.keep-mark) {
+  min-inline-size: 10em;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .keep-mark {
+    transition: fill 180ms ease-out;
+  }
+}

@@ -11,6 +11,7 @@ export function TimelineTrack({
   max,
   current,
   landmark,
+  valueLabel,
   kept = [],
   children,
 }: {
@@ -18,6 +19,7 @@ export function TimelineTrack({
   max: number;
   current: number;
   landmark?: Landmark | undefined;
+  valueLabel?: string | undefined;
   kept?: readonly number[] | undefined;
   children: ReactNode;
 }) {
@@ -28,6 +30,11 @@ export function TimelineTrack({
   return (
     <div className="timeline-track" data-landmark={!!landmark || undefined}>
       {children}
+      {valueLabel && (
+        <span className="timeline-value" style={position(current)} aria-hidden="true">
+          {valueLabel}
+        </span>
+      )}
       {kept
         .filter((at) => at >= min && at <= max)
         .map((at) => (

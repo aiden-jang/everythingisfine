@@ -26,6 +26,7 @@ export function TongaTimelineDock({
         min={START}
         max={END}
         current={minute}
+        valueLabel={`${timeLabel(minute)} UTC`}
         kept={kept}
         landmark={{
           at: station.start,

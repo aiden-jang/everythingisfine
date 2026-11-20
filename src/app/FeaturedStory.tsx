@@ -14,7 +14,7 @@ export function FeaturedStory({ scene }: { scene: EarthScene | null }): JSX.Elem
   return (
     <div className="featured-story" data-feature={selection.id}>
       <div className="featured-story-art">
-        <StoryThumbnail id={story.id} />
+        <StoryThumbnail id={story.id} featured />
       </div>
       <span>
         <strong>{story.title}</strong>
@@ -35,7 +35,7 @@ export function FeaturedStory({ scene }: { scene: EarthScene | null }): JSX.Elem
               <path d="M3 10h13m-5-5 5 5-5 5" fill="none" stroke="currentColor" strokeWidth="1.5" />
             </svg>
           </button>
-          <StoryPreviewButton id={story.id} title={story.title} />
+          <StoryPreviewButton id={story.id} title={story.title} triggerId={id} />
         </span>
       </span>
     </div>

@@ -1,4 +1,5 @@
 import { useId, useState } from "react";
+import { KeepMark } from "../visitor/KeepMark";
 import { useStoryNavigation } from "../journeys/StoryNavigation";
 import type { FloatDiveView } from "./floatPlayback";
 
@@ -60,6 +61,7 @@ function ObservationEditor({ view, sampleIndex }: { view: FloatDiveView; sampleI
             }
           }}
         >
+          <KeepMark kept={!!kept} />
           {kept
             ? changed
               ? "Save note"

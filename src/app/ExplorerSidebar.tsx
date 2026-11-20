@@ -104,34 +104,36 @@ export function ExplorerSidebar({
   return (
     <>
       <div className="explorer-tabs" role="tablist" aria-label="Explore panel">
-        {(["layers", "stories"] as const).map((pane) => (
-          <button
-            key={pane}
-            id={`explorer-${pane}-tab`}
-            type="button"
-            role="tab"
-            aria-selected={browser.pane === pane}
-            aria-controls={`explorer-${pane}`}
-            tabIndex={browser.pane === pane ? 0 : -1}
-            onClick={() => select(pane)}
-            onKeyDown={(event) => {
-              if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
-              event.preventDefault();
-              const next =
-                event.key === "Home"
-                  ? "layers"
-                  : event.key === "End"
-                    ? "stories"
-                    : pane === "layers"
+        <div className="explorer-tab-options" data-pane={browser.pane} role="presentation">
+          {(["layers", "stories"] as const).map((pane) => (
+            <button
+              key={pane}
+              id={`explorer-${pane}-tab`}
+              type="button"
+              role="tab"
+              aria-selected={browser.pane === pane}
+              aria-controls={`explorer-${pane}`}
+              tabIndex={browser.pane === pane ? 0 : -1}
+              onClick={() => select(pane)}
+              onKeyDown={(event) => {
+                if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
+                event.preventDefault();
+                const next =
+                  event.key === "Home"
+                    ? "layers"
+                    : event.key === "End"
                       ? "stories"
-                      : "layers";
-              select(next);
-              document.getElementById(`explorer-${next}-tab`)?.focus({ preventScroll: true });
-            }}
-          >
-            {pane === "layers" ? "Layers" : "Stories"}
-          </button>
-        ))}
+                      : pane === "layers"
+                        ? "stories"
+                        : "layers";
+                select(next);
+                document.getElementById(`explorer-${next}-tab`)?.focus({ preventScroll: true });
+              }}
+            >
+              {pane === "layers" ? "Layers" : "Stories"}
+            </button>
+          ))}
+        </div>
       </div>
       <div
         ref={browser.pane === "layers" ? panel : undefined}

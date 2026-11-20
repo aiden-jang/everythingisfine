@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { KeepMark } from "../visitor/KeepMark";
 import { useStoryNavigation } from "../journeys/StoryNavigation";
 import { pressureAt, timeIso, timeLabel, type stations } from "./tongaTimeline";
 
@@ -52,6 +53,7 @@ export function KeepPressure({
           if (navigation.library.save(next)) onKept?.();
         }}
       >
+        <KeepMark kept={kept} />
         {kept ? "Kept" : "Keep this reading"}
       </button>
       <span>

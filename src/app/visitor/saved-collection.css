@@ -293,3 +293,17 @@
 .saved-collection[data-empty] .saved-pending {
   min-height: 68px;
 }
+
+@media (prefers-reduced-motion: no-preference) {
+  .kept-item[data-returned] {
+    animation: reading-return 680ms ease-out;
+  }
+}
+@keyframes reading-return {
+  from {
+    background-color: var(--color-raised);
+  }
+  to {
+    background-color: transparent;
+  }
+}

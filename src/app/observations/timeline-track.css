@@ -90,3 +90,24 @@
     animation: none;
   }
 }
+
+.timeline-value {
+  position: absolute;
+  z-index: 2;
+  top: 3px;
+  inset-inline-start: clamp(37px, calc(100% * var(--timeline-position)), calc(100% - 37px));
+  transform: translate(-50%, -100%);
+  padding: 4px 7px;
+  border-radius: 4px;
+  border: 1px solid var(--color-hairline);
+  background: var(--color-raised);
+  color: var(--color-ink);
+  font: 11px / 1.35 var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  visibility: hidden;
+  pointer-events: none;
+}
+.timeline-track:has(> input:is(:active, :focus-visible)) > .timeline-value {
+  visibility: visible;
+}

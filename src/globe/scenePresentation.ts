@@ -285,7 +285,8 @@ export function createScenePresentation(
     radarTarget = weather?.target;
     const radarFrame = weather ?? mapLayers?.radar;
     liveFocus =
-      mode === null && (mapLayers?.emphasis !== "radar" || radarFrame?.image)
+      mapLayers?.emphasis === "catalogue" ||
+      (mode === null && (mapLayers?.emphasis !== "radar" || radarFrame?.image))
         ? (mapLayers?.emphasis ?? null)
         : null;
     overviewRadar = !weather && !!mapLayers?.radar;
@@ -300,6 +301,7 @@ export function createScenePresentation(
   return {
     set,
     step,
+    acceptsLivePicks: () => liveFocus !== "catalogue",
     shadows: () => !!chase,
     orbitalMoon: () => orbitalMoon,
     renderMoon(renderer: WebGLRenderer, aspect: number) {

@@ -9,7 +9,8 @@ import {
 } from "react";
 import { useStoryNavigation } from "../journeys/StoryNavigation";
 import { createPortal } from "react-dom";
-import { storyPlace, type StoryPlace } from "./places";
+import { storyPlace, storyPlaceId, type StoryPlace } from "./places";
+import "./preview-connector.css";
 import { refreshAnnotations } from "../../globe/annotationInput";
 import "./discovery.css";
 
@@ -17,7 +18,15 @@ const Preview = createContext<{
   active: StoryPlace | null;
   toggle: (place: StoryPlace, trigger: HTMLElement) => void;
 } | null>(null);
-export function StoryPreviewButton({ id, title }: { id: string; title: string }) {
+export function StoryPreviewButton({
+  id,
+  title,
+  triggerId,
+}: {
+  id: string;
+  title: string;
+  triggerId: string;
+}) {
   const preview = useContext(Preview);
   const navigation = useStoryNavigation();
   const place = storyPlace(id);
@@ -26,7 +35,8 @@ export function StoryPreviewButton({ id, title }: { id: string; title: string })
   return (
     <button
       type="button"
-      data-story-preview=""
+      id={`preview-${triggerId}`}
+      data-story-preview={id}
       className="story-preview-action"
       aria-label={`Preview ${title}`}
       aria-pressed={active}
@@ -49,6 +59,8 @@ export function StoryPreview({ children, scope }: { children: ReactNode; scope: 
   latest.current = navigation;
   const [pinned, setPinned] = useState(false);
   const trigger = useRef<HTMLElement | null>(null);
+  const openAction = useRef<HTMLButtonElement>(null);
+  const handoffFocus = useRef(false);
   const restoringFocus = useRef(false);
   useEffect(() => () => latest.current?.preview(), []);
   const touch = useRef<{ x: number; y: number; timer: ReturnType<typeof setTimeout>; held: boolean } | null>(
@@ -66,6 +78,11 @@ export function StoryPreview({ children, scope }: { children: ReactNode; scope: 
     latest.current?.preview(undefined, !!browsing);
   }, [scope, browsing]);
   useLayoutEffect(() => refreshAnnotations(), [place]);
+  useLayoutEffect(() => {
+    if (!pinned || !handoffFocus.current) return;
+    handoffFocus.current = false;
+    openAction.current?.focus({ preventScroll: true });
+  }, [pinned]);
   const dismiss = (restoreFocus = false) => {
     setPinned(false);
     setPlace(null);
@@ -80,7 +97,7 @@ export function StoryPreview({ children, scope }: { children: ReactNode; scope: 
     if (button) {
       trigger.current = button;
       button.focus({ preventScroll: true });
-    }
+    } else handoffFocus.current = true;
     setPinned(true);
     setPlace(region);
     navigation?.preview(region);
@@ -89,10 +106,12 @@ export function StoryPreview({ children, scope }: { children: ReactNode; scope: 
     if (pinned || restoringFocus.current) return;
     if (target instanceof Element && target.closest(".discovery-preview")) return;
     const button = target instanceof Element ? target.closest("button[id]") : null;
-    const previewed = button instanceof HTMLElement ? storyPlace(button.id) : undefined;
+    const previewed =
+      button instanceof HTMLElement ? storyPlace(button.dataset["storyPreview"] ?? button.id) : undefined;
     trigger.current = previewed && button instanceof HTMLElement ? button : null;
     setPlace(previewed ?? null);
   };
+  const story = storyPlaceId(trigger.current?.dataset["storyPreview"] ?? trigger.current?.id ?? "");
   const stage = document.querySelector(".zones");
   return (
     <Preview.Provider
@@ -195,27 +214,43 @@ export function StoryPreview({ children, scope }: { children: ReactNode; scope: 
           createPortal(
             <div
               className="discovery-preview"
+              role="group"
               aria-label="Story location preview"
               data-located={pinned || undefined}
             >
+              <svg className="preview-connector" data-evidence-connector="" aria-hidden="true">
+                <path fill="none" />
+                <circle r="2" />
+              </svg>
               <span
                 key={place.label}
                 className="discovery-pin"
                 data-observation-anchor=""
+                data-evidence-source={pinned ? "true" : undefined}
                 data-lon={place.lon}
                 data-lat={place.lat}
                 aria-hidden="true"
               />
-              <div key={`caption-${place.label}`} className="discovery-preview-caption">
+              <div key={`caption-${place.label}`} className="discovery-preview-caption" data-evidence-body="">
+                <i className="preview-connection-point" data-evidence-point="" aria-hidden="true" />
                 <span>
                   {place.label}
                   {!pinned && <small>Story location preview</small>}
                 </span>
-                {!pinned && (
+                {pinned && story ? (
+                  <button
+                    ref={openAction}
+                    type="button"
+                    disabled={!!navigation?.unavailable(story)}
+                    onClick={() => navigation?.open(story, trigger.current?.id)}
+                  >
+                    Open story
+                  </button>
+                ) : !pinned ? (
                   <button type="button" onClick={() => locate(place)}>
                     Locate
                   </button>
-                )}
+                ) : null}
                 <button type="button" aria-label="Dismiss location preview" onClick={() => dismiss(true)}>
                   <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true">
                     <path d="m3 3 10 10M13 3 3 13" fill="none" stroke="currentColor" strokeWidth="1.5" />

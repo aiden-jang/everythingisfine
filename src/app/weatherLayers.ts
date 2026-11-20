@@ -25,9 +25,9 @@ export interface WeatherLayerView {
   feed: Pick<FeedRow, "state" | "lastCheck" | "message">;
   lastAvailable?: boolean;
 }
-export type LayerEmphasis = "radar" | "earthquakes" | "aurora";
+export type LayerEmphasis = "radar" | "earthquakes" | "aurora" | "catalogue";
 
-export function emphasisLayer(layer: string | null): LayerEmphasis | null {
+export function emphasisLayer(layer: string | null): Exclude<LayerEmphasis, "catalogue"> | null {
   return layer === "radar" || layer === "earthquakes" || layer === "aurora" ? layer : null;
 }
 

@@ -100,7 +100,11 @@ test("keyboard previews do not move the camera, and date comparisons preserve fr
   expect(await camera(page)).toEqual(before);
   await page.getByRole("button", { name: "Locate", exact: true }).click();
   await expect.poll(async () => (await camera(page))?.lon).toBeCloseTo(59.5, 1);
-  await story.click();
+  const preview = page.locator(".discovery-preview[data-located]");
+  await expect(preview.locator(".preview-connector")).toBeVisible();
+  const openInPreview = preview.getByRole("button", { name: "Open story", exact: true });
+  await expect(openInPreview).toBeFocused();
+  await openInPreview.press("Enter");
   const panel = page.getByRole("region", { name: "Vanishing Sea", exact: true });
   const time = panel.getByRole("slider");
   await time.press("End");

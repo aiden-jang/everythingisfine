@@ -102,6 +102,8 @@ test("phone radar loads history on demand and stops the queue when a connection 
   const slider = scans.getByRole("slider", { name: "Radar scan time" });
   const status = page.getByRole("region", { name: "Storm radar playback" });
   await slider.press("Home");
+  await expect(scans.locator(".timeline-value")).toBeVisible();
+  await expect(credit).toHaveAttribute("datetime", new Date(latest).toISOString());
   await expect(status.getByRole("status", { name: "Radar status" })).toHaveText(
     "This scan’s image is unavailable.",
   );

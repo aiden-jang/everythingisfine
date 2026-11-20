@@ -11,6 +11,7 @@ import {
   useState,
 } from "react";
 import { RadarTransport } from "./RadarTransport";
+import { TimelineTrack } from "../observations/TimelineTrack";
 import type { RadarScan } from "../../sources/radar";
 import {
   radarRegions,
@@ -96,6 +97,13 @@ export function RadarStage({
   const index = candidate !== null && candidate >= 0 ? candidate : Math.max(0, scans.length - 1);
   const selected = scans[index];
   const image = selected && images.get(selected.id);
+  const previousScan = useRef<RadarScan>();
+  useLayoutEffect(() => {
+    if (image) previousScan.current = selected;
+  }, [image, selected]);
+  const shown = image ? selected : previousScan.current;
+  const shownImage = shown && images.get(shown.id);
+  const showingEarlier = !!shownImage && shown?.at !== selected?.at;
   const canRewind = layer && scans.filter(({ id }) => images.get(id)).length >= 2 ? covers : undefined;
   const region = regionId === "auto" ? (focus ?? undefined) : radarRegions.find(({ id }) => id === regionId);
   const target = useMemo(
@@ -103,21 +111,33 @@ export function RadarStage({
     [region, regionId, global],
   );
 
-  const lightning = useRadarLightning(showLightning ? selected?.at : undefined);
+  const lightning = useRadarLightning(showLightning && shownImage ? shown?.at : undefined);
   useLayoutEffect(
     () =>
       onView({
         kind: "radar",
         region: regionId,
         target,
-        image: image ?? null,
-        at: image ? selected?.at : undefined,
+        image: shownImage ?? null,
+        at: shownImage ? shown?.at : undefined,
         selectedAt: restored ? selected?.at : initialAt,
         canRewind,
         lightning: lightning?.frame ?? undefined,
         feed,
       }),
-    [image, lightning, onView, target, selected?.at, regionId, feed, restored, initialAt, canRewind],
+    [
+      shownImage,
+      shown?.at,
+      lightning,
+      onView,
+      target,
+      selected?.at,
+      regionId,
+      feed,
+      restored,
+      initialAt,
+      canRewind,
+    ],
   );
 
   const seek = useCallback(
@@ -228,6 +248,7 @@ export function RadarStage({
             {statusMessage}
           </p>
         )}
+        {showingEarlier && <p className="radar-reading-date">Still showing {label(shown!.at)}.</p>}
         <RadarTransport layer={layer} dock={dock}>
           <div className="radar-clock">
             <div className="radar-scan-reading">
@@ -260,21 +281,27 @@ export function RadarStage({
               </button>
             )}
           </div>
-          <input
-            id={id}
-            className="scrub-slider radar-scrub"
-            type="range"
-            min={0}
+          <TimelineTrack
             max={Math.max(0, scans.length - 1)}
-            value={index}
-            disabled={scans.length < 2}
-            aria-label="Radar scan time"
-            aria-valuetext={timeLabel}
-            onChange={(event) => {
-              setPlaying(false);
-              seek(scans[event.currentTarget.valueAsNumber] ?? null);
-            }}
-          />
+            current={index}
+            valueLabel={selected ? `${shortTime(selected.at)} UTC` : undefined}
+          >
+            <input
+              id={id}
+              className="scrub-slider radar-scrub"
+              type="range"
+              min={0}
+              max={Math.max(0, scans.length - 1)}
+              value={index}
+              disabled={scans.length < 2}
+              aria-label="Radar scan time"
+              aria-valuetext={timeLabel}
+              onChange={(event) => {
+                setPlaying(false);
+                seek(scans[event.currentTarget.valueAsNumber] ?? null);
+              }}
+            />
+          </TimelineTrack>
           <div className="observatory-actions radar-actions radar-playback">
             <button
               type="button"

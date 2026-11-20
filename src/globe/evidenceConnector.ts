@@ -9,7 +9,7 @@ export function positionEvidenceConnector(
   const svg = root?.querySelector<SVGSVGElement>("[data-evidence-connector]");
   if (!svg) return;
   const source = root?.querySelector<HTMLElement>("[data-evidence-source=true]");
-  const target = root?.querySelector<SVGCircleElement>("[data-evidence-point]");
+  const target = root?.querySelector("[data-evidence-point]");
   const point =
     source && controls.project(Number(source.dataset["lon"]), Number(source.dataset["lat"]), 1.01);
   const parent = source?.parentElement ? parents.get(source.parentElement) : undefined;

@@ -33,7 +33,7 @@ export function StoryRow({
         <span className="story-promise">{unavailable ?? story.summary}</span>
       </small>
       <div className="story-row-preview">
-        <StoryPreviewButton id={story.id} title={story.title} />
+        <StoryPreviewButton id={story.id} title={story.title} triggerId={buttonId} />
       </div>
       <svg className="story-choice-chevron" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true">
         <path d="m6 3 5 5-5 5" fill="none" stroke="currentColor" strokeWidth="1.5" />

@@ -26,6 +26,10 @@ export const storyPlaces: Record<string, StoryPlace> = {
   north: { lon: -90, lat: 77, label: "Canadian Arctic" },
 };
 
+export function storyPlaceId(id: string): string {
+  return id.replace(/^(?:open-(?:(?:story|featured)-)?|search-story-|overview-story-)/, "");
+}
+
 export function storyPlace(id: string): StoryPlace | undefined {
-  return storyPlaces[id.replace(/^(?:open-(?:(?:story|featured)-)?|search-story-|overview-story-)/, "")];
+  return storyPlaces[storyPlaceId(id)];
 }

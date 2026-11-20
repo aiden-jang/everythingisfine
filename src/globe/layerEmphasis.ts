@@ -9,6 +9,7 @@ const focus = {
   radar: { radar: 1, quakes: 0.42, reports: 0.48, aurora: 0.48, weather: 0.42 },
   earthquakes: { radar: 0.38, quakes: 1, reports: 0.49, aurora: 0.48, weather: 0.4 },
   aurora: { radar: 0.31, quakes: 0.42, reports: 0.51, aurora: 1, weather: 0.38 },
+  catalogue: { radar: 0, quakes: 0, reports: 0, aurora: 0, weather: 0 },
 };
 const channels = Object.keys(neutral) as (keyof typeof neutral)[];
 
@@ -31,7 +32,7 @@ export function createLayerEmphasis(
       if (subject === "aurora" && !nightUniforms["uAuroraOn"]!.value) subject = null;
       if (subject === "earthquakes" && events.object.geometry.drawRange.count === 0) subject = null;
       const goal = subject ? focus[subject] : neutral;
-      const ease = -Math.expm1(-15 * dt);
+      const ease = -Math.expm1(-(subject === "catalogue" ? 24 : 15) * dt);
       let moving = false;
       for (const key of channels) {
         const delta = goal[key] - value[key];
