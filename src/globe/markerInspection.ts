@@ -1,6 +1,6 @@
 import { magnitude } from "../app/format";
 import { layerTime } from "../app/layerTime";
-import type { MarkerHit } from "./quakePicking";
+import { HIT_SLOP_PX, type MarkerHit } from "./quakePicking";
 import { createMarkerPicker, type MarkerChoice } from "./markerPicker";
 import type { Feed } from "../app/feed";
 import { matches } from "../data/filter";
@@ -10,6 +10,7 @@ import { isLocalView } from "./scenePresentation";
 import { createTapGesture } from "./tapGesture";
 
 const TOUCH_SLOP_PX = 18;
+const TOUCH_MARK_CLUSTER_PX = 10;
 
 export type MarkerTarget = { kind: "quake" | "mark"; id: string };
 type Scene = ReturnType<typeof createGlobe>;
@@ -76,9 +77,15 @@ export function attachMarkerInspection(
     return { target, place, time: mark?.observationTime ?? "" };
   };
   const crowded = (e: PointerEvent, quakeHits: MarkerHit[], markHits: MarkerHit[]) => {
+    const touch = e.pointerType !== "mouse";
+    // A near miss can still open a single reading. Choices are for a tap on the cluster itself.
     const hits = [
-      ...quakeHits.map(({ id, score }) => ({ target: { kind: "quake" as const, id }, score })),
-      ...markHits.map(({ id, score }) => ({ target: { kind: "mark" as const, id }, score })),
+      ...quakeHits
+        .filter(({ score }) => !touch || score <= HIT_SLOP_PX)
+        .map(({ id, score }) => ({ target: { kind: "quake" as const, id }, score })),
+      ...markHits
+        .filter(({ score }) => !touch || score <= TOUCH_MARK_CLUSTER_PX)
+        .map(({ id, score }) => ({ target: { kind: "mark" as const, id }, score })),
     ].sort((a, b) => a.score - b.score);
     const choices: MarkerChoice[] = [];
     for (const { target } of hits) {

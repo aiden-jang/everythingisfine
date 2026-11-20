@@ -52,12 +52,10 @@ import { createMarkLayer, pickMark, type Mark } from "./marks";
 import type { Aurora } from "../sources/aurora";
 import { fitGlobeCamera, visibleMapCopies } from "./globeFraming";
 
-import { pickQuake, type HitStore, type MarkerHit } from "./quakePicking";
+import { HIT_SLOP_PX, pickQuake, type HitStore, type MarkerHit } from "./quakePicking";
 
 export type GlobeMoment = number | EclipseFrame | null;
 
-/* A small earthquake's marker is under 4px across, so the target needs padding to be hittable at all. */
-const HIT_SLOP_PX = 4;
 /* Marks are outlines, not filled discs. Asking a pointer to land on a stroke feels broken. */
 const MARK_SLOP_PX = 18;
 

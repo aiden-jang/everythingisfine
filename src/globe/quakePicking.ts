@@ -5,6 +5,9 @@ import { distanceKm } from "../geo/sphere";
 import type { Controls } from "./controls";
 import { sinkFraction } from "./events";
 
+/* Tiny earthquake markers need a few extra pixels of tolerance. */
+export const HIT_SLOP_PX = 4;
+
 export type MarkerHit = { id: string; score: number };
 
 export type HitStore = Pick<Store, "forEach">;
