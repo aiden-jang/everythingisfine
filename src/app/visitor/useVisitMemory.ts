@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useRef } from "react";
 import type { ObservatoryProps } from "../Observatory";
 import type { Visit, VisitPosition } from "./library";
+import { recordDeparture } from "./departingVisits";
 import { useVisitLibrary } from "./useVisitLibrary";
 
 // Capture before navigation disposes the player. See ARCHITECTURE.md#srcappvisitorusevisitmemoryts.
@@ -50,11 +51,15 @@ export function useVisitMemory(props: ObservatoryProps, active: string | null, c
     const hidden = () => {
       if (document.hidden) save();
     };
-    window.addEventListener("pagehide", save);
+    const departing = () => {
+      const value = latest.current();
+      if (value) recordDeparture(value);
+    };
+    window.addEventListener("pagehide", departing);
     document.addEventListener("visibilitychange", hidden);
     return () => {
       checkpoint.current = () => {};
-      window.removeEventListener("pagehide", save);
+      window.removeEventListener("pagehide", departing);
       document.removeEventListener("visibilitychange", hidden);
     };
   }, [checkpoint, visit]);

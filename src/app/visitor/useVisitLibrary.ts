@@ -1,10 +1,13 @@
 import { useCallback, useEffect, useState } from "react";
 import { stored, store } from "../stored";
 import { readLibrary, readVisit, rememberVisit, savedVisitKey, type Library, type Visit } from "./library";
+import { forgetDepartures, isDeparture, readDepartures } from "./departingVisits";
 import { restoreVisits, type RemovedVisits } from "./restoreVisits";
 
 let sessionFallback: Library | null = null;
-const read = () => sessionFallback ?? readLibrary(stored("visits-v2") ?? stored("visits"));
+const snapshot = () =>
+  readDepartures(sessionFallback ?? readLibrary(stored("visits-v2") ?? stored("visits")));
+const read = () => snapshot().library;
 
 export function useVisitLibrary() {
   const [library, setLibrary] = useState(read);
@@ -12,7 +15,8 @@ export function useVisitLibrary() {
   const [removed, setRemoved] = useState<RemovedVisits | null>(null);
   useEffect(() => {
     const sync = (event: StorageEvent) => {
-      if (!event.key || /^(eif|firstmotion)\.visits(-v2)?$/.test(event.key)) setLibrary(read());
+      if (!event.key || isDeparture(event.key) || /^(eif|firstmotion)\.visits(-v2)?$/.test(event.key))
+        setLibrary(read());
     };
     window.addEventListener("storage", sync);
     setLibrary(read());
@@ -20,13 +24,14 @@ export function useVisitLibrary() {
   }, []);
   const change = useCallback((update: (value: Library) => Library) => {
     const apply = () => {
-      const before = read();
+      const { library: before, keys } = snapshot();
       const next = update(before);
       const changed = next !== before;
       let persisted = sessionFallback === null;
-      if (changed && (sessionFallback || JSON.stringify(next) !== JSON.stringify(before))) {
+      if (keys.length || (changed && (sessionFallback || JSON.stringify(next) !== JSON.stringify(before)))) {
         persisted = store("visits-v2", JSON.stringify(next));
         sessionFallback = persisted ? null : next;
+        if (persisted) forgetDepartures(keys);
       }
       setLibrary(next);
       return { before, changed, persisted };

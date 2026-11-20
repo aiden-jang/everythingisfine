@@ -38,6 +38,16 @@ test("a saved lunar traverse resumes after a new page visit", async ({ page }) =
   const value = await distance.inputValue();
   await page.getByRole("button", { name: "Save view", exact: true }).click();
   await expect(page.locator(".visit-save")).toContainText("Saved on this device");
+  // A departing document cannot wait for the next library write to acquire the lock.
+  await page.evaluate(
+    () =>
+      new Promise<void>((acquired) => {
+        void navigator.locks.request("eif.visits-v2", () => {
+          acquired();
+          return new Promise<void>(() => {});
+        });
+      }),
+  );
   await page.goto("/");
   await openStories(page, "all");
   await page
