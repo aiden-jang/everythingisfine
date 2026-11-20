@@ -221,7 +221,14 @@
     padding: 8px;
   }
   .tonga-evidence .visit-save > button {
+    min-inline-size: 0;
+    padding-inline: 6px;
     font-size: 11px;
+  }
+  .tonga-evidence .keep-mark {
+    width: 12px;
+    height: 12px;
+    margin-inline-end: 4px;
   }
   .tonga-evidence-actions {
     margin-block-start: 6px;
