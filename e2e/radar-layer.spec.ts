@@ -125,7 +125,11 @@ for (const width of [1440, 390]) {
     await expect(feedToggle).toHaveAccessibleName(/7(?: of |\/)8/);
     await feedToggle.click();
     await expect(radarFeed).toContainText("Couldn’t reach feed");
-    await expect(radarFeed.locator("time")).toHaveCount(0);
+    const radarCheck = feedPanel
+      .locator("dl > div")
+      .filter({ hasText: "RainViewer storm radar" })
+      .locator("time");
+    await expect(radarCheck).toHaveCount(0);
     await page.keyboard.press("Escape");
     await expect(page.locator(".frame")).toHaveAttribute("data-presentation", "explore");
     expect(await marksVisible(page)).toBe(true);
@@ -137,7 +141,9 @@ for (const width of [1440, 390]) {
     await expect(feedToggle).toHaveAccessibleName(/All feeds available|8\/8 available/);
     await feedToggle.click();
     await expect(radarFeed).toContainText("Available");
-    await expect(radarFeed.locator("time")).toBeVisible();
+    await expect(radarCheck).toBeHidden();
+    await feedPanel.getByText("About these feeds", { exact: true }).click();
+    await expect(radarCheck).toBeVisible();
     await page.keyboard.press("Escape");
     const transport = width === 390 ? page.getByRole("group", { name: "Radar scan controls" }) : controls;
     const time = transport.locator(".radar-clock time");
