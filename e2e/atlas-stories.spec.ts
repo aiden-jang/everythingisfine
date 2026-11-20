@@ -277,15 +277,16 @@ test("the current-feed error gives an explicit archive recovery without silently
   await page.route("**/api/observations/**", (route) => route.abort());
   await page.goto("/#v=observe&story=reef");
   const panel = page.getByRole("region", { name: "Reef Heat", exact: true });
-  await expect(panel.getByText("The selected data could not load.", { exact: true })).toBeVisible();
-  await panel.getByRole("combobox", { name: "Heat stress" }).selectOption("2023 archive");
+  await expect(panel.locator(".stage-readout")).toHaveText("Recent reef data unavailable");
+  await expect(panel.getByRole("status").filter({ hasText: "Recent reef data unavailable." })).toBeVisible();
+  await panel.getByRole("button", { name: "Open 2023 archive", exact: true }).click();
   await expect(panel.getByRole("slider")).toBeVisible();
   await panel.getByRole("button", { name: "August", exact: true }).click();
   const at = "2023-08-10T12:00:00.000Z";
   await expect(panel.locator(".story-time time")).toHaveAttribute("datetime", at);
   await panel.getByRole("combobox", { name: "Heat stress" }).selectOption("Recent observations");
   await expect(
-    panel.getByText("The selected data could not load. Previous observations stay visible.", {
+    panel.getByText("Recent reef data unavailable. Showing the previous observations.", {
       exact: false,
     }),
   ).toBeVisible();

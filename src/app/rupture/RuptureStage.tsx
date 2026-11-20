@@ -23,6 +23,7 @@ import {
   ruptureTarget,
 } from "./ruptureGlobe";
 import { animationDelta } from "../../globe/animation";
+import { WaveStationLabels } from "./WaveStationLabels";
 import { RuptureSources } from "./RuptureSources";
 import type { WavePin, WaveReading } from "./RecordedWaves";
 import {
@@ -271,21 +272,7 @@ export function RuptureStage({ onView, ...panel }: ReplayProps): JSX.Element {
               : "11 March 2011"
       }
       at={<span>{!waves && frame.depth > 0 ? "Depth exaggerated 4×" : null}</span>}
-      inset={
-        <div className="recorded-anchors" aria-hidden="true">
-          {waves ? (
-            pins.map(({ id, lon, lat, name }) => (
-              <span key={id} data-observation-anchor="" data-lon={lon} data-lat={lat}>
-                {name.split(",")[0]}
-              </span>
-            ))
-          ) : (
-            <span data-observation-anchor="" data-lon={142.373} data-lat={38.297}>
-              Epicenter
-            </span>
-          )}
-        </div>
-      }
+      inset={<WaveStationLabels pins={waves ? pins : null} />}
       sources={<RuptureSources />}
     >
       {waves ? (
@@ -295,6 +282,7 @@ export function RuptureStage({ onView, ...panel }: ReplayProps): JSX.Element {
             initialReading={waveReading.current}
             onReading={rememberWaves}
             onPins={setPins}
+            reduced={reduced}
             back={closeWaves}
             backLabel={
               waveReturn.current && waveReturn.current.mode !== "shaking"

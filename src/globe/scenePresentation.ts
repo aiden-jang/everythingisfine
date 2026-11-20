@@ -81,6 +81,7 @@ export function createScenePresentation(
   let comparisonFrame: ObservationView["comparisonFrame"];
   let registeredFrame: ObservationView["comparisonFrame"];
   let replay: ObservationView["follow"];
+  let holdingGeography = false;
   let replayBank = 0;
   let replayPitch = 0;
   const orbital = createOrbitalFraming();
@@ -157,7 +158,7 @@ export function createScenePresentation(
       !!diving ||
       !!lunar ||
       approaching ||
-      (!!lens && lensReveal < 1)
+      (!!lens && !holdingGeography && lensReveal < 1)
     );
   }
 
@@ -169,6 +170,8 @@ export function createScenePresentation(
     if (mode === "planetarium" && !planetarium) skyCamera = returnCamera ?? controls.state();
     const local = isLocalView(mode) ? mode : null;
     const observation = local?.kind === "observation" ? local : null;
+    const hold = observation?.holdGeography === true;
+    if (hold && !holdingGeography) controls.setView(controls.state());
     picking.set(observation);
     const weather = local?.kind === "radar" ? local : null;
     const float = local?.kind === "float-dive" ? local : null;
@@ -191,7 +194,7 @@ export function createScenePresentation(
         if (observation) {
           const pose = observation.follow ?? observation.shadow?.pose ?? observation.target;
           orbital.set(observation.frame.orbit);
-          controls.flyTo(pose.lon, pose.lat, pose.zoom);
+          if (!hold) controls.flyTo(pose.lon, pose.lat, pose.zoom);
         } else if (weather) {
           controls.flyTo(weather.target.lon, weather.target.lat, weather.target.zoom);
         } else if (float) {
@@ -268,7 +271,12 @@ export function createScenePresentation(
     } else if (observation) {
       returnCamera ??= controls.state();
       const { target } = observation;
-      if (guided && target !== observationTarget && observation.sky?.sunCover === undefined)
+      if (
+        !hold &&
+        guided &&
+        (holdingGeography || target !== observationTarget) &&
+        observation.sky?.sunCover === undefined
+      )
         controls.flyTo(target.lon, target.lat, target.zoom);
     } else if (returnCamera) {
       if (
@@ -281,6 +289,7 @@ export function createScenePresentation(
       returnCamera = undefined;
     }
     radarReveal.set(sweep);
+    holdingGeography = hold;
     observationTarget = observation?.target;
     radarTarget = weather?.target;
     const radarFrame = weather ?? mapLayers?.radar;

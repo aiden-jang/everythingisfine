@@ -1,3 +1,4 @@
+import { StoryDeparture } from "./StoryDeparture";
 import { SharedStory } from "./SharedStory";
 import { StoryLoading } from "../StoryLoading";
 import { ExperienceEnding } from "../journeys/ExperienceEnding";
@@ -83,6 +84,7 @@ export function ObservationDeck({
             {deck.view?.image && <img src={deck.view.image.src} alt={photograph.alt} />}
           </div>
         )}
+        <StoryDeparture />
         <div className="stage-corners" aria-hidden="true">
           <span />
           <span />

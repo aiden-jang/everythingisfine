@@ -353,3 +353,31 @@
     display: none;
   }
 }
+
+.story-departure {
+  z-index: 2;
+  animation: story-departure-fade 1200ms ease-out both;
+}
+
+.story-departure span {
+  font-size: 12px;
+  white-space: normal;
+  max-width: min(180px, 40vw);
+}
+
+@keyframes story-departure-fade {
+  0%,
+  35% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .story-departure {
+    visibility: hidden;
+    animation-duration: 1ms;
+  }
+}

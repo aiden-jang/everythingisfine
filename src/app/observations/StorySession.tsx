@@ -1,9 +1,11 @@
 import { createContext, useContext, useRef, useState } from "react";
 import type { StoryMoment } from "./storyMoment";
+import type { StoryPlace } from "../discovery/places";
 import { storyShare } from "./storyShare";
 
 export interface StorySessionValue {
   shared?: boolean;
+  departure?: StoryPlace | undefined;
   initial: StoryMoment | undefined;
   remember: (part: Partial<StoryMoment>) => void;
   current: () => StoryMoment | undefined;

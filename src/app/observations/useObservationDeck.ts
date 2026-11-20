@@ -1,3 +1,5 @@
+import { spanDeg } from "../../geo/sphere";
+import { storyPlace, type StoryPlace } from "../discovery/places";
 import { useCallback, useRef, useState } from "react";
 import type { EarthStoryId } from "../earth-stories/catalogue";
 import type { StoryMoment } from "./storyMoment";
@@ -20,7 +22,14 @@ export function useObservationDeck(
   const [entry, setEntry] = useState<StoryId | null>((shared?.id as StoryId) ?? null);
   const [trigger, setTrigger] = useState<string | null>(null);
   const [view, setView] = useState<ObservationView | null>(null);
-  const [map, setMap] = useState(initialMap);
+  const [map, setProjection] = useState(initialMap);
+  const queuedProjection = useRef<boolean>();
+  const published = useRef<StoryId | null>(null);
+  const departure = useRef<StoryPlace>();
+  const setMap = useCallback((next: boolean) => {
+    queuedProjection.current = undefined;
+    setProjection(next);
+  }, []);
   const [horizon, setHorizon] = useState(shared?.chapter === "horizon");
   const [query, setQuery] = useState("");
   const [revision, setRevision] = useState(0);
@@ -32,7 +41,12 @@ export function useObservationDeck(
   const update = useCallback(
     (next: ObservationView | null) => {
       if (active.current !== entry) return;
-      if (next) pending.current = false;
+      const map = queuedProjection.current ?? projection.current;
+      if (next) {
+        pending.current = false;
+        published.current = entry;
+        if (queuedProjection.current !== undefined) setMap(map);
+      }
       setView((previous) =>
         next
           ? { ...next, cameraKey: [entry ?? "observation", next.cameraKey].filter(Boolean).join(":") }
@@ -41,10 +55,9 @@ export function useObservationDeck(
             : null,
       );
       const id = active.current;
-      if (id && next)
-        memory.current.set(id, { ...memory.current.get(id), id, map: projection.current, at: next.frame.at });
+      if (id && next) memory.current.set(id, { ...memory.current.get(id), id, map, at: next.frame.at });
     },
-    [entry],
+    [entry, setMap],
   );
   const remember = useCallback(
     (part: Partial<StoryMoment>) => {
@@ -61,6 +74,7 @@ export function useObservationDeck(
   }, [entry]);
   const session = {
     shared: recipient.current,
+    departure: departure.current,
     initial: entry ? memory.current.get(entry) : undefined,
     remember,
     current,
@@ -71,13 +85,15 @@ export function useObservationDeck(
     const id = active.current;
     if (id) memory.current.set(id, { ...memory.current.get(id), id, map: projection.current });
     pending.current = false;
+    published.current = null;
+    departure.current = undefined;
     active.current = null;
     setView(null);
     setEntry(null);
     setTrigger(null);
     setMap(false);
     setHorizon(false);
-  }, []);
+  }, [setMap]);
   const snapshot = { entry, trigger, map, horizon, query, recipient: recipient.current };
   return {
     entry,
@@ -86,6 +102,8 @@ export function useObservationDeck(
     restore(saved: typeof snapshot) {
       recipient.current = saved.recipient;
       pending.current = false;
+      departure.current = undefined;
+      published.current = null;
       active.current = saved.entry;
       setEntry(saved.entry);
       setTrigger(saved.trigger);
@@ -124,13 +142,22 @@ export function useObservationDeck(
       if (resume === null) memory.current.delete(next);
       if (resume?.id === next) memory.current.set(next, resume);
       pending.current = true;
+      const fromPlace = published.current ? storyPlace(published.current) : undefined;
+      const destination = storyPlace(next);
+      departure.current =
+        fromPlace &&
+        destination &&
+        spanDeg(fromPlace.lon, fromPlace.lat, destination.lon, destination.lat) >= 24
+          ? fromPlace
+          : undefined;
       active.current = next;
       setTrigger(from);
       setView((previous) =>
         previous
           ? {
               kind: "observation",
-              cameraKey: next,
+              ...(previous.cameraKey ? { cameraKey: previous.cameraKey } : {}),
+              holdGeography: true,
               target: previous.target,
               frame: { at: previous.frame.at },
               image: null,
@@ -139,7 +166,9 @@ export function useObservationDeck(
             }
           : null,
       );
-      setMap(memory.current.get(next)?.map ?? projection.current);
+      const nextMap = memory.current.get(next)?.map ?? projection.current;
+      if (view) queuedProjection.current = nextMap;
+      else setMap(nextMap);
       setHorizon(memory.current.get(next)?.chapter === "horizon");
       setEntry(next);
     },

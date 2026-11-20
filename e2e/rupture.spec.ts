@@ -43,10 +43,20 @@ test("Tōhoku recordings restore the station pair, cursor, and prior projection"
   await recorded.click();
   await expect(reveal.getByRole("heading", { name: "Two stations. One event." })).toBeVisible();
   await expect(reveal.getByRole("combobox", { name: "Second station" })).toHaveValue("3");
+  const japan = reveal.locator('[data-wave-station="MAJO"]');
+  const hawaii = reveal.locator('[data-wave-station="KIP"]');
+  await expect(reveal.locator(".wave-onset-interval")).toContainText("MAJO → KIP · about 8 min 22 sec");
+  await expect(japan).not.toHaveAttribute("data-reached");
+  await expect(hawaii).not.toHaveAttribute("data-reached");
+  await reveal.getByRole("button", { name: "Jump to MAJO onset" }).click();
+  await expect(japan).toHaveAttribute("data-reached", "true");
+  await expect(hawaii).not.toHaveAttribute("data-reached");
   await reveal.getByRole("button", { name: "Jump to KIP onset" }).click();
+  await expect(hawaii).toHaveAttribute("data-reached", "true");
   await reveal.getByRole("button", { name: "Map", exact: true }).click();
   await expect(reveal.getByRole("slider")).toHaveAttribute("aria-valuetext", "05:55:40 UTC");
   expect(await canvas.evaluate((el, prior) => el === prior, original)).toBe(true);
+  await expect(hawaii).toHaveAttribute("data-reached", "true");
   await reveal.getByRole("combobox", { name: "Second station" }).selectOption({ label: "Albuquerque" });
   await expect(
     reveal.getByRole("img", { name: /Albuquerque, New Mexico, normalized vertical motion/ }),

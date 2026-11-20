@@ -8,6 +8,7 @@ import { loadEarthStory } from "./load";
 import type { EarthStoryData } from "./types";
 import { StoryPlayer } from "./StoryPlayer";
 import { storyChoice, usesCity } from "./storySelection";
+import { StoryRecovery } from "./StoryRecovery";
 import { StoryChoices } from "./StoryChoices";
 import { captureStoryFocus } from "./replacementFocus";
 type Props = ReplayProps & { id: EarthStoryId; city: SkyCityPreference; onRadar: () => void };
@@ -43,6 +44,7 @@ export function EarthStory(props: Props): JSX.Element {
       active = false;
     };
   }, [id, choice, city.city, key, retry]);
+  const reefRecent = id === "reef" && choice === "Recent observations";
   if (!loaded)
     return (
       <ReplayPanel
@@ -50,20 +52,24 @@ export function EarthStory(props: Props): JSX.Element {
         title={earthStories[id].title}
         location={earthStories[id].location}
         subtitle={earthStories[id].summary}
-        status="Preparing the observations"
+        status={
+          failed
+            ? reefRecent
+              ? "Recent reef data unavailable"
+              : "Observation source unavailable"
+            : "Preparing the observations"
+        }
         sources={<a href={earthStories[id].url}>{earthStories[id].source}</a>}
       >
         <StoryChoices id={id} city={city} choice={choice} select={setChoice} />
         {failed ? (
-          <p role="status">The selected data could not load.</p>
+          <StoryRecovery
+            reefRecent={reefRecent}
+            retry={() => setRetry((n) => n + 1)}
+            archive={() => setChoice("2023 archive")}
+          />
         ) : (
           <StoryLoading>Preparing the observations. You can still explore the globe.</StoryLoading>
-        )}
-
-        {failed && (
-          <button type="button" onClick={() => setRetry((n) => n + 1)}>
-            Try again
-          </button>
         )}
       </ReplayPanel>
     );

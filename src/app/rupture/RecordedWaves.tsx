@@ -35,7 +35,27 @@ export interface WaveReading {
   second: number;
   seconds: number;
 }
-export type WavePin = Pick<Station, "id" | "name" | "lon" | "lat">;
+export type WavePin = Pick<Station, "id" | "name" | "lon" | "lat"> & { reached: boolean };
+
+const reached = (station: Station, seconds: number) => station.first !== null && seconds >= station.first;
+
+function OnsetInterval({ a, b }: { a: Station; b: Station }) {
+  if (a.first === null || b.first === null) return null;
+  const [earlier, later] = a.first <= b.first ? [a, b] : [b, a];
+  const diff = later.first! - earlier.first!;
+  const x1 = (earlier.first! / duration) * width;
+  const x2 = (later.first! / duration) * width;
+  return (
+    <div className="wave-onset-interval">
+      <svg viewBox={`0 0 ${width} 12`} preserveAspectRatio="none" aria-hidden="true">
+        <path d={`M${x1} 2V9H${x2}V2`} />
+      </svg>
+      <p>
+        {earlier.id} → {later.id} · about {Math.floor(diff / 60)} min {diff % 60} sec between onsets
+      </p>
+    </div>
+  );
+}
 
 function waveTime(seconds: number) {
   return `${Math.floor(seconds / 60)}:${String(Math.floor(seconds) % 60).padStart(2, "0")}`;
@@ -46,10 +66,18 @@ const timeAt = (seconds: number) =>
 function Trace({ station, seconds, second }: { station: Station; seconds: number; second?: boolean }) {
   const x = (seconds / duration) * width;
   return (
-    <div className="recorded-trace" data-second={second || undefined}>
+    <div
+      className="recorded-trace"
+      data-second={second || undefined}
+      data-reached={reached(station, seconds) || undefined}
+    >
       <div>
         <strong data-ramp="">{station.id}</strong> · {station.name}{" "}
-        <span>{station.first === null ? "Onset unclear" : `Motion at +${waveTime(station.first)}`}</span>
+        <span>
+          {station.first === null
+            ? "Onset unclear"
+            : `${reached(station, seconds) ? "Reached" : "Onset"} at +${waveTime(station.first)}`}
+        </span>
       </div>
       <svg
         data-ramp=""
@@ -107,6 +135,7 @@ export function RecordedWaves({
   onReading,
   onPins,
   onView,
+  reduced,
 }: {
   back: () => void;
   backLabel: string;
@@ -114,6 +143,7 @@ export function RecordedWaves({
   onReading: (reading: WaveReading) => void;
   onPins: (pins: WavePin[]) => void;
   onView: (view: ObservationView) => void;
+  reduced: boolean;
 }): JSX.Element {
   const { initial, remember } = useStorySession();
   const navigation = useStoryNavigation();
@@ -136,7 +166,15 @@ export function RecordedWaves({
   const sound = useRef<HTMLAudioElement>(null);
   const a = waves[first]!;
   const b = waves[second]!;
-  const pins = useMemo(() => [a, b], [a, b]);
+  const reachedA = reached(a, seconds);
+  const reachedB = reached(b, seconds);
+  const pins = useMemo(
+    () => [
+      { id: a.id, name: a.name, lon: a.lon, lat: a.lat, reached: reachedA },
+      { id: b.id, name: b.name, lon: b.lon, lat: b.lat, reached: reachedB },
+    ],
+    [a, b, reachedA, reachedB],
+  );
   useLayoutEffect(() => onPins(pins), [pins, onPins]);
   const at = origin + seconds * 1000;
   const choice = `${first},${second}`;
@@ -160,11 +198,16 @@ export function RecordedWaves({
           ...waves.map((station) => {
             const sample = station.envelope[Math.min(station.envelope.length - 1, Math.floor(seconds / 5))];
             const amplitude = sample ? Math.max(Math.abs(sample[0]!), Math.abs(sample[1]!)) : 0;
+            const arrived = reached(station, seconds);
+            const color = station === a ? 0xf2be95 : station === b ? 0xa6dce9 : 0xaebcc9;
+            const selected = station === a || station === b;
+            const pulse =
+              arrived && playing && !reduced ? Math.max(0, 1 - (seconds - station.first!) / 120) : 0;
             return {
               lon: station.lon,
               lat: station.lat,
-              size: 8 + Math.sqrt(amplitude / 1000) * 20,
-              color: station === a ? 0xf2be95 : station === b ? 0xa6dce9 : 0x8fa7ba,
+              size: arrived ? (selected ? 13 : 9) + Math.sqrt(amplitude / 1000) * 12 + pulse * 9 : 7,
+              color: arrived ? color : 0x657786,
             };
           }),
         ],
@@ -172,7 +215,7 @@ export function RecordedWaves({
     });
     remember?.({ chapter: "waves", choice });
     onReading({ first, second, seconds });
-  }, [at, choice, seconds, a, b, first, second, onView, onReading, remember]);
+  }, [at, choice, seconds, a, b, first, second, onView, onReading, remember, playing, reduced]);
   const running = playing && seconds < duration;
   useEffect(() => cursor.current?.focus({ preventScroll: true }), []);
   useEffect(() => {
@@ -199,8 +242,8 @@ export function RecordedWaves({
         <div className="archive-scene-caption recorded-chapter">
           <h3>Two stations. One event.</h3>
           <p>
-            Both traces share the same clock. Dotted lines mark approximate onsets. Heights are normalized per
-            instrument.
+            Stations light up at the approximate onset picked from each recording. The traces share one clock
+            and are normalized per instrument.
           </p>
         </div>
         <div className="recorded-controls">
@@ -211,6 +254,7 @@ export function RecordedWaves({
           <div className="recorded-traces">
             <Trace station={a} seconds={seconds} />
             <Trace station={b} seconds={seconds} second />
+            <OnsetInterval a={a} b={b} />
           </div>
           <StoryDock label="Recorded wave playback">
             <label className="recorded-time">

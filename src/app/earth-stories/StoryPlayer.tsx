@@ -19,6 +19,8 @@ import transect from "../../sources/earth-stories/dust-transect.json";
 import { point } from "./types";
 import { StoryOverlay } from "./StoryOverlay";
 import { StoryCompass } from "./StoryCompass";
+import { StoryRecovery } from "./StoryRecovery";
+import { DustSliceControls } from "./DustSliceControls";
 import { StoryChoices } from "./StoryChoices";
 import { useMooringInspection } from "./useMooringInspection";
 import { useShorelineComparison } from "./useShorelineComparison";
@@ -134,6 +136,7 @@ export function StoryPlayer({
   const displayedImage = shoreline.image ?? element;
   const comparingShoreline = id === "aral" && finished;
   useLayoutEffect(() => {
+    if (status === "loading") return;
     if (frame.raster && (!element || element.src !== new URL(frame.raster.url, location.href).href)) return;
     onView({
       kind: "observation",
@@ -224,7 +227,15 @@ export function StoryPlayer({
       location={localSky ? `${city.name} · ${new Date(frame.at).getUTCFullYear()} sky` : meta.location}
       subtitle={meta.summary}
       finding={id !== "aral"}
-      status={comparingShoreline ? null : localSky ? `${localSky.targetName} from ${city.name}` : caption}
+      status={
+        failed && id === "reef" && choice === "Recent observations"
+          ? "Recent reef data unavailable · showing previous observations"
+          : comparingShoreline
+            ? null
+            : localSky
+              ? `${localSky.targetName} from ${city.name}`
+              : caption
+      }
       at={
         comparingShoreline ? undefined : (
           <time dateTime={frame.dateTime ?? new Date(frame.at).toISOString()}>{time}</time>
@@ -283,28 +294,14 @@ export function StoryPlayer({
         </div>
       )}
       {id === "dust" && (
-        <>
-          <div className="observatory-actions">
-            <button
-              type="button"
-              aria-pressed={slice}
-              onClick={() => {
-                if (!slice) clock.seek(nearestFrame(data, Date.parse("2020-06-23T12:00:00Z")));
-                else clock.pause();
-                setSlice(!slice);
-              }}
-            >
-              {slice ? "Close lidar slice" : "Open lidar slice"}
-            </button>
-          </div>
-          {slice && (
-            <div className="story-section-caption">
-              <strong>CALIPSO · 23 June 2020</strong>
-              <span>0–15 km · height exaggerated 80×</span>
-              <span>Warm colors: stronger laser backscatter. Clouds also scatter light.</span>
-            </div>
-          )}
-        </>
+        <DustSliceControls
+          open={slice}
+          toggle={() => {
+            if (!slice) clock.seek(nearestFrame(data, Date.parse("2020-06-23T12:00:00Z")));
+            else clock.pause();
+            setSlice(!slice);
+          }}
+        />
       )}
       {(busy || status === "loading") && <StoryLoading>Loading the selected observations…</StoryLoading>}
       <StoryTimeline
@@ -371,12 +368,12 @@ export function StoryPlayer({
         </ul>
       )}
       {failed && (
-        <p role="status" className="observation-note">
-          The selected data could not load. Previous observations stay visible.{" "}
-          <button type="button" onClick={retry}>
-            Try again
-          </button>
-        </p>
+        <StoryRecovery
+          reefRecent={id === "reef" && choice === "Recent observations"}
+          retry={retry}
+          archive={() => setChoice("2023 archive")}
+          holding
+        />
       )}
       {status === "failed" && (
         <p role="status" className="observation-note">

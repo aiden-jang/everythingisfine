@@ -1,3 +1,4 @@
+import { StoryDeparture } from "./StoryDeparture";
 import type { StoryMoment } from "./storyMoment";
 import { SharedStory } from "./SharedStory";
 import { ExperienceEnding } from "../journeys/ExperienceEnding";
@@ -96,6 +97,7 @@ export function ReplayPanel({
         role="group"
         aria-label={`${title} on the ${map ? "map" : "globe"}`}
       >
+        <StoryDeparture />
         {inset}
         <div className="stage-corners" aria-hidden="true">
           <span />
