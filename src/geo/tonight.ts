@@ -22,6 +22,7 @@ export interface TonightView {
   look: SkyLook;
   bodies: ReturnType<typeof skyBodies>;
   targetName?: string | undefined;
+  nightStart?: number;
   sunCover?: number;
   radiantTrail?: readonly SkyLook[];
   nightTrail?: { points: readonly SkyLook[]; following: boolean } | undefined;

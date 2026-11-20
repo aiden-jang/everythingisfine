@@ -1,3 +1,4 @@
+import { searchStories } from "./app/storyIndex";
 import { useWorldLayout } from "./app/useWorldLayout";
 import { closeDetail } from "./app/closeDetail";
 import { ExplorerFold, ExplorerSidebar } from "./app/ExplorerSidebar";
@@ -757,20 +758,18 @@ export function App(): JSX.Element {
   const driven = replay !== null || view.at !== null;
   const headline = useRolling(replay ? replay.revealed : (revealedNow ?? shown), !driven);
 
-  /* The count in the tab, so leaving the page open is worth something. Not during the replay: the count
-     climbs through a whole day in 2.8 seconds, which is a flickering tab rather than a readout, and it is
-     showing yesterday anyway. See ARCHITECTURE.md#srcapptsx. */
+  const storyId =
+    observatory.getMoment()?.id ?? (observatory.tonight.active ? observatory.tonight.entry.mode : undefined);
+  const storyTitle = searchStories.find(({ id }) => id === storyId)?.title;
   useEffect(() => {
     const base = "meanwhile.";
-    if (replay || snapshot.coveredSince === null) {
-      document.title = base;
-      return;
-    }
-    // The day that is loaded, not the text in the box: typing put half a date in the tab title.
-    const at = snapshot.archive;
-    const day = at ? `${new Date(at.from).toISOString().slice(0, 10)} · ` : "";
-    document.title = `(${headline.toLocaleString("en-GB")}) ${day}${base}`;
-  }, [headline, replay, snapshot.coveredSince, snapshot.archive]);
+    const day = snapshot.archive ? `${new Date(snapshot.archive.from).toISOString().slice(0, 10)} · ` : "";
+    document.title = storyTitle
+      ? `${storyTitle} · ${base}`
+      : observatory.observing || replay || snapshot.coveredSince === null
+        ? base
+        : `(${headline.toLocaleString("en-GB")}) ${day}${base}`;
+  }, [storyTitle, observatory.observing, headline, replay, snapshot.coveredSince, snapshot.archive]);
   // `headline`, not the raw total, so the number on the image is the number that was on screen.
   stillCounts.current = {
     quakes: observatory.observing || mapLayers.enabled.earthquakes ? headline : 0,

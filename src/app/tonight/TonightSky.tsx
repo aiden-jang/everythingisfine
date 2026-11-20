@@ -1,5 +1,6 @@
 import type { CameraState } from "../../globe/controlsTypes";
-import type { MoonfallProgress } from "../../globe/moonfall/scene";
+import { ShareMoment } from "../observations/StorySession";
+import { skyPosition, skyStoryMoment, type SkyPosition } from "./skyMoment";
 import { ExperienceEnding } from "../journeys/ExperienceEnding";
 import { lazy, Suspense, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
@@ -8,7 +9,6 @@ import {
   moonsetBetween,
   openingSky,
   skyBodies,
-  type SkyLook,
   type TonightView,
 } from "../../geo/tonight";
 import type { LunarDeparture, TonightPresentation } from "../../globe/scenePresentation";
@@ -45,9 +45,8 @@ export function TonightSky({
   onClose,
   preference,
   initialMode,
-  initialLunar,
-  initialLook,
-  initialMoment,
+  initialPosition,
+  orbit,
   returnLabel,
   projection,
   readCamera,
@@ -59,9 +58,8 @@ export function TonightSky({
   onClose: () => void;
   preference: SkyCityPreference;
   initialMode: "sky" | "meteors" | "moonfall";
-  initialLunar?: MoonfallProgress | undefined;
-  initialLook: SkyLook | undefined;
-  initialMoment: { city: string; at: number } | undefined;
+  initialPosition: SkyPosition | undefined;
+  orbit: boolean;
   returnLabel: string;
   readCamera: () => CameraState;
   projection: { map: boolean; setMap: (map: boolean) => void };
@@ -71,16 +69,15 @@ export function TonightSky({
   const [openedAt] = useState(() => Date.now());
   const [mode, setMode] = useState(initialMode === "moonfall" ? "sky" : initialMode);
   const [meteorDeparture, setMeteorDeparture] = useState<TonightView | null>(null);
-  const [observing, setObserving] = useState(Boolean(initialMoment || initialLook));
+  const [observing, setObserving] = useState(Boolean(initialPosition));
   const { city } = preference;
+  const initial = initialPosition?.city === city.name ? initialPosition : undefined;
   const entries = useStoryNavigation()?.library.saved;
   const night = useMemo(() => {
-    const at = initialMoment?.city === city.name ? initialMoment.at : openedAt;
-    const candidate = localNight(city, at);
-    return at < candidate.start && initialMoment?.city === city.name
-      ? localNight(city, at - 12 * 3_600_000)
-      : candidate;
-  }, [city, openedAt, initialMoment]);
+    const at = initial?.at ?? openedAt;
+    const candidate = localNight(city, initial?.nightStart ?? at);
+    return at < candidate.start && initial ? localNight(city, at - 12 * 3_600_000) : candidate;
+  }, [city, openedAt, initial]);
   const format = useMemo(
     () => ({
       clock: new Intl.DateTimeFormat("en", { timeZone: city.zone, hour: "numeric", minute: "2-digit" }),
@@ -96,17 +93,35 @@ export function TonightSky({
     [city],
   );
   const opening = useMemo(() => {
-    const base = openingSky(city, night.start, night.end);
-    const saved = initialMoment?.city === city.name ? initialMoment.at : undefined;
-    return saved !== undefined && saved >= night.start && saved <= night.end
-      ? { ...base, at: saved, bodies: skyBodies(city, saved) }
-      : base;
-  }, [city, night.start, night.end, initialMoment]);
-  const current = view?.city.name === city.name ? view : { ...opening, look: initialLook ?? opening.look };
+    const base = { ...openingSky(city, night.start, night.end), nightStart: night.start };
+    if (!initial || initial.at < night.start || initial.at > night.end) return base;
+    const bodies = skyBodies(city, initial.at);
+    return {
+      ...base,
+      at: initial.at,
+      bodies,
+      look: initial.look,
+      ...(initial.target
+        ? {
+            targetName: initial.target,
+            ...(initial.trail
+              ? {
+                  nightTrail: {
+                    points: nightTrail(city, initial.target, night.start, night.end),
+                    following: !!initial.following,
+                  },
+                }
+              : {}),
+          }
+        : {}),
+      ...(initial.reference ? { reference: initial.reference } : {}),
+    };
+  }, [city, night.start, night.end, initial]);
+  const current = view?.city.name === city.name ? view : opening;
   const [departure, setDeparture] = useState(() =>
     view?.lunarDeparture
       ? { ...view.lunarDeparture, aim: view }
-      : initialMode === "moonfall" || initialLunar
+      : initialMode === "moonfall" || initial?.lunar
         ? depart(current, projection.map ? readCamera() : undefined)
         : null,
   );
@@ -124,6 +139,7 @@ export function TonightSky({
       current.targetName === body.name && current.nightTrail
         ? current.nightTrail.points
         : nightTrail(city, body.name, night.start, night.end);
+    setObserving(true);
     onLocalSky();
     onView({ ...current, look: aimAt(body), targetName: body.name, nightTrail: { points, following: true } });
   }
@@ -132,9 +148,9 @@ export function TonightSky({
   useLayoutEffect(() => back.current?.focus({ preventScroll: true }), []);
   useLayoutEffect(() => {
     if (!departure && mode === "sky" && view?.city.name !== city.name) {
-      onView({ ...opening, look: initialLook ?? opening.look });
+      onView(opening);
     }
-  }, [view?.city.name, city.name, mode, opening, initialLook, onView, departure]);
+  }, [view?.city.name, city.name, mode, opening, onView, departure]);
   const returnToSky = () => {
     if (!departure) return;
     if (initialMode === "moonfall") {
@@ -173,8 +189,11 @@ export function TonightSky({
           </div>
         </div>
         <Suspense fallback={<p role="status">Loading the lunar survey…</p>}>
-          <Moonfall sky={departure.aim} onView={onView} resume={initialLunar} />
+          <Moonfall sky={departure.aim} onView={onView} resume={initial?.lunar} />
         </Suspense>
+        {view?.moonfall && (
+          <ShareMoment current={() => skyStoryMoment("moonfall", skyPosition(view, false, false))} />
+        )}
         <ExperienceEnding id="moonfall" />
       </>
     );
@@ -213,7 +232,6 @@ export function TonightSky({
                 className="tonight-find"
                 onClick={() => {
                   findBody(target);
-                  setObserving(true);
                   requestAnimationFrame(() =>
                     document.querySelector<HTMLButtonElement>(".tonight-objects button")?.focus(),
                   );
@@ -249,7 +267,7 @@ export function TonightSky({
         <MeteorNights
           city={city}
           view={view}
-          initialLook={meteorDeparture?.city.name === city.name ? meteorDeparture.look : initialLook}
+          initialLook={meteorDeparture?.city.name === city.name ? meteorDeparture.look : initial?.look}
           onView={onView}
         />
       ) : (
@@ -339,6 +357,16 @@ export function TonightSky({
           </button>
         </div>
       </div>
+      {mode === "sky" && observing && (
+        <ShareMoment
+          current={() =>
+            skyStoryMoment("sky", {
+              ...skyPosition(current, projection.map, orbit),
+              ...(projection.map || orbit ? { reference: readCamera() } : {}),
+            })
+          }
+        />
+      )}
       <ExperienceEnding id={mode} />
     </>
   );

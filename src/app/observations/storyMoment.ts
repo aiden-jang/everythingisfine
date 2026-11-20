@@ -1,3 +1,4 @@
+import { isSkyStory, readSkyMoment, writeSkyMoment, type SkyPosition } from "../tonight/skyMoment";
 import { observations } from "./catalogue";
 import { replays } from "./replays";
 import { earthStories } from "../earth-stories/catalogue";
@@ -10,6 +11,7 @@ export interface StoryMoment {
   city?: string;
   chapter?: string;
   map: boolean;
+  sky?: SkyPosition;
 }
 
 const ids = new Set([
@@ -20,6 +22,8 @@ const ids = new Set([
   "shadow",
   "kilauea",
   "float",
+  "sky",
+  "moonfall",
 ]);
 const safe = (value: string | null) =>
   value && /^[\p{L}\p{N} .,:_+/-]{1,80}$/u.test(value) ? value : undefined;
@@ -38,6 +42,8 @@ export function readStoryMoment(params: URLSearchParams): StoryMoment | undefine
   if (city) result.city = city;
   if (choice) result.choice = choice;
   if (chapter) result.chapter = chapter;
+  const sky = isSkyStory(id) ? readSkyMoment(params, result) : undefined;
+  if (sky) result.sky = sky;
   if (id === "float" && !readFloatMoment(result)) return;
   return result;
 }
@@ -46,6 +52,7 @@ export function writeStoryMoment(params: URLSearchParams, moment: StoryMoment) {
   params.set("story", moment.id);
   params.set("p", moment.map ? "map" : "globe");
   params.set("v", "observe");
+  if (moment.sky && isSkyStory(moment.id)) writeSkyMoment(params, moment.sky);
   for (const [key, value] of [
     ["t", moment.at],
     ["choice", moment.choice],

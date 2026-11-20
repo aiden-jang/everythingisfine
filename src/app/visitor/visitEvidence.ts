@@ -124,15 +124,17 @@ export function visitEvidence(visit: Visit): VisitEvidence {
   const sky = visit.position.sky;
   if (sky && !sky.lunar) {
     const city = skyCities.find(({ name }) => name === sky.city);
-    const moon = city ? skyBodies(city, sky.at).find(({ name }) => name === "Moon") : undefined;
+    const body = city
+      ? skyBodies(city, sky.at).find(({ name }) => name === (sky.target ?? "Moon"))
+      : undefined;
     return {
       ...base,
       kind: "Calculated sky",
       place: sky.city,
       time: layerTime(sky.at),
-      reading: moon ? `Moon ${moon.altitude.toFixed(1)}°` : "Saved sky direction",
-      detail: moon
-        ? `Altitude above the horizon · ${moon.lit}% illuminated. Calculated positions, not a weather or visibility forecast.`
+      reading: body ? `${body.name} ${body.altitude.toFixed(1)}°` : "Saved sky direction",
+      detail: body
+        ? `${Math.round(body.azimuth) % 360}° bearing · ${body.altitude < 0 ? "below" : "above"} the horizon${body.lit === null ? "" : ` · ${body.lit}% illuminated`}. Calculated sky position.`
         : "The city, time and viewing direction are kept.",
       source: "meanwhile. · lunar model",
       url: "https://github.com/aiden-jang/meanwhile/blob/main/src/geo/moon.ts",

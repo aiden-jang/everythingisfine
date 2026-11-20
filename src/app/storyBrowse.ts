@@ -1,6 +1,6 @@
 import { catalogueFeature, featuredStories, sceneHighlights, storyRank } from "./storyCuration";
 import { observations } from "./observations/catalogue";
-import { searchStories, type SearchStory } from "./storyIndex";
+import { inStoryTopic, searchStories, type SearchStory } from "./storyIndex";
 import type { EarthScene } from "./useObservatory";
 
 export const featuredStoryId = (scene: EarthScene | null) =>
@@ -8,7 +8,7 @@ export const featuredStoryId = (scene: EarthScene | null) =>
 
 export function browseStories(scene: EarthScene | null, all: boolean): readonly SearchStory[] {
   const featured = featuredStoryId(scene);
-  const list = searchStories.filter((story) => !scene || story.scene === scene);
+  const list = searchStories.filter((story) => inStoryTopic(story, scene));
   if (all) return list.sort((a, b) => storyRank(a.id) - storyRank(b.id));
   const ids = scene ? sceneHighlights[scene] : ["float", "sky", "rupture"];
   return ids.slice(0, 3).flatMap((id) => list.filter((story) => story.id === id && id !== featured));

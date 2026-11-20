@@ -47,3 +47,25 @@ test("story search spans scenes, handles accents, and requires every search term
   expect(findStories("comet volcano")).toEqual([]);
   expect(findStories("   ")).toEqual([]);
 });
+
+test("sky links round trip a night path and rover links reject invalid stops", () => {
+  const sky = {
+    city: "Tokyo",
+    at: 1794002400000,
+    look: { azimuth: 180, altitude: 16 },
+    nightStart: 1793964000000,
+    target: "Saturn",
+    trail: true,
+    following: false,
+    orbit: true,
+  };
+  const moment = { id: "sky", city: sky.city, at: sky.at, map: false, sky };
+  const params = new URLSearchParams();
+  writeStoryMoment(params, moment);
+  expect(readStoryMoment(params)).toEqual(moment);
+  params.set("story", "moonfall");
+  params.set("rover", "1,0,999");
+  expect(readStoryMoment(params)?.sky?.lunar).toBeUndefined();
+  params.set("look", ",16");
+  expect(readStoryMoment(params)?.sky).toBeUndefined();
+});

@@ -1,17 +1,14 @@
-import { lunarTraverses } from "../../sources/moonfall/traverses";
+import { readSkyPosition, type SkyPosition } from "../tonight/skyMoment";
 import { searchStories } from "../storyIndex";
 import { readStoryMoment, writeStoryMoment, type StoryMoment } from "../observations/storyMoment";
-import type { SkyLook } from "../../geo/tonight";
-import type { MoonfallProgress } from "../../globe/moonfall/scene";
 import { riverGauge } from "../observations/riverGauges";
 import type { WindSample } from "../../sources/spaceWeather";
-import { skyCities } from "../tonight/cities";
 
 export interface VisitPosition {
   moment?: StoryMoment;
   solar?: WindSample;
   river?: { gauge: string; at: number; value: number };
-  sky?: { city: string; at: number; look: SkyLook; lunar?: MoonfallProgress };
+  sky?: SkyPosition;
   float?: { profile: string; index: number; map?: boolean };
   radar?: { region?: string; at?: number; map: boolean };
 }
@@ -100,37 +97,8 @@ export function readVisit(value: unknown): Visit | null {
       (solar.density === null || finite(solar.density, 0, 10_000))
     )
       position.solar = { at: solar.at, source: solar.source, value: solar.value, density: solar.density };
-    const sky = source.sky;
-    if (
-      sky &&
-      skyCities.some(({ name }) => name === sky.city) &&
-      time(sky.at) &&
-      finite(sky.look?.azimuth, 0, 360) &&
-      finite(sky.look?.altitude, -90, 90)
-    ) {
-      position.sky = {
-        city: sky.city,
-        at: sky.at,
-        look: { azimuth: sky.look.azimuth, altitude: sky.look.altitude },
-      };
-      const lunar = sky.lunar;
-      if (
-        lunar &&
-        Number.isInteger(lunar.eva) &&
-        finite(lunar.eva, 0, 2) &&
-        finite(lunar.meters, 0, 100_000) &&
-        (lunar.station === null ||
-          (Number.isInteger(lunar.station) &&
-            finite(lunar.station, 0, lunarTraverses[lunar.eva]!.stations.length - 1))) &&
-        typeof lunar.mapped === "boolean"
-      )
-        position.sky.lunar = {
-          eva: lunar.eva,
-          meters: lunar.meters,
-          station: lunar.station,
-          mapped: lunar.mapped,
-        };
-    }
+    const sky = readSkyPosition(source.sky);
+    if (sky) position.sky = sky;
     const float = source.float;
     if (
       float &&

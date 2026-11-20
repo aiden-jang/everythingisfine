@@ -1,21 +1,25 @@
 import { useCallback, useRef, useState } from "react";
 import type { VisitPosition } from "./visitor/library";
-import type { SkyLook, TonightView } from "../geo/tonight";
+import type { TonightView } from "../geo/tonight";
 import type { TonightPresentation } from "../globe/scenePresentation";
-import type { MoonfallProgress } from "../globe/moonfall/scene";
+import type { StoryMoment } from "./observations/storyMoment";
+import { isSkyStory, skyPosition, skyStoryMoment } from "./tonight/skyMoment";
 
 type Entry = {
   mode: "sky" | "meteors" | "moonfall";
   revision: number;
-  look?: SkyLook;
-  moment?: { city: string; at: number };
-  lunar?: MoonfallProgress;
+  position?: VisitPosition["sky"];
 };
 
-export function useSkyView(city: string, before: () => void) {
-  const [view, setView] = useState<TonightPresentation | "opening" | null>(null);
-  const [entry, setEntry] = useState<Entry>({ mode: "sky", revision: 0 });
-  const [orbit, setOrbit] = useState(false);
+export function useSkyView(city: string, before: () => void, story?: StoryMoment) {
+  const linked = isSkyStory(story?.id) ? story : undefined;
+  const [view, setView] = useState<TonightPresentation | "opening" | null>(() => (linked ? "opening" : null));
+  const [entry, setEntry] = useState<Entry>(() => ({
+    mode: linked?.id === "moonfall" ? "moonfall" : "sky",
+    revision: 0,
+    position: linked?.sky,
+  }));
+  const [orbit, setOrbit] = useState(() => !!linked?.sky?.orbit);
   const memory = useRef<TonightView | null>(null);
   const update = useCallback((next: TonightPresentation) => {
     // A meteor shower’s selected date must not overwrite the saved general-sky moment.
@@ -25,14 +29,13 @@ export function useSkyView(city: string, before: () => void) {
   const capture = () => {
     if (view === null || view === "opening") return { view, entry, orbit };
     const { moonfall, ...sky } = view;
+    void moonfall;
     return {
       view: sky,
       orbit,
       entry: {
         ...entry,
-        look: sky.look,
-        moment: { city: sky.city.name, at: sky.at },
-        ...(moonfall ? { lunar: moonfall.read() } : {}),
+        position: skyPosition(view, false, orbit),
       },
     };
   };
@@ -48,27 +51,33 @@ export function useSkyView(city: string, before: () => void) {
       update(next);
     },
     capture,
+    moment(map: boolean) {
+      if (view === "opening" && isSkyStory(entry.mode))
+        return entry.position
+          ? skyStoryMoment(entry.mode, entry.position)
+          : { id: entry.mode, map: entry.mode === "sky" && map, city };
+      if (!view || view === "opening" || view.radiantTrail) return undefined;
+      return skyStoryMoment(
+        view.lunarDeparture || view.moonfall ? "moonfall" : "sky",
+        skyPosition(view, map, orbit),
+      );
+    },
     restore(saved: ReturnType<typeof capture>) {
       setView(saved.view);
       setOrbit(saved.orbit);
       setEntry({ ...saved.entry, revision: entry.revision + 1 });
     },
     open(mode: Entry["mode"] = "sky", resume?: VisitPosition["sky"] | null) {
-      setOrbit(false);
+      setOrbit(!!resume?.orbit);
       const previous = memory.current;
       setEntry((last) => ({
         mode,
         revision: last.revision + 1,
-        ...(resume
-          ? {
-              look: resume.look,
-              moment: { city: resume.city, at: resume.at },
-              ...(resume.lunar ? { lunar: resume.lunar } : {}),
-            }
-          : {}),
-        ...(resume === undefined && previous?.city.name === city
-          ? { look: previous.look, moment: { city: previous.city.name, at: previous.at } }
-          : {}),
+        position:
+          resume ??
+          (resume === undefined && previous?.city.name === city
+            ? skyPosition(previous, false, false)
+            : undefined),
       }));
       setView("opening");
     },

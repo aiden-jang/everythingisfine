@@ -10,7 +10,7 @@ import { resetStoryResults, StorySearch } from "./StorySearch";
 import { StoryPreview } from "./discovery/StoryPreview";
 import { FeaturedStory } from "./FeaturedStory";
 import { browseStories, featuredStoryId, storyButtonId } from "./storyBrowse";
-import { searchStories } from "./storyIndex";
+import { inStoryTopic, searchStories } from "./storyIndex";
 import { APRIL_ECLIPSE_DAY } from "../geo/aprilEclipse";
 import "./stories.css";
 
@@ -52,7 +52,7 @@ export function StoriesDrawer({
   const recent = all
     ? undefined
     : navigation?.library.recent.find(({ id }) =>
-        searchStories.some((story) => story.id === id && (!scene || story.scene === scene)),
+        searchStories.some((story) => story.id === id && inStoryTopic(story, scene)),
       );
   const entries = browseStories(scene, all).filter(({ id }) => id !== recent?.id);
   const featuredRow =

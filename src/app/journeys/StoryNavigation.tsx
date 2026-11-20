@@ -145,9 +145,10 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
     if (!standalone) return;
     deck.setTrigger(trigger);
     if (saved?.position.sky) props.views.skyCity.select(saved.position.sky.city);
-    if (id === "sky" || id === "meteors" || id === "moonfall")
+    if (id === "sky" || id === "meteors" || id === "moonfall") {
+      if (id === "sky") deck.setMap(!!saved?.position.sky?.map);
       tonight.open(id, fresh && id !== "moonfall" ? null : saved?.position.sky);
-    else if (id === "aurora") props.aurora.start();
+    } else if (id === "aurora") props.aurora.start();
     else if (id === "sun") sun.open(saved?.position.solar);
     else if (id === "radar") {
       const exploring = !props.views.observing && !resuming;
@@ -206,6 +207,10 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
     setRoute(null);
     const focus = focusSearch ? "story-search-input" : (entry ?? "explorer-stories-tab");
     props.views.navigation.requestExploreFocus(focus);
+    if (focusSearch) {
+      props.views.browser.scroll.current = 0;
+      props.views.browser.select(null);
+    }
     props.views.browser.show("stories");
     props.onExplore(true);
     panelReturn.restore({

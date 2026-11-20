@@ -8,6 +8,7 @@ export interface SearchStory {
   summary: string;
   scene: EarthScene;
   keywords: string;
+  topics?: readonly EarthScene[];
 }
 export const searchStories: readonly SearchStory[] = [
   ...Object.entries(observations).map(([id, value]) => ({
@@ -34,7 +35,7 @@ export const searchStories: readonly SearchStory[] = [
     title: "Eye of the Storm",
     summary: "Follow Hurricane Katrina from the Gulf to landfall.",
     scene: "live",
-    keywords: "Katrina hurricane 2005 NOAA",
+    keywords: "Katrina hurricane hurricanes Gulf of Mexico 2005 NOAA",
   },
   {
     id: "tonga",
@@ -118,17 +119,25 @@ export const searchStories: readonly SearchStory[] = [
     title: "Float Dive",
     summary: "Rise through an Argo temperature and salinity profile.",
     scene: "live",
+    topics: ["depth"],
     keywords: "ocean water underwater diving submarine temperature depth",
   },
 ];
 export const normalizeStoryQuery = (query: string) =>
-  query.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase().trim();
+  query
+    .normalize("NFD")
+    .replace(/[\p{M}'’]/gu, "")
+    .toLowerCase()
+    .trim();
+
+export const inStoryTopic = (story: SearchStory, topic: EarthScene | null) =>
+  !topic || story.scene === topic || Boolean(story.topics?.includes(topic));
 export function findStories(query: string, scene: EarthScene | null = null): readonly SearchStory[] {
   const terms = normalizeStoryQuery(query).split(/\s+/).filter(Boolean);
   return terms.length
     ? searchStories.filter(
         (story) =>
-          (!scene || story.scene === scene) &&
+          inStoryTopic(story, scene) &&
           terms.every((term) =>
             normalizeStoryQuery(`${story.title} ${story.summary} ${story.keywords}`).includes(term),
           ),

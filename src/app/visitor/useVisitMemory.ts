@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useRef } from "react";
 import type { ObservatoryProps } from "../Observatory";
 import type { Visit, VisitPosition } from "./library";
+import { skyPosition } from "../tonight/skyMoment";
 import { recordDeparture } from "./departingVisits";
 import { useVisitLibrary } from "./useVisitLibrary";
 
@@ -13,17 +14,11 @@ export function useVisitMemory(props: ObservatoryProps, active: string | null, c
   const read = () => {
     if (!active) return null;
     const position: VisitPosition = {};
-    const { observations, tonight, floatDive, skyCity } = props.views;
+    const { observations, tonight, floatDive } = props.views;
     const moment = observations.getMoment();
     if (moment?.id === active) position.moment = moment;
     const sky = tonight.view;
-    if (sky && !sky.radiantTrail)
-      position.sky = {
-        city: skyCity.name,
-        at: sky.at,
-        look: { ...sky.look },
-        ...(sky.moonfall ? { lunar: sky.moonfall.read() } : {}),
-      };
+    if (sky && !sky.radiantTrail) position.sky = skyPosition(sky, observations.map, tonight.orbit);
     const float = floatDive.view;
     if (float)
       position.float = {

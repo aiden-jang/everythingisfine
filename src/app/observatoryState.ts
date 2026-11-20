@@ -1,9 +1,19 @@
+import { earthStories, isEarthStory } from "./earth-stories/catalogue";
 import { DEFAULT_CAMERA } from "../globe/framing";
 import type { Permalink } from "./permalink";
 import { stored } from "./stored";
 import type { CutawayFocus } from "../globe/cutaway";
 import { subsolarPoint } from "../geo/sun";
 import type { EarthScene, Presentation } from "./useObservatory";
+
+export function initialScene(shared: Partial<Permalink>): EarthScene {
+  const id = shared.story?.id;
+  if (id && isEarthStory(id)) return earthStories[id].scene;
+  if (id === "rupture") return "depth";
+  return ["lights", "shadow", "orbit", "sky", "moonfall"].includes(id ?? "")
+    ? "night"
+    : (shared.scene ?? "live");
+}
 
 export function initialPresentation(shared: Partial<Permalink>, read = stored): Presentation {
   if (shared.story) return "observe";

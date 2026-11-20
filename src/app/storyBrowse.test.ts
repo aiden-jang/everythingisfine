@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { browseStories, featuredStoryId, storyKind } from "./storyBrowse";
-import { findStories, searchStories } from "./storyIndex";
+import { findStories, inStoryTopic, searchStories } from "./storyIndex";
 
 describe("story browsing", () => {
   for (const scene of [null, "live", "depth", "night"] as const) {
@@ -14,7 +14,7 @@ describe("story browsing", () => {
       expect(first.map(({ id }) => id)).not.toContain(featured);
       expect(all.map(({ id }) => id).sort()).toEqual(
         searchStories
-          .filter((story) => !scene || story.scene === scene)
+          .filter((story) => inStoryTopic(story, scene))
           .map(({ id }) => id)
           .sort(),
       );
@@ -38,4 +38,10 @@ it("keeps subject search inside the chosen scene while allowing the full catalog
   expect(findStories("Aral", null).map(({ id }) => id)).toContain("aral");
   expect(findStories("Moonfall", "live")).toEqual([]);
   expect(findStories("Moonfall", "night").map(({ id }) => id)).toContain("moonfall");
+});
+
+it("matches natural punctuation and places while preserving a single Float Dive story", () => {
+  expect(findStories("tonight's sky").map(({ id }) => id)).toEqual(["sky"]);
+  expect(findStories("Gulf of Mexico").map(({ id }) => id)).toContain("katrina");
+  expect(findStories("Float Dive", "depth").map(({ id }) => id)).toEqual(["float"]);
 });

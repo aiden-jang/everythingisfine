@@ -248,9 +248,8 @@ function ObservatoryContent({
                   preference={skyCity}
                   projection={observations}
                   initialMode={tonight.entry.mode}
-                  initialLunar={tonight.entry.lunar}
-                  initialLook={tonight.entry.look}
-                  initialMoment={tonight.entry.moment}
+                  initialPosition={tonight.entry.position}
+                  orbit={tonight.orbit}
                   returnLabel={navigationContext?.returnLabel ?? "Back to After Dark"}
                   onClose={closeView(() => {
                     const id =
