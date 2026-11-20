@@ -8,6 +8,7 @@ import type { EarthScene } from "./useObservatory";
 import type { Stop } from "./tour";
 import type { AuroraRun } from "../sources/auroraRoute";
 import type { ReactNode } from "react";
+import "./scene-cues.css";
 
 export const OBSERVATORY_SCENES = [
   { id: "live", name: "Earth" },
@@ -61,10 +62,16 @@ export function ObservatoryStage({
           : geographicCoordinates(subsolarPoint(at));
   return (
     <div className="observatory-stage" data-stage={mode} role="group" aria-label="Globe readout">
-      <div key={mode} className="stage-ident">
-        <span className="stage-rule" aria-hidden="true" />
-        <span>{mode === "live" ? "Day–night boundary" : sceneName}</span>
-      </div>
+      {mode === "live" ? (
+        <span className="scene-cue scene-dayline-label" data-dayline-label="">
+          <span className="scene-cue-label">Day–night boundary</span>
+        </span>
+      ) : (
+        <div key={mode} className="stage-ident">
+          <span className="stage-rule" aria-hidden="true" />
+          <span>{sceneName}</span>
+        </div>
+      )}
       {aurora && (
         <span
           className="sky-reference-marker"

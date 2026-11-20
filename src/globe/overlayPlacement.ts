@@ -10,6 +10,7 @@ import { sinkFraction } from "./events";
 import { sectionEdges, type SectionLine } from "../app/section";
 import { kmPerPixel, latitudeLabel, niceScale } from "./scale";
 import { matches } from "../data/filter";
+import { createLayerExample } from "./layerExample";
 
 type Target = { kind: "quake" | "mark"; id: string } | null;
 type State = Pick<
@@ -54,10 +55,12 @@ export function overlayPlacement({
   let projectionMoving = false;
   let tipWidth = 0;
   let tipHeight = 0;
+  const placeExample = createLayerExample(el, globe);
   return () => {
     const state = read();
     const hovered = hover();
     const box = el.getBoundingClientRect();
+    placeExample(box, state);
     const projection = globe.controls.morph();
     const moving = projection > 0 && projection < 1;
     if (projectionMoving !== moving) {

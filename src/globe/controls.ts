@@ -340,7 +340,7 @@ export function createControls(
       rig.snap(lens.bank, lens.lift);
       apply();
     },
-    project: (pLon, pLat, radius = 1) => project(pLon, pLat, radius, morph, lon),
+    project: (pLon, pLat, radius = 1, rect) => project(pLon, pLat, radius, morph, lon, rect),
     setMorph: (t) => {
       if (t > 0 && target?.intro) target = { lon: target.lon, lat: target.lat, zoom: target.zoom };
       morph = Math.max(0, Math.min(1, t));

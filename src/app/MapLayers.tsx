@@ -30,6 +30,8 @@ import { useStoryNavigation } from "./journeys/StoryNavigation";
 import { LayerCatalogue, LayerVisibility } from "./LayerCatalogue";
 import { LayerSources } from "./LayerSources";
 import { HazardList } from "./HazardList";
+import { LayerExample, hasLayerExample } from "./LayerExample";
+import { LayerIcon } from "./LayerIcon";
 import "./map-layers.css";
 import "./discovery/discovery.css";
 
@@ -122,8 +124,10 @@ export function MapLayers({
   }, [inspectingPlace, rewindPoint]);
   const disabled = (id: MapLayer) => archived && (id === "aurora" || id === "radar" || id in weatherLayers);
   const listScroll = useRef(0);
+  const exampleLayer = useRef<MapLayer>();
   const inspect = (id: MapLayer) => {
     listScroll.current = document.getElementById("chrome-rail")?.scrollTop ?? 0;
+    exampleLayer.current = id;
     controls.inspect(id);
     requestAnimationFrame(() => {
       document.getElementById("chrome-rail")?.scrollTo({ top: 0 });
@@ -131,6 +135,7 @@ export function MapLayers({
     });
   };
   const back = () => {
+    exampleLayer.current = undefined;
     controls.inspect(null);
     requestAnimationFrame(() => {
       document.getElementById("chrome-rail")?.scrollTo({ top: listScroll.current });
@@ -202,6 +207,7 @@ export function MapLayers({
           </button>
           <div>
             <h2 id="layer-inspector-title" tabIndex={-1}>
+              {hasLayerExample(layer) && <LayerIcon layer={layer} />}
               {mapLayerNames[layer]}
             </h2>
             <LayerVisibility
@@ -221,6 +227,11 @@ export function MapLayers({
           ) : quiet(layer) ? (
             <p role="status">{quiet(layer)}</p>
           ) : null}
+          {exampleLayer.current === layer &&
+            panelVisible &&
+            !inspectingPlace &&
+            controls.visible[layer] &&
+            hasLayerExample(layer) && <LayerExample key={layer} layer={layer} />}
         </div>
       )}
       <div

@@ -52,7 +52,7 @@ export interface Controls {
   diveReady: () => boolean;
   framingReady: () => boolean;
   /** Screen position of a geographic point, or null when it is round the back. See ARCHITECTURE.md#srcglobecontrolsts. */
-  project: (lon: number, lat: number, radius?: number) => { x: number; y: number } | null;
+  project: (lon: number, lat: number, radius?: number, rect?: DOMRect) => { x: number; y: number } | null;
   /** Degrees of map covered by one screen pixel. Only meaningful once flat. See ARCHITECTURE.md#srcglobecontrolsts. */
   degPerPx: (atZoom?: number) => number;
   /** Pixel offset in degrees: spherical perspective blends into a straight line as the map unfolds. */

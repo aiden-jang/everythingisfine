@@ -14,7 +14,7 @@ import { EARTH_RADIUS_KM } from "../geo/sphere";
 /* Fifty thousand earthquakes in one draw call. See ARCHITECTURE.md#srcglobeeventsts. */
 
 /** Just clear of the coastline stroke, so a marker on a shoreline is never half-swallowed by it. */
-const RADIUS_EVENTS = 1.006;
+export const RADIUS_EVENTS = 1.006;
 
 /** Marker radius in CSS pixels: `BASE + SCALE * (magnitude - MAG_MIN) ^ EXPONENT`. See ARCHITECTURE.md#srcglobeeventsts. */
 const RADIUS_BASE = 1.0;

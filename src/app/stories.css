@@ -52,6 +52,18 @@
   object-fit: cover;
   border-radius: 5px;
 }
+.story-thumbnail[data-story="tonga"] {
+  object-position: 49% 52%;
+}
+.story-thumbnail[data-story="float"] {
+  object-position: 78% 30%;
+}
+.story-thumbnail[data-story="rupture"] {
+  object-position: 56% 62%;
+}
+.story-thumbnail[data-story="moonfall"] {
+  object-position: 78% 69%;
+}
 .story-choice {
   position: relative;
   display: grid;

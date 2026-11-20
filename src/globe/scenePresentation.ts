@@ -21,6 +21,7 @@ import type { ObservationView } from "../app/observations/types";
 import { createOrbitalFraming } from "./orbitalFraming";
 import type { createLayerEmphasis } from "./layerEmphasis";
 import { createObservationPicking } from "./observationPicking";
+import { createDaylineLabel } from "./daylineLabel";
 
 export type GlobePresentation =
   "planetarium" | "dayline" | "landing" | AuroraRun | LocalView | MapLayerPresentation | null;
@@ -86,6 +87,7 @@ export function createScenePresentation(
   let replayPitch = 0;
   const orbital = createOrbitalFraming();
   const picking = createObservationPicking(canvas, controls);
+  const placeDayline = createDaylineLabel(canvas, controls, lights.sun);
   let orbitalMoon = false;
   let overviewRadar = false;
   let liveFocus: LayerEmphasis | null = null;
@@ -336,6 +338,7 @@ export function createScenePresentation(
         (observationTarget?.zoom ?? 1) / controls.state().zoom,
       );
       positionObservationAnchors(canvas, controls, !!observationTarget || !!skyView || planetarium);
+      placeDayline(dayline.value);
       dive?.size();
       const amount = controls.localSky.amount() * (1 - projection.value);
       lights.apply(amount);

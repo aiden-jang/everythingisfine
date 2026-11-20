@@ -88,7 +88,7 @@ const NIGHT_SURFACE = {
             float halo = 1.0 - smoothstep(width, width * 6.0, abs(sun));
             float latitude = 0.5 - normalize(vNormal).y * 0.5;
             float traced = smoothstep(0.0, 0.12, uDayline * 1.13 - latitude);
-            float accent = (contour * 0.72 + halo * 0.16) * traced * (1.0 - uMorph);
+            float accent = (contour * 0.72 + halo * 0.16) * traced * mix(1.0, 0.55, uMorph);
             color = mix(color, vec3(0.64, 0.86, 0.93), clamp(accent * 1.45, 0.0, 1.0));
             alpha = max(alpha, accent);
           }

@@ -248,10 +248,6 @@
   color: var(--color-dim);
 }
 
-#explorer-stories .featured-story[data-feature="tonga"] img {
-  object-position: center;
-}
-
 .shared-story-compact {
   display: none;
 }

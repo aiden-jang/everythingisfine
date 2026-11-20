@@ -24,7 +24,7 @@ export function createGeographicProjection(camera: PerspectiveCamera, canvas: HT
   const world = new Vector3();
   const towardEye = new Vector3();
   const normal = new Vector3();
-  return (lon: number, lat: number, radius: number, morph: number, centreLon: number) => {
+  return (lon: number, lat: number, radius: number, morph: number, centreLon: number, bounds?: DOMRect) => {
     if (morph === 1) {
       const centre = wrap(centreLon);
       world.set(((centre + wrap(lon - centre)) / 180) * MAP_HALF_WIDTH, lat / 90, 0);
@@ -42,7 +42,7 @@ export function createGeographicProjection(camera: PerspectiveCamera, canvas: HT
       if (world.dot(towardEye.subVectors(camera.position, world)) <= 0) return null;
       world.multiplyScalar(radius);
     }
-    const rect = canvas.getBoundingClientRect();
+    const rect = bounds ?? canvas.getBoundingClientRect();
     world.project(camera);
     return {
       x: rect.left + ((world.x + 1) / 2) * rect.width,
