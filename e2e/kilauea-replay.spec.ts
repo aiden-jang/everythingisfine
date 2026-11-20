@@ -34,6 +34,11 @@ test("Kīlauea keeps the same coastline comparison on globe and map", async ({ p
   await page.emulateMedia({ reducedMotion: "reduce" });
   const { panel, canvas, original } = await openKilauea(page);
   await expect(panel.getByRole("button", { name: "Follow the lava", exact: true })).toBeVisible();
+  const intro = panel.locator(".kilauea-narrative p").last();
+  const dock = panel.locator(".story-dock");
+  const copy = (await intro.boundingBox())!;
+  const playback = (await dock.boundingBox())!;
+  expect(copy.y + copy.height).toBeLessThanOrEqual(playback.y);
   await panel.getByRole("button", { name: /^Ocean entry · / }).click();
   await expect(panel.getByRole("slider", { name: "Mapped extent date" })).toHaveAttribute(
     "aria-valuetext",

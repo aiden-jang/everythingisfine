@@ -221,8 +221,19 @@
     row-gap: 8px;
   }
 
-  .replay-sidebar .observation-heading {
-    gap: 4px;
+  .replay-sidebar > .observatory-intro > :is(.observation-heading, [data-moonfall-panel]) {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .replay-sidebar
+    > .observatory-intro
+    > :is(.observation-heading, [data-moonfall-panel])
+    > .observatory-actions {
+    order: 0;
+    flex-shrink: 0;
   }
 }
 

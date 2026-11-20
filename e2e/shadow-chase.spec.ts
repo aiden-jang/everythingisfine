@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 import { installFeeds, openStories, selectScene } from "./feeds";
 
 test("Shadow Chase follows the globe and uses the saved city for local circumstances", async ({ page }) => {
-  await page.setViewportSize({ width: 320, height: 740 });
+  await page.setViewportSize({ width: 320, height: 640 });
   await page.emulateMedia({ reducedMotion: "reduce" });
   await installFeeds(page, { presentation: "fresh" });
   await page.addInitScript(() => localStorage.setItem("eif.sky-city", "New York"));
@@ -18,7 +18,7 @@ test("Shadow Chase follows the globe and uses the saved city for local circumsta
   const panel = page.getByRole("region", { name: "Shadow Chase" });
   const stage = page.getByRole("group", { name: "Eclipse visualization" });
   await expect(panel.getByRole("button", { name: "Back to stories" })).toBeFocused();
-  await expect(panel.getByRole("button", { name: "Play", exact: true })).toBeVisible();
+  await expect(panel.getByRole("button", { name: "Play", exact: true })).toBeInViewport({ ratio: 1 });
 
   const shadow = panel.getByRole("slider", { name: "Shadow time" });
   await expect(shadow).toHaveAttribute("aria-valuetext", "08:26 UTC");

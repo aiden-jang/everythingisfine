@@ -242,7 +242,7 @@ export function KilaueaJourney({ onView, ...panel }: ReplayProps): JSX.Element {
           {comparing
             ? "The dashed line marks Kapoho Bay’s former shore. Light amber shows the new land."
             : invited
-              ? "Follow the mapped lava from Fissure 8 to Kapoho Bay on the shared globe."
+              ? "Follow the lava from Fissure 8 to Kapoho Bay."
               : "Amber highlights the newly mapped lava. Darker orange shows earlier flows."}
         </p>
         <div className="observatory-actions kilauea-actions">

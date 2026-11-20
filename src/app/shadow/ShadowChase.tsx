@@ -21,6 +21,7 @@ import { elementsSource, pathSource } from "./pathData";
 import { shadowMotion, useShadowClock } from "./useShadowClock";
 
 import { ShareMoment, useStorySession } from "../observations/StorySession";
+import { StoryDock, StoryDockProvider } from "../observations/StoryDock";
 
 const routes = [
   { name: "Atlantic", at: chaseStart },
@@ -175,7 +176,7 @@ export function ShadowChase({
   const canScrub = !local || !!circumstances;
 
   return (
-    <>
+    <section className="replay-region" aria-labelledby="shadow-title">
       <div className="observatory-stage" data-stage="shadow" role="group" aria-label="Eclipse visualization">
         {local && frame.altitude >= 0 && (
           <div key={observer.name} className="shadow-sight">
@@ -206,184 +207,187 @@ export function ShadowChase({
           <span>{time}</span>
         </div>
       </div>
-      <div className="observatory-sidebar">
-        <section
-          id="observatory-intro"
-          className="observatory-intro observation-panel shadow-panel"
-          aria-labelledby="shadow-title"
-        >
-          <div className="observation-heading">
-            <h2 id="shadow-title">Shadow Chase</h2>
-            <div className="observatory-actions">
-              <button type="button" onClick={onClose} ref={back} aria-label={closeLabel}>
-                <span className="observation-back-full">{closeLabel}</span>
-                <span className="observation-back-compact">Back</span>
+      <div className="observatory-sidebar replay-sidebar">
+        <StoryDockProvider>
+          <div id="observatory-intro" className="observatory-intro observation-panel shadow-panel">
+            <div className="observation-heading">
+              <h2 id="shadow-title">Shadow Chase</h2>
+              <div className="observatory-actions">
+                <button type="button" onClick={onClose} ref={back} aria-label={closeLabel}>
+                  <span className="observation-back-full">{closeLabel}</span>
+                  <span className="observation-back-compact">Back</span>
+                </button>
+              </div>
+            </div>
+            <p className="observatory-description">
+              2 August 2027 · A total solar eclipse crosses from the Atlantic to the Indian Ocean.
+            </p>
+            <div className="observatory-actions shadow-actions" role="group" aria-label="Eclipse viewpoint">
+              <button type="button" aria-pressed={!local} onClick={() => show("globe")}>
+                Shadow track
+              </button>
+              <button
+                type="button"
+                aria-pressed={local}
+                onClick={() => show(mode === "luxor" ? "luxor" : "saved")}
+              >
+                From {observer.name}
               </button>
             </div>
-          </div>
-          <p className="observatory-description">
-            2 August 2027 · A total solar eclipse crosses from the Atlantic to the Indian Ocean.
-          </p>
-          <div className="observatory-actions shadow-actions" role="group" aria-label="Eclipse viewpoint">
-            <button type="button" aria-pressed={!local} onClick={() => show("globe")}>
-              Shadow track
-            </button>
-            <button
-              type="button"
-              aria-pressed={local}
-              onClick={() => show(mode === "luxor" ? "luxor" : "saved")}
-            >
-              From {observer.name}
-            </button>
-          </div>
-          {!local && (
-            <div className="observatory-actions shadow-actions" role="group" aria-label="Eclipse projection">
-              <button type="button" aria-pressed={!earthMap} onClick={() => setEarthMap(false)}>
-                Globe
-              </button>
-              <button type="button" aria-pressed={earthMap} onClick={() => setEarthMap(true)}>
-                Map
-              </button>
-            </div>
-          )}
-          {canScrub && (
-            <div className="shadow-timeline">
-              <div className="shadow-timeline-row">
-                <label htmlFor={timeline}>{local ? "Local eclipse time" : "Shadow time"}</label>
-                <time dateTime={new Date(at).toISOString()}>{time}</time>
+            {!local && (
+              <div
+                className="observatory-actions shadow-actions"
+                role="group"
+                aria-label="Eclipse projection"
+              >
+                <button type="button" aria-pressed={!earthMap} onClick={() => setEarthMap(false)}>
+                  Globe
+                </button>
+                <button type="button" aria-pressed={earthMap} onClick={() => setEarthMap(true)}>
+                  Map
+                </button>
               </div>
-              <div className="shadow-seek">
-                <input
-                  id={timeline}
-                  type="range"
-                  className="scrub-slider"
-                  min={0}
-                  max={Math.ceil((end - start) / 1000)}
-                  value={Math.round((at - start) / 1000)}
-                  step={1}
-                  aria-valuetext={time}
-                  onChange={(e) => clock.seek(Math.min(end, start + e.currentTarget.valueAsNumber * 1000))}
-                  onKeyDown={(e) => {
-                    if (
-                      e.key !== "ArrowLeft" &&
-                      e.key !== "ArrowRight" &&
-                      e.key !== "ArrowDown" &&
-                      e.key !== "ArrowUp"
-                    )
-                      return;
-                    e.preventDefault();
-                    const dir = e.key === "ArrowLeft" || e.key === "ArrowDown" ? -1 : 1;
-                    clock.seek(Math.max(start, Math.min(end, at + dir * (local ? 15_000 : 120_000))));
-                  }}
-                />
-                <PlaybackButton
-                  playing={clock.playing}
-                  ended={at >= end}
-                  onClick={() => {
-                    if (local && !clock.playing && at === circumstances?.peak) clock.reset(start, true);
-                    else clock.toggle();
-                  }}
-                />
-              </div>
-              <div className="observatory-actions shadow-actions">
-                {local ? (
-                  <button type="button" onClick={() => clock.seek(circumstances!.peak)}>
-                    Peak eclipse
-                  </button>
-                ) : (
-                  routes.map((stop) => (
-                    <button key={stop.name} type="button" onClick={() => clock.seek(stop.at)}>
-                      {stop.name}
+            )}
+            {canScrub && (
+              <>
+                <StoryDock label="Eclipse playback">
+                  <div className="story-dock-time">
+                    <label htmlFor={timeline}>{local ? "Local eclipse time" : "Shadow time"}</label>
+                    <time dateTime={new Date(at).toISOString()}>{time}</time>
+                  </div>
+                  <input
+                    id={timeline}
+                    type="range"
+                    className="scrub-slider"
+                    min={0}
+                    max={Math.ceil((end - start) / 1000)}
+                    value={Math.round((at - start) / 1000)}
+                    step={1}
+                    aria-valuetext={time}
+                    onChange={(e) => clock.seek(Math.min(end, start + e.currentTarget.valueAsNumber * 1000))}
+                    onKeyDown={(e) => {
+                      if (
+                        e.key !== "ArrowLeft" &&
+                        e.key !== "ArrowRight" &&
+                        e.key !== "ArrowDown" &&
+                        e.key !== "ArrowUp"
+                      )
+                        return;
+                      e.preventDefault();
+                      const dir = e.key === "ArrowLeft" || e.key === "ArrowDown" ? -1 : 1;
+                      clock.seek(Math.max(start, Math.min(end, at + dir * (local ? 15_000 : 120_000))));
+                    }}
+                  />
+                  <PlaybackButton
+                    playing={clock.playing}
+                    ended={at >= end}
+                    onClick={() => {
+                      if (local && !clock.playing && at === circumstances?.peak) clock.reset(start, true);
+                      else clock.toggle();
+                    }}
+                  />
+                </StoryDock>
+                <div className="observatory-actions shadow-actions">
+                  {local ? (
+                    <button type="button" onClick={() => clock.seek(circumstances!.peak)}>
+                      Peak eclipse
                     </button>
-                  ))
-                )}
-              </div>
-            </div>
-          )}
-          {local ? (
-            <>
-              <div className="shadow-summary">
-                <h3>
-                  {event} in {observer.name}
-                </h3>
-                {circumstances ? (
-                  <dl className="observation-values">
-                    <div>
-                      <dt>Peak local time</dt>
-                      <dd>{localClock.format(circumstances.peak)}</dd>
-                    </div>
-                    <div>
-                      <dt>Sun covered at peak</dt>
-                      <dd>{percentage(circumstances.cover)}</dd>
-                    </div>
-                    {circumstances.totality && (
+                  ) : (
+                    routes.map((stop) => (
+                      <button key={stop.name} type="button" onClick={() => clock.seek(stop.at)}>
+                        {stop.name}
+                      </button>
+                    ))
+                  )}
+                </div>
+              </>
+            )}
+            {local ? (
+              <>
+                <div className="shadow-summary">
+                  <h3>
+                    {event} in {observer.name}
+                  </h3>
+                  {circumstances ? (
+                    <dl className="observation-values">
                       <div>
-                        <dt>Totality</dt>
+                        <dt>Peak local time</dt>
+                        <dd>{localClock.format(circumstances.peak)}</dd>
+                      </div>
+                      <div>
+                        <dt>Sun covered at peak</dt>
+                        <dd>{percentage(circumstances.cover)}</dd>
+                      </div>
+                      {circumstances.totality && (
+                        <div>
+                          <dt>Totality</dt>
+                          <dd>
+                            {durationLabel((circumstances.totality[1] - circumstances.totality[0]) / 1000)}
+                          </dd>
+                        </div>
+                      )}
+                      <div>
+                        <dt>Sun position now</dt>
                         <dd>
-                          {durationLabel((circumstances.totality[1] - circumstances.totality[0]) / 1000)}
+                          {Math.round(frame.altitude)}° · {bearingLabel(frame.azimuth)}
                         </dd>
                       </div>
-                    )}
-                    <div>
-                      <dt>Sun position now</dt>
-                      <dd>
-                        {Math.round(frame.altitude)}° · {bearingLabel(frame.azimuth)}
-                      </dd>
-                    </div>
-                  </dl>
-                ) : (
-                  <p className="observation-note">
-                    From {observer.name}, the Moon won’t cover the Sun above the horizon during this eclipse.
-                  </p>
-                )}
-              </div>
-              {city.name !== luxor.name && (
-                <div className="observatory-actions shadow-actions">
-                  <button type="button" onClick={() => show(mode === "luxor" ? "saved" : "luxor")}>
-                    {mode === "luxor" ? `Back to ${city.name}` : "Preview totality in Luxor"}
-                  </button>
+                    </dl>
+                  ) : (
+                    <p className="observation-note">
+                      From {observer.name}, the Moon won’t cover the Sun above the horizon during this
+                      eclipse.
+                    </p>
+                  )}
                 </div>
-              )}
-            </>
-          ) : (
-            <dl className="observation-values shadow-summary">
-              <div>
-                <dt>Path width</dt>
-                <dd>{Math.round(point.width)} km</dd>
+                {city.name !== luxor.name && (
+                  <div className="observatory-actions shadow-actions">
+                    <button type="button" onClick={() => show(mode === "luxor" ? "saved" : "luxor")}>
+                      {mode === "luxor" ? `Back to ${city.name}` : "Preview totality in Luxor"}
+                    </button>
+                  </div>
+                )}
+              </>
+            ) : (
+              <dl className="observation-values shadow-summary">
+                <div>
+                  <dt>Path width</dt>
+                  <dd>{Math.round(point.width)} km</dd>
+                </div>
+                <div>
+                  <dt>Totality on the centerline</dt>
+                  <dd>{durationLabel(point.duration)}</dd>
+                </div>
+              </dl>
+            )}
+            <details className="shadow-sources">
+              <summary>Sources &amp; viewing safety</summary>
+              <p className="observation-note">
+                Eclipse Predictions by Fred Espenak, NASA’s GSFC. The globe follows NASA’s two-minute path
+                samples. City estimates use NASA’s Besselian elements at sea level with a geometric horizon.
+                The corona illustration is schematic. Use NASA’s guidance for safe viewing.
+              </p>
+              <div className="shadow-links">
+                <a href={pathSource} target="_blank" rel="noreferrer">
+                  NASA path table
+                </a>
+                <a href={elementsSource} target="_blank" rel="noreferrer">
+                  NASA prediction map
+                </a>
+                <a
+                  href="https://science.nasa.gov/eclipses/future-eclipses/eclipse-2024/safety/"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  NASA viewing safety
+                </a>
               </div>
-              <div>
-                <dt>Totality on the centerline</dt>
-                <dd>{durationLabel(point.duration)}</dd>
-              </div>
-            </dl>
-          )}
-          <details className="shadow-sources">
-            <summary>Sources &amp; viewing safety</summary>
-            <p className="observation-note">
-              Eclipse Predictions by Fred Espenak, NASA’s GSFC. The globe follows NASA’s two-minute path
-              samples. City estimates use NASA’s Besselian elements at sea level with a geometric horizon. The
-              corona illustration is schematic. Use NASA’s guidance for safe viewing.
-            </p>
-            <div className="shadow-links">
-              <a href={pathSource} target="_blank" rel="noreferrer">
-                NASA path table
-              </a>
-              <a href={elementsSource} target="_blank" rel="noreferrer">
-                NASA prediction map
-              </a>
-              <a
-                href="https://science.nasa.gov/eclipses/future-eclipses/eclipse-2024/safety/"
-                target="_blank"
-                rel="noreferrer"
-              >
-                NASA viewing safety
-              </a>
-            </div>
-          </details>
-          <ShareMoment />
-          <ExperienceEnding />
-        </section>
+            </details>
+            <ShareMoment />
+            <ExperienceEnding />
+          </div>
+        </StoryDockProvider>
       </div>
-    </>
+    </section>
   );
 }
