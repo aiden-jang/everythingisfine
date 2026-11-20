@@ -58,7 +58,8 @@ export function createMarkerPicker(
   document.addEventListener(
     "focusin",
     (event) => {
-      if (open && !panel.contains(event.target as Node)) close();
+      if (open && panel.contains(event.relatedTarget as Node | null) && !panel.contains(event.target as Node))
+        close();
     },
     { signal },
   );
@@ -69,7 +70,7 @@ export function createMarkerPicker(
     get open() {
       return open;
     },
-    show(x: number, y: number, choices: readonly MarkerChoice[]) {
+    show(event: PointerEvent, choices: readonly MarkerChoice[]) {
       if (!panel.isConnected || typeof panel.showPopover !== "function") return false;
       const options = choices.map(({ target, place, time }) => {
         const button = document.createElement("button");
@@ -93,11 +94,12 @@ export function createMarkerPicker(
       open = true;
       canvas.setAttribute("data-marker-picker", "");
       const { width, height } = panel.getBoundingClientRect();
-      const left = Math.max(GAP, Math.min(window.innerWidth - width - GAP, x + GAP));
-      const top = Math.max(GAP, Math.min(window.innerHeight - height - GAP, y + GAP));
+      const left = Math.max(GAP, Math.min(window.innerWidth - width - GAP, event.clientX + GAP));
+      const top = Math.max(GAP, Math.min(window.innerHeight - height - GAP, event.clientY + GAP));
       panel.style.left = `${left}px`;
       panel.style.top = `${top}px`;
-      options[0]?.focus({ preventScroll: true });
+      // Safari focuses the tapped canvas after pointerup. Let touch keep that focus until the next tap.
+      if (event.pointerType !== "touch") options[0]?.focus({ preventScroll: true });
       redraw();
       return true;
     },

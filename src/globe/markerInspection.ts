@@ -89,7 +89,7 @@ export function attachMarkerInspection(
     }
     if (choices.length < 2) return false;
     display(null);
-    return picker.show(e.clientX, e.clientY, choices);
+    return picker.show(e, choices);
   };
   const move = (e: PointerEvent) => {
     const dragging = tap.move(e);

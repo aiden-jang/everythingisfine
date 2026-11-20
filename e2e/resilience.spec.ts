@@ -127,3 +127,32 @@ test("phone radar loads history on demand and stops the queue when a connection 
   await expect(credit).toHaveAttribute("datetime", new Date(times[1]!).toISOString());
   expect(await canvas!.evaluate((node) => node === document.querySelector("#globe-view canvas"))).toBe(true);
 });
+
+test("a phone tap leaves the crowded marker picker open for a second tap", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await installFeeds(page, {
+    presentation: "fresh",
+    count: 0,
+    usgs: ["North of Guam", "East of Guam", "South of Guam"].map((place, index) => {
+      const time = Date.now() - (index + 1) * 600_000;
+      return {
+        id: `touch-crowd-${index}`,
+        properties: { mag: 5.2, place, time, updated: time, magType: "mw", type: "earthquake", net: "us" },
+        geometry: { type: "Point", coordinates: [145 + index * 0.05, 12, 8] },
+      };
+    }),
+  });
+  await page.goto("/#at=145,12,1&p=globe&v=observe");
+  const globe = page.getByRole("button", { name: "Explore visible observations" });
+  const picker = page.getByRole("group", { name: "Nearby observations" });
+  await expect(globe).toBeVisible();
+  await expect(async () => {
+    if (!(await picker.isVisible())) await globe.tap();
+    await expect(picker).toBeVisible({ timeout: 1_000 });
+  }).toPass({ timeout: 15_000 });
+  const observation = picker.getByRole("button", { name: /East of Guam.*UTC/ });
+  await expect(picker.getByRole("button", { name: /of Guam.*UTC/ })).toHaveCount(3);
+  await observation.tap();
+  await expect(picker).toBeHidden();
+  await expect(page.getByRole("heading", { name: /East of Guam/ }).first()).toBeVisible();
+});
