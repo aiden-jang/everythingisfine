@@ -8,7 +8,7 @@ test("Tōhoku reveals the modeled fault before the estimated shaking", async ({ 
   await page.goto("/");
   await selectScene(page, "Below the Surface");
   await openStories(page);
-  const trigger = page.getByRole("button", { name: "Open story: Rupture Reveal", exact: true });
+  const trigger = page.getByRole("button", { name: "Rupture Reveal", exact: true });
   const canvas = page.locator("#globe-view canvas");
   const original = await canvas.elementHandle();
   await trigger.click();

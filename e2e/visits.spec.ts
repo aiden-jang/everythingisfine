@@ -8,13 +8,14 @@ test("discovery changes with the scene and keeps the same globe", async ({ page 
   await installFeeds(page, { presentation: "fresh" });
   await page.goto("/");
   const canvas = await page.locator("#globe-view canvas").elementHandle();
-  await openStories(page, "all");
+  await openStories(page, "search");
   await expect(page.locator(".featured-story-link")).toHaveAccessibleName("Open story: Tonga’s shockwave");
+  await page.locator(".story-today summary").click();
   await expect(page.getByRole("region", { name: "Worth looking at today" })).toContainText(
     "calculated for a level horizon",
   );
   await selectScene(page, "After Dark");
-  await openStories(page, "all");
+  await openStories(page, "search");
   await expect(page.locator(".featured-story-link")).toHaveAccessibleName("Open story: Moonfall");
   await page.getByRole("button", { name: "Open story: Moonfall", exact: true }).click();
   await expect(page.getByRole("group", { name: "Lunar view" })).toBeVisible();
@@ -30,7 +31,7 @@ test("a saved lunar traverse resumes after a new page visit", async ({ page }) =
   await page.goto("/");
   await selectScene(page, "After Dark");
   await openStories(page, "all");
-  await page.getByRole("button", { name: "Open story: Moonfall", exact: true }).click();
+  await page.getByRole("button", { name: "Moonfall", exact: true }).click();
   await page.getByRole("combobox", { name: "Rover traverse" }).selectOption("1");
   const distance = page.getByRole("slider", { name: "Mapped distance" });
   await distance.press("End");

@@ -116,10 +116,10 @@ for (const [width, height] of [
     await page.getByRole("button", { name: /^Explore (the globe|the layers)$/, exact: true }).click();
     await openLayer(page, "Storm radar");
     const controls = page.getByRole("region", { name: "Storm radar playback" });
-    await expect(controls).toBeVisible();
+    const transport = width === 390 ? page.getByRole("group", { name: "Radar scan controls" }) : controls;
+    await expect(transport).toBeVisible();
     expect(await radarTexture(page)).toBe(texture);
     expect(source.calls()).toBe(1);
-    const transport = width === 390 ? page.getByRole("group", { name: "Radar scan controls" }) : controls;
     await transport.getByRole("slider").press("Home");
     await expect(page.locator(".radar-canvas-credit time")).toHaveAttribute(
       "datetime",
