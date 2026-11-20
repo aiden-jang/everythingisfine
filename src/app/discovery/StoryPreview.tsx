@@ -191,7 +191,7 @@ export function StoryPreview({ children, scope }: { children: ReactNode; scope: 
               <div className="discovery-preview-caption">
                 <span>
                   {place.label}
-                  {!pinned && <small>Location preview</small>}
+                  {!pinned && <small>Story location preview</small>}
                 </span>
                 {!pinned && (
                   <button type="button" onClick={() => locate(place)}>

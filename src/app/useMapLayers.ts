@@ -57,7 +57,7 @@ export function useMapLayers(
   const selectTime = useCallback((id: PlaybackLayer, at: number | null) => {
     setSelectedTimes((previous) => ({ ...previous, [id]: at }));
   }, []);
-  const active = background && !archived;
+  const active = (background || suspended) && !archived;
   const visible = useMemo(
     () =>
       suspended

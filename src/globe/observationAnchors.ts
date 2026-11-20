@@ -9,9 +9,13 @@ export function positionObservationAnchors(canvas: HTMLCanvasElement, controls: 
   let places = 0;
   const zoom = controls.state().zoom;
   const parents = new Map<Element, DOMRect>();
+  const placeWidths = new Map<HTMLElement, number>();
   for (const anchor of anchors) {
     const parent = anchor.parentElement;
     if (parent && !parents.has(parent)) parents.set(parent, parent.getBoundingClientRect());
+    if (!story && anchor.hasAttribute("data-place-label") && zoom >= Number(anchor.dataset["minZoom"])) {
+      placeWidths.set(anchor, anchor.offsetWidth);
+    }
   }
   positionEvidenceConnector(canvas, controls, parents);
   for (const anchor of anchors) {
@@ -24,11 +28,12 @@ export function positionObservationAnchors(canvas: HTMLCanvasElement, controls: 
     const parent = anchor.parentElement ? parents.get(anchor.parentElement) : undefined;
     const x = (point?.x ?? 0) - (parent?.left ?? 0);
     const y = (point?.y ?? 0) - (parent?.top ?? 0);
+    const inset = Math.max(24, (placeWidths.get(anchor) ?? 0) / 2 + 4);
     const visible =
       point &&
       parent &&
-      x > 24 &&
-      x < parent.width - 24 &&
+      x > inset &&
+      x < parent.width - inset &&
       y > 55 &&
       y < parent.height - 55 &&
       !occupied.some((p) => Math.hypot(p.x - x, p.y - y) < (place ? 100 : 44));

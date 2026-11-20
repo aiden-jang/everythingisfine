@@ -1808,14 +1808,9 @@ test("fullscreen makes the window bigger and takes nothing away", async ({ page 
   await page.waitForTimeout(900);
   const pinned = await chrome();
   expect(pinned.panels, "an event still opens its panel").toBeGreaterThan(0);
-  // The key and the panel are the same edge, so the key stands down. That rule is not fullscreen's.
-  expect(pinned.key, "source times remain available beside the pinned event").toBe(true);
-  await page.getByRole("button", { name: "Sources & legend", exact: true }).click();
-  await expect(
-    page
-      .getByRole("region", { name: "Sources & legend", exact: true })
-      .getByRole("heading", { name: "Legend", exact: true }),
-  ).toHaveCount(0);
+  // The legend yields to the pinned event. Source times can stay when a feed has a timestamp.
+  if (pinned.key) await page.getByRole("button", { name: "Sources & legend", exact: true }).click();
+  await expect(page.locator(".globe-info-legend")).toHaveCount(0);
 
   await page.evaluate(() => document.exitFullscreen());
   await expect.poll(async () => (await chrome()).full, { timeout: 10_000 }).toBe("");

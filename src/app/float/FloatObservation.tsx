@@ -11,6 +11,7 @@ function ObservationEditor({ view, sampleIndex }: { view: FloatDiveView; sampleI
   );
   const noteId = useId();
   if (!navigation || navigation.active !== "float") return null;
+  const sample = sampleIndex === undefined ? undefined : view.profile.samples[sampleIndex];
 
   return (
     <section className="float-observation" aria-label="Keep an observation">
@@ -44,6 +45,12 @@ function ObservationEditor({ view, sampleIndex }: { view: FloatDiveView; sampleI
         >
           {kept ? "Update kept observation" : "Keep this observation"}
         </button>
+        {sample && (
+          <small>
+            {Math.round(sample.depth).toLocaleString()} m · {sample.temperature.toFixed(2)} °C ·{" "}
+            {sample.salinity.toFixed(3)} salinity
+          </small>
+        )}
       </div>
       <details className="float-observation-note">
         <summary>Add a note (optional)</summary>

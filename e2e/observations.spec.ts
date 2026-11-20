@@ -16,7 +16,6 @@ test("feed status names unavailable sources without increasing the background co
     "Off",
   );
   const usgs = panel.getByRole("listitem").filter({ hasText: "USGS earthquakes" });
-  await expect(usgs.locator("time")).toBeVisible();
   await expect(usgs.getByRole("link", { name: "USGS earthquakes" })).toHaveAttribute(
     "href",
     "https://earthquake.usgs.gov/earthquakes/feed/v1.0/",
@@ -27,8 +26,11 @@ test("feed status names unavailable sources without increasing the background co
   await expect(panel.getByRole("listitem").filter({ hasText: "GDACS wildfires" })).toContainText(
     "Couldn’t reach feed",
   );
+  const usgsCheck = panel.locator("dl > div").filter({ hasText: "USGS earthquakes" }).locator("time");
+  await expect(usgsCheck).toBeHidden();
   await panel.getByText("About these feeds", { exact: true }).click();
   await expect(panel.getByText(/Stories check their own sources/)).toBeVisible();
+  await expect(usgsCheck).toBeVisible();
   await panel.getByText("About these feeds", { exact: true }).click();
   await page.keyboard.press("Escape");
   await expect(panel).toBeHidden();

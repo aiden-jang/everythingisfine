@@ -159,7 +159,7 @@ for (const width of [1440, 390, 320]) {
     const scrubber = (await transport.getByRole("slider").boundingBox())!;
     const play = transport.getByRole("button", { name: "Play", exact: true });
     const button = (await play.boundingBox())!;
-    expect(button.x + button.width).toBeLessThanOrEqual(scrubber.x);
+    expect(scrubber.x + scrubber.width).toBeLessThanOrEqual(button.x);
     expect(button.y + button.height / 2).toBeGreaterThanOrEqual(scrubber.y);
     expect(button.y + button.height / 2).toBeLessThanOrEqual(scrubber.y + scrubber.height);
     expect(button.height).toBeGreaterThanOrEqual(44);
