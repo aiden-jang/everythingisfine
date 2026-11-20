@@ -45,9 +45,13 @@ test("phone story loading, retry and return work when feeds are unavailable", as
   await panel.getByRole("button", { name: "Try again", exact: true }).click();
   const time = panel.getByRole("slider");
   await expect(time).toBeVisible();
-  const initial = await time.inputValue();
+  const finalFrame = await time.getAttribute("max");
   await time.press("End");
-  await expect(time).not.toHaveValue(initial);
+  await expect(panel.getByRole("region", { name: "What this view showed" }).locator("time")).toHaveText(
+    "2021",
+  );
+  await panel.getByRole("button", { name: "Timeline", exact: true }).click();
+  await expect(time).toHaveValue(finalFrame!);
 
   await page.getByRole("button", { name: "Back to stories" }).click();
   await expect(query).toHaveValue("Aral");
