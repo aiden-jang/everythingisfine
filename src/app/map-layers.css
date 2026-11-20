@@ -115,12 +115,12 @@
   text-underline-offset: 3px;
 }
 .canvas-information {
+  --canvas-inline-padding: 28px;
   align-items: center;
   gap: 4px 16px;
-  padding: 12px 28px 16px;
+  padding: 12px var(--canvas-inline-padding) 16px;
 }
 .canvas-footer {
-  position: relative;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -134,6 +134,18 @@
 }
 .key-hints {
   margin-left: auto;
+}
+.key-hints > .keyboard-controls {
+  position: absolute;
+  inset-inline-end: var(--canvas-inline-padding);
+  inset-block-end: calc(100% + 8px);
+  width: max-content;
+  max-width: min(600px, calc(100% - 2 * var(--canvas-inline-padding)));
+  padding: 8px 12px;
+  border: 1px solid var(--color-hairline);
+  border-radius: 7px;
+  background: var(--color-deck);
+  color: var(--color-ink);
 }
 .layer-times-toggle {
   display: inline-flex;

@@ -114,6 +114,36 @@ test("phone sheet offers three sizes without losing the globe or covering its co
   await legend.getByRole("button", { name: "Close sources and legend", exact: true }).click();
 });
 
+test("opening desktop keyboard help holds the trigger and world footer in place", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await installFeeds(page, { radar: "default" });
+  for (const view of [
+    { width: 1440, height: 900, projection: "globe", action: "orbit" },
+    { width: 812, height: 375, projection: "map", action: "pan" },
+  ]) {
+    await page.setViewportSize(view);
+    await page.goto(`/?projection=${view.projection}#v=explore&p=${view.projection}&at=15,25,1.5`);
+    const trigger = page.locator(".key-hints summary");
+    const help = page.locator(".key-hints .keyboard-controls");
+    const sources = page.getByRole("button", { name: "Sources & legend", exact: true });
+    const divider = page.locator(".canvas-footer");
+    const geometry = () => Promise.all([trigger.boundingBox(), sources.boundingBox(), divider.boundingBox()]);
+    await expect(trigger).toBeVisible();
+    await expect(sources).toBeVisible();
+    await page.evaluate(() => document.fonts.ready.then(() => undefined));
+    const before = await geometry();
+    await trigger.click();
+    await expect(help).toContainText(view.action);
+    await expect(help).toBeInViewport({ ratio: 1 });
+    await expect.poll(geometry).toEqual(before);
+    await sources.click({ trial: true, timeout: 3_000 });
+    await trigger.press("Enter");
+    await expect(help).toBeHidden();
+    await expect(trigger).toBeFocused();
+    await expect.poll(geometry).toEqual(before);
+  }
+});
+
 for (const width of [1440, 812, 390]) {
   test(`Explore separates layer visibility, inspection and stories at ${width}px @dev`, async ({ page }) => {
     await page.setViewportSize({ width, height: width === 812 ? 375 : 900 });
