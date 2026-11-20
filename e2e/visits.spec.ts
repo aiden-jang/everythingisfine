@@ -81,6 +81,9 @@ test("a saved float returns to its measured depth after a new page visit", async
     .getByRole("textbox", { name: /A note for this observation/ })
     .fill("The warmer water was below the shallowest sample.");
   await page.getByRole("button", { name: "Keep the 62 m reading", exact: true }).click();
+  await expect(page.getByRole("status", { name: "Kept observation status" })).toHaveText(
+    "Saved on this device.",
+  );
   await page.goto("/");
   await openStories(page, "all");
   const shelf = page.getByRole("region", { name: "Your visits" });
