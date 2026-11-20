@@ -93,6 +93,32 @@ async function prepareRadar(page: Page, width: number, unavailable = true) {
   };
 }
 
+test("a short phone keeps the radar heading and coverage in view when the inspector opens", async ({
+  page,
+}) => {
+  const { times } = await prepareRadar(page, 390, false);
+  await page.setViewportSize({ width: 320, height: 568 });
+  await page.goto("/#v=explore");
+  const layer = page.getByRole("button", { name: "Storm radar details", exact: true });
+  await layer.press("Enter");
+  const heading = page.getByRole("heading", { name: "Storm radar", exact: true });
+  await expect(heading).toBeFocused();
+  await expect(heading).toBeInViewport({ ratio: 1 });
+  await expect(page.locator(".layer-inspector-heading > p").first()).toHaveText(
+    "Recent scans · worldwide network",
+  );
+  await expect(page.locator(".layer-inspector-heading > p").first()).toBeInViewport({ ratio: 1 });
+  const controls = page.getByRole("region", { name: "Storm radar playback" });
+  const slider = controls.getByRole("slider", { name: "Radar scan time" });
+  await expect(slider).toBeEnabled();
+  await slider.press("Home");
+  await expect(controls.locator("time")).toHaveAttribute("datetime", new Date(times[0]!).toISOString());
+  await expect(slider).toBeInViewport({ ratio: 1 });
+  await slider.press("Escape");
+  await expect(layer).toBeFocused();
+  await expect(layer).toBeInViewport({ ratio: 1 });
+});
+
 for (const width of [1440, 390]) {
   test(`radar starts on in Explore and plays without moving the camera at ${width}px @dev`, async ({
     page,

@@ -1,7 +1,7 @@
 import { useLayoutEffect, useRef, type ReactNode, type KeyboardEventHandler } from "react";
 import { createPortal } from "react-dom";
 import { StoryDock } from "../observations/StoryDock";
-import { useNarrow } from "../useNarrow";
+import { useMedia } from "../useNarrow";
 
 export function RadarTransport({
   layer,
@@ -12,8 +12,9 @@ export function RadarTransport({
   dock: KeyboardEventHandler<HTMLElement> | undefined;
   children: ReactNode;
 }): JSX.Element {
-  const narrow = useNarrow();
-  const target = layer && dock && narrow ? document.querySelector<HTMLElement>(".frame") : null;
+  // The fixed dock would leave too little of the inspector visible on a short phone.
+  const roomForDock = useMedia("(max-width: 767px) and (min-height: 700px)");
+  const target = layer && dock && roomForDock ? document.querySelector<HTMLElement>(".frame") : null;
   const container = useRef<HTMLDivElement>(null);
   useLayoutEffect(() => {
     const element = container.current;
