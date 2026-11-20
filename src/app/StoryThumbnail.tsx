@@ -37,6 +37,7 @@ export function StoryThumbnail({
   const src = previews[storyKey(id)];
   return src ? (
     <img
+      key={src}
       className="story-thumbnail"
       data-story={storyKey(id)}
       src={src}
