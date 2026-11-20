@@ -44,10 +44,15 @@ export function stormGeography(
       marks: [
         ...track.map((point, index) => ({
           ...point,
-          size: 8,
-          color: index <= storm.fixIndex || comparing ? 0xa6f2e3 : 0x738e99,
+          size: comparing && index === storm.fixIndex ? 20 : 10,
+          color:
+            comparing && index === storm.fixIndex
+              ? 0xffdfac
+              : index <= storm.fixIndex || comparing
+                ? 0xa6f2e3
+                : 0x738e99,
         })),
-        { ...center, lift: 0.015, size: 25, color: 0xffdfac },
+        ...(comparing ? [] : [{ ...center, lift: 0.015, size: 25, color: 0xffdfac }]),
       ],
     },
     follow: comparing

@@ -1,9 +1,6 @@
 import { useStoryCompletion } from "../journeys/useStoryCompletion";
-import { PlaybackButton } from "../PlaybackButton";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { ReplayPanel, type ReplayProps } from "../observations/RecordedReplay";
-import { StoryDock } from "../observations/StoryDock";
-import { TimelineTrack } from "../observations/TimelineTrack";
 import { gulf, stormGeography, stormLens, stormTarget } from "./stormGlobe";
 import { useObservationImage } from "../observations/useObservationData";
 import {
@@ -21,9 +18,11 @@ import { useStorySession } from "../observations/StorySession";
 import { useStoryNavigation } from "../journeys/StoryNavigation";
 import { savedVisitKey } from "../visitor/library";
 import terra from "./terra-2005-08-28.webp?url";
-import { PEAK_INDEX, PEAK_MINUTE, StormFinding, StormInvitation } from "./StormNarrative";
+import { StormFinding, StormInvitation } from "./StormNarrative";
+import { StormTransport } from "./StormTransport";
 
-const comparisonTarget = { ...stormTarget };
+const comparisonTarget = { ...stormTarget, lat: 26.55 };
+const comparisonLens = { globe: stormLens.globe, map: 8.2 };
 const MOTION = "(prefers-reduced-motion: reduce)";
 
 interface Playback {
@@ -66,10 +65,10 @@ export function StormStage({ onView, ...panel }: ReplayProps): JSX.Element {
   const [ready, setReady] = useState(false);
   const arrive = useCallback(() => setReady(true), []);
 
-  function update(next: Playback) {
+  const update = useCallback((next: Playback) => {
     clock.current = next;
     setView(next);
-  }
+  }, []);
 
   useEffect(() => {
     if (!view.playing || !ready) return;
@@ -116,9 +115,25 @@ export function StormStage({ onView, ...panel }: ReplayProps): JSX.Element {
     }
     motion.addEventListener("change", change);
     return () => motion.removeEventListener("change", change);
-  }, []);
+  }, [update]);
 
   const comparing = view.phase === "compare";
+  const invited = view.phase === "intro";
+  const compareAt = useCallback(
+    (minute: number) => {
+      if (!comparing) replayPoint.current = invited ? seekTo(0) : { ...clock.current, playing: false };
+      update(fixedComparison(minute));
+      if (!comparing) requestAnimationFrame(() => reading.current?.focus({ preventScroll: true }));
+    },
+    [comparing, invited, update],
+  );
+
+  const inspectFix = useCallback(
+    (index: number) => {
+      compareAt((FIXES[index]!.time - START) / 60_000);
+    },
+    [compareAt],
+  );
   const archiveOpacity =
     !panel.map && archiveReady && !initial && (view.phase === "intro" || !view.survey)
       ? Math.max(0, 1 - view.elapsed / 1600)
@@ -132,16 +147,16 @@ export function StormStage({ onView, ...panel }: ReplayProps): JSX.Element {
       capture: !visibleArchive,
       image: coast,
       target: comparing ? comparisonTarget : stormTarget,
-      lens: stormLens,
+      lens: comparing ? comparisonLens : stormLens,
       arrive,
+      pickMarks: invited || visibleArchive ? undefined : { points: FIXES, select: inspectFix },
     });
     remember?.({ chapter: comparing ? "compare" : "" });
-  }, [view, onView, arrive, coast, comparing, remember, visibleArchive]);
+  }, [view, onView, arrive, coast, comparing, remember, visibleArchive, invited, inspectFix]);
   const storm = stormFrame(view.elapsed, view.survey).storm;
   const { fix } = storm;
   const minute = Math.floor((storm.at - START) / 60_000);
   const ended = view.elapsed >= duration(view);
-  const invited = view.phase === "intro";
   const kept =
     comparing && navigation?.library.saved.some((entry) => savedVisitKey(entry) === `katrina:${fix.time}`);
   const title = fix.landfall
@@ -170,18 +185,16 @@ export function StormStage({ onView, ...panel }: ReplayProps): JSX.Element {
     requestAnimationFrame(() => playback.current?.focus({ preventScroll: true }));
   }
 
-  function compareAt(minute: number) {
-    if (!comparing) replayPoint.current = { ...clock.current, playing: false };
-    update(fixedComparison(minute));
-    if (!comparing) requestAnimationFrame(() => reading.current?.focus({ preventScroll: true }));
-  }
-
   const readings = (
     <div className="archive-scene-caption storm-reading">
       <h3 ref={reading} tabIndex={-1}>
         {title}
       </h3>
-      <p className="storm-measurements">
+      <p
+        className="storm-measurements"
+        aria-live={comparing ? "polite" : undefined}
+        aria-atomic={comparing || undefined}
+      >
         <span>
           <strong>{fix.wind} kt</strong> max wind
         </span>
@@ -256,13 +269,11 @@ export function StormStage({ onView, ...panel }: ReplayProps): JSX.Element {
             <div className="storm-map-labels" aria-hidden="true">
               <span
                 data-observation-anchor=""
-                data-lon={FIXES[PEAK_INDEX]!.lon}
-                data-lat={FIXES[PEAK_INDEX]!.lat}
+                data-storm-fix={storm.fixIndex}
+                data-lon={fix.lon}
+                data-lat={fix.lat}
               >
-                Offshore peak
-              </span>
-              <span data-observation-anchor="" data-lon={FIXES.at(-1)!.lon} data-lat={FIXES.at(-1)!.lat}>
-                Buras
+                {fix.wind} kt · {fix.pressure} hPa
               </span>
             </div>
           )}
@@ -295,7 +306,7 @@ export function StormStage({ onView, ...panel }: ReplayProps): JSX.Element {
       }
     >
       {invited ? (
-        <StormInvitation onFollow={follow} />
+        <StormInvitation onFollow={follow} onInspect={() => inspectFix(0)} />
       ) : (
         <div className="archive-scene-console" data-storm-phase={comparing ? "compare" : view.phase}>
           {comparing ? (
@@ -308,71 +319,18 @@ export function StormStage({ onView, ...panel }: ReplayProps): JSX.Element {
           ) : (
             readings
           )}
-          <StoryDock label="Eye of the Storm playback">
-            <div className="survey-transport" data-comparing={comparing}>
-              <div className="story-dock-time storm-timeline">
-                <label htmlFor="storm-time">{comparing ? "Recorded fix" : "Track time"}</label>
-                <time dateTime={new Date(storm.at).toISOString()}>{progress}</time>
-              </div>
-              <TimelineTrack
-                max={comparing ? FIXES.length - 1 : TRACK_MINUTES}
-                current={comparing ? storm.fixIndex : minute}
-                landmark={
-                  comparing
-                    ? undefined
-                    : {
-                        at: TRACK_MINUTES,
-                        label: `Landfall · ${stormClock(FIXES.at(-1)!.time)}`,
-                        select: () => compareAt(TRACK_MINUTES),
-                      }
-                }
-              >
-                <input
-                  id="storm-time"
-                  className="scrub-slider storm-scrub"
-                  type="range"
-                  min={0}
-                  max={comparing ? FIXES.length - 1 : TRACK_MINUTES}
-                  value={comparing ? storm.fixIndex : minute}
-                  aria-valuetext={progress}
-                  onInput={(event) => {
-                    const value = event.currentTarget.valueAsNumber;
-                    update(
-                      comparing ? fixedComparison((FIXES[value]!.time - START) / 60_000) : seekTo(value),
-                    );
-                  }}
-                />
-              </TimelineTrack>
-              <div className="story-dock-actions archive-scene-controls">
-                <PlaybackButton
-                  buttonRef={playback}
-                  playing={view.playing}
-                  ended={comparing || ended}
-                  className="archive-scene-button"
-                  onClick={toggle}
-                />
-                {!comparing && (
-                  <>
-                    <button
-                      type="button"
-                      className="archive-scene-button"
-                      aria-label="Offshore peak"
-                      onClick={() => compareAt(PEAK_MINUTE)}
-                    >
-                      Peak
-                    </button>
-                    <button
-                      type="button"
-                      className="archive-scene-button"
-                      onClick={() => compareAt(TRACK_MINUTES)}
-                    >
-                      Landfall
-                    </button>
-                  </>
-                )}
-              </div>
-            </div>
-          </StoryDock>
+          <StormTransport
+            at={storm.at}
+            minute={minute}
+            fixIndex={storm.fixIndex}
+            comparing={comparing}
+            playing={view.playing}
+            ended={ended}
+            buttonRef={playback}
+            onSeek={(value) => (comparing ? inspectFix(value) : update(seekTo(value)))}
+            onInspect={compareAt}
+            onToggle={toggle}
+          />
           <p className="storm-legend">
             {fix.landfall ? (
               "Wind extent unavailable for this position."

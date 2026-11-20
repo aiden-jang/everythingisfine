@@ -1,6 +1,16 @@
 import { expect, test, type Page } from "@playwright/test";
 import { installFeeds, openStories } from "./feeds";
 
+const fixes = [
+  [100, 941],
+  [125, 930],
+  [145, 909],
+  [150, 902],
+  [140, 905],
+  [125, 913],
+  [110, 920],
+] as const;
+
 async function openStorm(page: Page) {
   await installFeeds(page, { presentation: "fresh", empty: true });
   await page.goto("/");
@@ -77,13 +87,53 @@ test("Katrina’s reduced-motion map supports the NOAA fixes and keyboard scrubb
   await expect(slider).toHaveAttribute("aria-valuetext", "28 Aug · 18:00 UTC");
   await slider.press("Home");
   await expect(slider).toHaveAttribute("aria-valuetext", "28 Aug · 00:00 UTC");
-  await expect(panel.locator(".storm-measurements").getByText("100 kt", { exact: true })).toBeVisible();
+  for (const [index, [wind, pressure]] of fixes.entries()) {
+    if (index) await slider.press("ArrowRight");
+    await expect(slider).toHaveValue(String(index));
+    await expect(panel.locator(".storm-measurements")).toContainText(`${wind} kt`);
+    await expect(panel.locator(".storm-measurements")).toContainText(`${pressure} hPa`);
+  }
   await slider.press("End");
   await expect(panel.locator(".storm-measurements").getByText("920 hPa", { exact: true })).toBeVisible();
   await panel.getByRole("button", { name: "Globe", exact: true }).click();
   await expect(slider).toHaveAttribute("aria-valuetext", "29 Aug · 11:10 UTC");
   expect(await canvas.evaluate((el, prior) => el === prior, original)).toBe(true);
   expect(await panel.locator("#observatory-intro").evaluate((el) => el.scrollWidth - el.clientWidth)).toBe(0);
+});
+
+test("Katrina’s visible track points select their exact readings on the same globe and map", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  const { panel, canvas, original } = await openStorm(page);
+  await panel.getByRole("button", { name: "Inspect recorded positions", exact: true }).click();
+  const slider = panel.getByRole("slider", { name: "Recorded fix" });
+  for (const projection of ["Globe", "Map"]) {
+    if (projection === "Map") await panel.getByRole("button", { name: "Map", exact: true }).click();
+    const at = async (index: number) => {
+      const marker = panel.locator(`[data-storm-fix="${index}"]`);
+      await expect(marker).toBeVisible();
+      return marker.evaluate((node) => {
+        const parent = node.parentElement!.getBoundingClientRect();
+        return { x: parent.left + parseFloat(node.style.left), y: parent.top + parseFloat(node.style.top) };
+      });
+    };
+    await slider.press("Home");
+    const points = [];
+    for (const index of fixes.keys()) {
+      if (index) await slider.press("ArrowRight");
+      points.push(await at(index));
+    }
+    for (const [index, point] of points.entries()) {
+      const [wind, pressure] = fixes[index]!;
+      await page.mouse.click(point.x, point.y);
+      await expect(slider, `${projection} position ${index + 1}`).toHaveValue(String(index));
+      await expect(panel.locator(".storm-measurements")).toContainText(`${wind} kt`);
+      await expect(panel.locator(".storm-measurements")).toContainText(`${pressure} hPa`);
+    }
+  }
+  expect(await canvas.evaluate((el, prior) => el === prior, original)).toBe(true);
 });
 
 for (const width of [320, 390]) {

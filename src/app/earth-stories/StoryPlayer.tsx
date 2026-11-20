@@ -326,7 +326,7 @@ export function StoryPlayer({
       )}
       {frame.measurements && (
         <dl className="observation-values">
-          {frame.measurements.map((m) => (
+          {(id === "north" ? frame.measurements.slice(0, 1) : frame.measurements).map((m) => (
             <div key={m.label}>
               <dt>{m.label}</dt>
               <dd>{m.value}</dd>
@@ -334,13 +334,8 @@ export function StoryPlayer({
           ))}
         </dl>
       )}
-      {id === "north" && (
-        <StoryCompass
-          value={
-            Number(frame.measurements?.[1]?.value.split("°")[0]) *
-            (frame.measurements?.[1]?.value.includes("west") ? -1 : 1)
-          }
-        />
+      {id === "north" && data.series?.[0]?.samples[index] && frame.measurements?.[1] && (
+        <StoryCompass value={data.series[0].samples[index][1]} label={frame.measurements[1].label} />
       )}
       {data.sites && (
         <label className="observation-picker">

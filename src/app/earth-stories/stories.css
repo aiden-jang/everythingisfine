@@ -83,7 +83,7 @@
 .story-compass {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 12px;
 }
 .story-compass svg {
   width: 120px;
@@ -97,14 +97,24 @@
   fill: currentColor;
   font-size: 10px;
 }
-.story-compass g {
+.story-compass-arc {
+  color: var(--color-ink);
+  opacity: 0.8;
+  stroke-width: 1.5;
+}
+.story-compass-needle {
   color: var(--color-ink);
   stroke-width: 2;
-  transition: transform 220ms ease-out;
 }
 .story-compass figcaption {
+  display: grid;
+  gap: 3px;
   font-size: 11px;
   color: var(--color-dim);
+}
+.story-compass figcaption strong {
+  color: var(--color-ink);
+  font: 15px var(--font-mono);
 }
 .story-sites {
   position: absolute;
@@ -131,12 +141,6 @@
   border-radius: 50%;
   margin-right: 7px;
 }
-@media (prefers-reduced-motion: reduce) {
-  .story-compass g {
-    transition: none;
-  }
-}
-
 .terrain-coordinates {
   margin-block: 12px;
   font-size: 12px;

@@ -153,6 +153,14 @@ test("normal-motion entry can be interrupted and never replaces the shared canva
   await panel.getByRole("button", { name: "1970", exact: true }).click();
   await expect(panel.getByRole("button", { name: "Play", exact: true })).toBeVisible();
   await expect(panel.locator(".story-time time")).toHaveAttribute("datetime", "1970-01-01T12:00:00.000Z");
+  const compass = panel.locator(".story-compass");
+  await expect(compass.locator("figcaption strong")).toHaveText("11.66° west");
+  const angle = await compass.locator(".story-compass-arc").evaluate((node) => {
+    const arc = node as SVGPathElement;
+    const end = arc.getPointAtLength(arc.getTotalLength());
+    return (Math.atan2(end.x - 60, 54 - end.y) * 180) / Math.PI;
+  });
+  expect(angle).toBeCloseTo(-11.66, 2);
   await panel.getByRole("button", { name: "Back to stories", exact: true }).click();
   expect(await original!.evaluate((node) => node === document.querySelector("#globe-view canvas"))).toBe(
     true,

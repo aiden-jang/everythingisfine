@@ -1,24 +1,29 @@
 import type { ReactNode } from "react";
 import { FIXES, LANDFALL, START, TRACK_MINUTES, stormClock } from "./stormTrack";
 
-export const PEAK = FIXES.reduce((peak, fix) => (fix.wind > peak.wind ? fix : peak));
+const PEAK = FIXES.reduce((peak, fix) => (fix.wind > peak.wind ? fix : peak));
 export const PEAK_MINUTE = (PEAK.time - START) / 60_000;
-export const PEAK_INDEX = FIXES.indexOf(PEAK);
+const PEAK_INDEX = FIXES.indexOf(PEAK);
 const point = (fix: (typeof FIXES)[number]) => ({
   x: 34 + ((fix.time - START) / (TRACK_MINUTES * 60_000)) * 282,
   y: 126 - ((fix.wind - 90) / 70) * 98,
 });
 
-export function StormInvitation({ onFollow }: { onFollow: () => void }) {
+export function StormInvitation({ onFollow, onInspect }: { onFollow: () => void; onInspect: () => void }) {
   return (
     <div className="storm-invitation" data-storm-phase="intro">
       <h3>Across the Gulf.</h3>
       <p>
         Katrina crossed the Gulf before reaching Louisiana. Where along its track were the winds strongest?
       </p>
-      <button type="button" className="storm-follow" onClick={onFollow}>
-        Follow the storm
-      </button>
+      <div className="observatory-actions">
+        <button type="button" className="storm-follow" onClick={onFollow}>
+          Follow the storm
+        </button>
+        <button type="button" onClick={onInspect}>
+          Inspect recorded positions
+        </button>
+      </div>
       <p className="storm-invitation-source">NOAA’s recorded positions · 28–29 August 2005</p>
     </div>
   );
@@ -38,7 +43,7 @@ export function StormFinding({
   return (
     <section className="storm-finding" aria-label="What this track showed" data-storm-phase="finding">
       <h3>Two points. One storm.</h3>
-      <p>Compare the strongest offshore winds with the reading at landfall near Buras, Louisiana.</p>
+      <p>Choose a track point to read its wind and pressure, or compare the offshore peak with landfall.</p>
       {readings}
       <div className="storm-finding-actions" role="group" aria-label="Compare two recorded positions">
         <button
@@ -103,9 +108,13 @@ export function StormFinding({
           <p>Seven recorded positions. Lines join readings; they do not add wind measurements.</p>
         </figure>
         <ul>
-          {FIXES.map((fix) => (
+          {FIXES.map((fix, index) => (
             <li key={fix.at}>
-              <button type="button" onClick={() => onInspect((fix.time - START) / 60_000)}>
+              <button
+                type="button"
+                aria-pressed={selected === index}
+                onClick={() => onInspect((fix.time - START) / 60_000)}
+              >
                 <time dateTime={fix.at}>{stormClock(fix.time)}</time>
                 <span>
                   {fix.wind} kt · {fix.pressure} hPa

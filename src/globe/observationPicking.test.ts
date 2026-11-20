@@ -69,3 +69,46 @@ test("globe inspection is opt-in and releases its handler when the view changes"
   expect(pick).toHaveBeenCalledOnce();
   picking.dispose();
 });
+
+test("recorded marks take the nearest visible point and yield during dragging or projection travel", () => {
+  const canvas = Object.assign(new EventTarget(), {
+    getBoundingClientRect: () => ({}),
+  }) as unknown as HTMLCanvasElement;
+  let morph = 0;
+  const controls = {
+    morph: () => morph,
+    project: (lon: number) => (lon > 0 ? { x: lon, y: 100 } : null),
+  } as unknown as Controls;
+  const picking = createObservationPicking(canvas, controls);
+  const select = vi.fn();
+  picking.set({
+    pickMarks: { points: [100, 112, -1].map((lon) => ({ lon, lat: 0 })), select },
+  } as unknown as ObservationView);
+  const send = (type: string, x: number) =>
+    canvas.dispatchEvent(
+      Object.assign(new Event(type), {
+        pointerId: 1,
+        clientX: x,
+        clientY: 100,
+        button: 0,
+        pointerType: "touch",
+      }),
+    );
+  const tap = (x: number) => {
+    send("pointerdown", x);
+    send("pointerup", x);
+  };
+  tap(110);
+  expect(select).toHaveBeenCalledExactlyOnceWith(1);
+  send("pointerdown", 112);
+  send("pointermove", 125);
+  send("pointerup", 125);
+  morph = 0.5;
+  tap(112);
+  tap(0);
+  expect(select).toHaveBeenCalledOnce();
+  morph = 1;
+  tap(100);
+  expect(select).toHaveBeenLastCalledWith(0);
+  picking.dispose();
+});

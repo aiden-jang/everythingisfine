@@ -147,6 +147,7 @@ export interface ObservationView {
   moonImage?: HTMLImageElement | null;
   onPick?: ((point: GeoPoint) => void) | undefined;
   pickOnGlobe?: boolean;
+  pickMarks?: { points: readonly GeoPoint[]; select: (index: number) => void } | undefined;
   lens?: { globe: number; map: number };
   sky?: TonightView | undefined;
   follow?: ReplayCamera | undefined;
