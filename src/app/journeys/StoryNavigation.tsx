@@ -13,6 +13,7 @@ import { isGlobalRadar } from "../radar/radarCamera";
 import { journeys } from "./catalogue";
 import { useVisitMemory } from "../visitor/useVisitMemory";
 import type { Visit } from "../visitor/library";
+import type { SkyPosition } from "../tonight/skyMoment";
 import { captureCollection, type CollectionPosition } from "../visitor/collectionReturn";
 
 interface BrowseOrigin {
@@ -32,6 +33,7 @@ const Navigation = createContext<{
   restoredCollection: CollectionPosition | null;
   dismissRestoration: () => void;
   openSkyAt: (city: string, trigger: string) => void;
+  openNightfall: (position: SkyPosition, trigger: string) => void;
   openRadar: (at: number | undefined, map: boolean) => void;
   returnToBrowse: () => boolean;
   browse: (focusSearch?: boolean) => void;
@@ -124,6 +126,7 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
     saved?: Visit,
     keepScene = false,
     fresh = false,
+    nightfall?: SkyPosition,
   ) {
     const story = searchStories.find((entry) => entry.id === id);
     if (!story || unavailable(id)) return;
@@ -147,7 +150,7 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
     if (saved?.position.sky) props.views.skyCity.select(saved.position.sky.city);
     if (id === "sky" || id === "meteors" || id === "moonfall") {
       if (id === "sky") deck.setMap(!!saved?.position.sky?.map);
-      tonight.open(id, fresh && id !== "moonfall" ? null : saved?.position.sky);
+      tonight.open(id, nightfall ?? (fresh && id !== "moonfall" ? null : saved?.position.sky), !!nightfall);
     } else if (id === "aurora") props.aurora.start();
     else if (id === "sun") sun.open(saved?.position.solar);
     else if (id === "radar") {
@@ -295,6 +298,10 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
             ? route
             : null,
         unavailable,
+        openNightfall(position, trigger) {
+          setRoute(null);
+          navigate("sky", trigger, undefined, false, true, position);
+        },
         openSkyAt(city, trigger) {
           if (unavailable("sky")) return;
           setRoute(null);

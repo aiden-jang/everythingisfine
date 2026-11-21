@@ -1,4 +1,5 @@
-import { lunarTraverses } from "./traverses";
+import { lunarTraverses, valley } from "./traverses";
+export { valley } from "./traverses";
 import survey from "./recordings/traverses.json";
 import elevationUrl from "./recordings/taurus-littrow.bin?url";
 import terrainUrl from "./recordings/taurus-littrow.webp";
@@ -12,7 +13,6 @@ export const lunarSources = {
 
 // Easting and southward offset in km, in the survey's transverse Mercator grid.
 export type LunarPoint = readonly [x: number, z: number];
-export const valley = { left: -7.5, right: 6, near: 6, far: -5.3, columns: 210, rows: 176 };
 const pointAt = (point: number[]): LunarPoint => [point[0]!, point[1]!];
 export const landing = pointAt(survey.landing);
 

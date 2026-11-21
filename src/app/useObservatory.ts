@@ -1,6 +1,5 @@
 import { useSunVisit } from "./sun/useSunVisit";
 import { useCallback, useRef, useState } from "react";
-import type { VisitPosition } from "./visitor/library";
 import type { Permalink } from "./permalink";
 import { initialPresentation, initialScene } from "./observatoryState";
 export { initialPresentation, earthSceneTarget } from "./observatoryState";
@@ -324,9 +323,9 @@ export function useObservatory(shared: Partial<Permalink>) {
       entry: skyEntry,
       orbit: sky.orbit,
       setOrbit: sky.setOrbit,
-      open(mode: "sky" | "meteors" | "moonfall" = "sky", resume?: VisitPosition["sky"] | null) {
+      open(...args: Parameters<typeof sky.open>) {
         before();
-        sky.open(mode, resume);
+        sky.open(...args);
         setRun(null);
         setSunWatch(null);
       },
@@ -384,6 +383,7 @@ export function useObservatory(shared: Partial<Permalink>) {
       if (observations.entry) return observations.view ?? loadingBackdrop.current;
       if (floatView === "opening" || radarOpening) return loadingBackdrop.current;
       if (night) {
+        if (tonightView === "opening" && skyEntry.nightfall) return "dayline";
         if (localSky && (observations.map || sky.orbit) && !localSky.moonfall && !localSky.lunarDeparture)
           return skyReference(localSky);
         return localSky ?? auroraRun ?? (sunActive ? null : "planetarium");

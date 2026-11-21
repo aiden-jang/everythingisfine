@@ -2,6 +2,7 @@ import { defineConfig } from "vite";
 import preact from "@preact/preset-vite";
 import tailwindcss from "@tailwindcss/vite";
 import { observationDevelopment } from "./worker/development";
+import { moonfallSharePages } from "./tools/moonfall-share-pages.mjs";
 import { tongaSharePages } from "./tools/tonga-share-pages.mjs";
 
 export default defineConfig({
@@ -18,7 +19,7 @@ export default defineConfig({
    * The source keeps importing from "react" throughout. Nothing here uses an API preact/compat does not
    * cover: StrictMode, lazy, Suspense, five hooks, createRoot and three types.
    */
-  plugins: [preact(), tailwindcss(), observationDevelopment(), tongaSharePages()],
+  plugins: [preact(), tailwindcss(), observationDevelopment(), tongaSharePages(), moonfallSharePages()],
   /*
    * The aliases spelled out, because the preset's own only reach the client build.
    *

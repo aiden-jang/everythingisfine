@@ -483,7 +483,7 @@
     font-size: 13px;
   }
   .frame[data-landing] .observatory-stage {
-    inset: auto 18px 55px;
+    inset: var(--head-h) 18px 55px;
     width: auto;
     height: auto;
   }

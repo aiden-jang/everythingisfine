@@ -105,6 +105,17 @@
   color: var(--color-dim);
   font-size: 11px;
 }
+.radar-canvas-time {
+  position: relative;
+  white-space: nowrap;
+}
+.radar-canvas-time > :not([aria-hidden="true"]) {
+  position: absolute;
+  inset: 0;
+}
+.radar-canvas-time > [aria-hidden="true"] {
+  visibility: hidden;
+}
 .radar-canvas-credit a {
   display: inline-flex;
   align-items: center;
@@ -218,7 +229,6 @@
     min-height: 44px;
   }
   .radar-credit-prefix,
-  .radar-canvas-credit > time,
   .radar-canvas-credit > span {
     display: none;
   }

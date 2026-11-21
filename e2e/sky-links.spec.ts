@@ -112,3 +112,54 @@ test("sky links restore the city, night, selected body, bearing, and lunar stop 
   await expect(reopened.getByRole("slider", { name: "Mapped distance" })).toHaveValue(saved);
   await expect(reopened.getByRole("button", { name: "Pause", exact: true })).toHaveCount(0);
 });
+
+test("Nightfall connects the landing globe to a shareable Apollo 17 stop and restores the view", async ({
+  page,
+  request,
+}) => {
+  await page.setViewportSize({ width: 320, height: 568 });
+  await configure(page, "2026-11-20T23:50:00Z");
+  await page.goto("/#v=observe&at=-74,40,1");
+  const trigger = page.getByRole("button", { name: "Follow nightfall", exact: true });
+  await expect(trigger).toBeInViewport({ ratio: 1 });
+  const globe = await page.locator("#globe-view canvas").elementHandle();
+  await trigger.click();
+
+  const sky = page.getByRole("region", { name: "Tonight’s Sky", exact: true });
+  await expect(sky.getByRole("heading", { name: /^Nightfall in/ })).toBeVisible();
+  const city = await sky.getByRole("combobox", { name: "City" }).inputValue();
+  const at = await sky.locator(".tonight-invitation time").getAttribute("datetime");
+  await expect(sky).toContainText("calculated local sunset");
+  const moonEntry = sky.locator("#open-moonfall");
+  await moonEntry.click();
+
+  const lunar = page.getByRole("region", { name: "Moonfall", exact: true });
+  await lunar.getByRole("combobox", { name: "Rover traverse" }).selectOption("1");
+  await lunar.getByRole("combobox", { name: "Geology stop" }).selectOption("0");
+  await lunar.getByRole("button", { name: "Landing map", exact: true }).click();
+  await lunar.getByRole("button", { name: "Share this moment", exact: true }).click();
+  const url = new URL(await lunar.getByRole("textbox", { name: "Story link" }).inputValue());
+  expect(url.pathname).toBe("/share/moonfall/2/1/");
+  const response = await request.get(url.pathname);
+  expect(await response.text()).toContain('property="og:title" content="Nansen · Apollo 17"');
+  expect((await request.get("/share/moonfall-2-1.jpg")).ok()).toBe(true);
+
+  await lunar.getByRole("button", { name: "Back to Tonight’s Sky", exact: true }).click();
+  await expect(sky.getByRole("combobox", { name: "City" })).toHaveValue(city);
+  await expect(sky.locator(".tonight-invitation time")).toHaveAttribute("datetime", at!);
+  await expect(moonEntry).toBeFocused();
+  await sky.getByRole("button", { name: "Back to home", exact: true }).click();
+  await expect(trigger).toBeFocused();
+  await expect.poll(() => new URLSearchParams(new URL(page.url()).hash.slice(1)).get("at")).toBe("-74,40,1");
+  expect(await globe!.evaluate((element) => document.querySelector("#globe-view canvas") === element)).toBe(
+    true,
+  );
+
+  await page.goto(url.pathname);
+  await expect(lunar.getByRole("heading", { name: "Nansen", exact: true })).toBeVisible();
+  await expect(lunar.getByRole("button", { name: "Landing map", exact: true })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
+  await expect(lunar.getByRole("button", { name: "Pause", exact: true })).toHaveCount(0);
+});

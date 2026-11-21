@@ -72,14 +72,20 @@ export function KeyboardHelp({
 }
 
 export function RadarCanvasCredit({ radar }: { radar: RadarLayerView | null }): JSX.Element | null {
+  const scan = radar?.at === undefined ? undefined : new Date(radar.at).toISOString();
   return radar ? (
     <p className="radar-canvas-credit">
-      {radar.at !== undefined && (
-        <time dateTime={new Date(radar.at).toISOString()} title={layerTime(radar.at)}>
-          Radar · {new Date(radar.at).toISOString().slice(11, 16)} UTC
-        </time>
-      )}
-      {radar.at !== undefined && <span aria-hidden="true">·</span>}
+      <span className="radar-canvas-time">
+        <span aria-hidden="true">Radar · 00:00 UTC</span>
+        {scan && radar.at !== undefined ? (
+          <time dateTime={scan} title={layerTime(radar.at)}>
+            Radar · {scan.slice(11, 16)} UTC
+          </time>
+        ) : (
+          <span>Radar · No scan</span>
+        )}
+      </span>
+      <span aria-hidden="true">·</span>
       <a
         href="https://www.rainviewer.com/"
         target="_blank"

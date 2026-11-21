@@ -355,3 +355,39 @@ test("radar rewind reveals the current scan before showing playback @dev", async
   expect(await canvas!.evaluate((node) => node === document.querySelector("#globe-view canvas"))).toBe(true);
   expect(shaderErrors).toEqual([]);
 });
+
+test("the first radar timestamp preserves the position of Sources and keyboard help", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await installFeeds(page, { presentation: "explore", radar: "default", empty: true });
+  let release!: () => void;
+  const held = new Promise<void>((resolve) => (release = resolve));
+  const at = Math.floor(Date.now() / 600_000) * 600_000;
+  await page.route("https://api.rainviewer.com/public/weather-maps.json", async (route) => {
+    await held;
+    await route.fulfill({
+      json: {
+        host: "https://tilecache.rainviewer.com",
+        radar: { past: [{ time: at / 1000, path: "/v2/radar/first" }] },
+      },
+    });
+  });
+  await page.route("https://tilecache.rainviewer.com/**", (route) =>
+    route.fulfill({ contentType: "image/png", body: pixel }),
+  );
+  await page.goto("/#v=explore");
+  const sources = page.getByRole("button", { name: "Sources & legend", exact: true });
+  const keyboard = page.locator(".key-hints summary");
+  const positions = () => Promise.all([sources.boundingBox(), keyboard.boundingBox()]);
+  await expect(sources).toBeVisible();
+  await expect(keyboard).toBeVisible();
+  await page.evaluate(() => document.fonts.ready.then(() => undefined));
+  expect(await page.locator(".radar-canvas-credit").innerText()).toContain("No scan");
+  const before = await positions();
+  release();
+  await expect(page.locator(".radar-canvas-credit time")).toHaveAttribute(
+    "datetime",
+    new Date(at).toISOString(),
+  );
+  expect(await positions()).toEqual(before);
+});

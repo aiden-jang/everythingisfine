@@ -29,6 +29,7 @@ import { ObservatoryEntryActions } from "./ObservatoryEntryActions";
 import { StoryBoundary } from "./StoryBoundary";
 import { StoryLoading } from "./StoryLoading";
 import { StoryDockProvider } from "./observations/StoryDock";
+import { nightfallPosition } from "./tonight/nightfall";
 export interface ObservatoryProps {
   explorer: {
     radarAt: number | undefined;
@@ -188,6 +189,15 @@ function ObservatoryContent({
             aurora={aurora.run}
             layers={layerReadout}
             projection={observations}
+            onNightfall={
+              landing && ready && navigationContext
+                ? (anchor) =>
+                    navigationContext.openNightfall(
+                      nightfallPosition(at, anchor ?? explorer.read()),
+                      "follow-nightfall",
+                    )
+                : undefined
+            }
           />
         )
       )}
@@ -249,6 +259,7 @@ function ObservatoryContent({
                   projection={observations}
                   initialMode={tonight.entry.mode}
                   initialPosition={tonight.entry.position}
+                  nightfall={tonight.entry.nightfall}
                   orbit={tonight.orbit}
                   returnLabel={navigationContext?.returnLabel ?? "Back to After Dark"}
                   onClose={closeView(() => {

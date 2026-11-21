@@ -429,6 +429,42 @@
   }
 }
 
+@media (min-width: 600px) and (max-height: 440px) {
+  .zones[data-tonga-phase="discover"] .tonga-narrative {
+    display: grid;
+    justify-items: start;
+    gap: 10px;
+  }
+  .zones[data-tonga-phase="discover"] .tonga-narrative h3 {
+    font-size: clamp(28px, 4.8vw, 40px);
+  }
+  .zones[data-tonga-phase="discover"] .tonga-narrative h3 br {
+    display: none;
+  }
+  .zones[data-tonga-phase="discover"] .tonga-primary {
+    grid-row: 2;
+  }
+  .zones[data-tonga-phase="discover"] .tonga-narrative p {
+    margin: 0;
+    font-size: 13px;
+  }
+  .zones[data-tonga-phase="discover"] .replay-stage:has(.replay-inset) .stage-readout {
+    inset: auto 5% 16% auto;
+    width: min(38%, 410px);
+    font-size: 11px;
+  }
+  .zones[data-tonga-phase="discover"] .tonga-world-anchors button:not(:is(:hover, :focus-visible)) {
+    width: 44px;
+  }
+  .zones[data-tonga-phase="discover"]
+    .tonga-world-anchors
+    button:not(:is(:hover, :focus-visible))
+    span
+    + span {
+    display: none;
+  }
+}
+
 @media (max-width: 599px), (max-width: 899px) and (min-height: 621px) {
   .zones[data-tonga-phase="follow"] .story-dock {
     grid-template-columns: minmax(0, 1fr) minmax(92px, max-content);

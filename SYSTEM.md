@@ -92,7 +92,7 @@ accounts and the rail distinguishes raw readings from distinct events.
 | `src/app/sun/` | On-demand solar flight, separate live observation windows and feed state |
 | `src/sources/spaceWeather.ts` | NOAA primary wind and GOES X-ray decoders |
 | `src/globe/planetarium.ts` | Finite After Dark pitch, input interruption and reduced-motion sky framing |
-| `src/app/tonight/`, `src/geo/tonight.ts`, and `src/globe/localSkyCamera.ts` | Tonight’s Sky controls, local night window, and city-to-horizon camera |
+| `src/app/tonight/`, `src/geo/tonight.ts`, `src/geo/nightWindow.ts`, and `src/globe/localSkyCamera.ts` | Tonight’s Sky controls, local night window, and city-to-horizon camera |
 | `src/sources/auroraRoute.ts` | Current NOAA forecast checks and dark-side oval selection |
 | `src/globe/auroraFlight.ts` and `src/globe/auroraVeil.ts` | Finite polar framing and forecast-derived ribbon |
 | `src/globe/depthDive.ts` | Oblique cutaway framing after geographic arrival, including interruption and exit |
@@ -337,7 +337,9 @@ Tonight’s Sky shares the globe renderer and its displayed moment with the Sun,
 star catalogue. The city’s time zone defines the evening and morning across clock changes. The
 Moon’s altitude includes parallax at the city. The horizon is level and the twilight glow is
 illustrative. The compass holds its direction during scrubbing, and choosing a body points the
-camera at its calculated position at that instant.
+camera at its calculated position at that instant. Follow nightfall opens a featured city at its calculated
+sunset using the visible day–night boundary when available. The landing camera and saved sky city are
+restored independently.
 
 Moonfall lazily loads the lunar mosaic, a local elevation grid and orthomosaic, and the three Apollo 17
 traverses. The Moon and valley use dedicated perspective and landing-map cameras in the existing renderer. Its finite
@@ -345,7 +347,9 @@ approach and descent are illustrative. The terrain uses the LRO survey at about 
 keeps the traverse segments and geology stops in the survey’s transverse Mercator grid. The rover
 cursor follows cumulative mapped distance and leaves gaps in the source geometry open. Closing
 Moonfall disposes its GPU resources and restores the original local sky view. The source URLs and
-conversion parameters are in [make-moonfall.py](tools/make-moonfall.py).
+conversion parameters are in [make-moonfall.py](tools/make-moonfall.py). Named stops have static share
+previews built from the same survey and route geometry. The link fragment preserves the sky moment and
+lunar projection, while the path alone opens the named stop in a paused landing map.
 
 After Dark, Tonight’s Sky, Meteor Nights and Orbital Pass share a saved city. Meteor Nights uses dated peak
 nights and radiants from the 2026 and 2027 IMO calendars. Local sidereal time places the radiant,

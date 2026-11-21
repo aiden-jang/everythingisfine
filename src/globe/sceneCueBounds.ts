@@ -29,6 +29,7 @@ export function sceneCueBounds(canvas: HTMLCanvasElement, box: DOMRect, landing 
     left = Math.max(left, innerWidth * 0.42);
   }
   return {
+    bottom,
     centre: { x: (left + right) / 2, y: top + (bottom - top) * 0.46 },
     fits(point: Point, halfWidth: number, above: number, below: number) {
       return (

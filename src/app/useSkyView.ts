@@ -9,6 +9,7 @@ type Entry = {
   mode: "sky" | "meteors" | "moonfall";
   revision: number;
   position?: VisitPosition["sky"];
+  nightfall?: boolean;
 };
 
 export function useSkyView(city: string, before: () => void, story?: StoryMoment) {
@@ -67,12 +68,13 @@ export function useSkyView(city: string, before: () => void, story?: StoryMoment
       setOrbit(saved.orbit);
       setEntry({ ...saved.entry, revision: entry.revision + 1 });
     },
-    open(mode: Entry["mode"] = "sky", resume?: VisitPosition["sky"] | null) {
+    open(mode: Entry["mode"] = "sky", resume?: VisitPosition["sky"] | null, nightfall = false) {
       setOrbit(!!resume?.orbit);
       const previous = memory.current;
       setEntry((last) => ({
         mode,
         revision: last.revision + 1,
+        ...(nightfall && { nightfall }),
         position:
           resume ??
           (resume === undefined && previous?.city.name === city

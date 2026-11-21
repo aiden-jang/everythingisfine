@@ -131,3 +131,17 @@ test("a station link has source-specific metadata and opens its paused recipient
   await expect(story.getByRole("slider", { name: "Replay time", exact: true })).toHaveValue("539");
   await expect(story.getByRole("button", { name: "Play", exact: true })).toBeVisible();
 });
+
+test("Tonga’s opening fits its primary action above the credit in short landscape", async ({ page }) => {
+  await page.setViewportSize({ width: 812, height: 375 });
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await installFeeds(page, { presentation: "fresh", empty: true });
+  await page.goto("/#v=observe&story=tonga");
+  const follow = page.getByRole("button", { name: "Follow the wave", exact: true });
+  await expect(follow).toBeInViewport({ ratio: 1 });
+  const action = (await follow.boundingBox())!;
+  const credit = (await page.locator(".creator-credit").boundingBox())!;
+  expect(action.y + action.height).toBeLessThanOrEqual(credit.y);
+  await follow.click();
+  await expect(page.getByRole("slider", { name: "Replay time", exact: true })).toBeVisible();
+});

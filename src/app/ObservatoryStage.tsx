@@ -23,6 +23,7 @@ export function ObservatoryStage({
   aurora,
   layers,
   projection,
+  onNightfall,
 }: {
   scene: EarthScene;
   at: number;
@@ -30,6 +31,7 @@ export function ObservatoryStage({
   aurora: AuroraRun | null;
   layers: ReactNode;
   projection: { map: boolean; setMap: (map: boolean) => void };
+  onNightfall?: ((anchor?: { lon: number; lat: number }) => void) | undefined;
 }): JSX.Element {
   const time = new Date(at).toISOString();
   const mode = tour !== undefined ? "tour" : aurora ? "aurora" : scene;
@@ -63,8 +65,35 @@ export function ObservatoryStage({
   return (
     <div className="observatory-stage" data-stage={mode} role="group" aria-label="Globe readout">
       {mode === "live" ? (
-        <span className="scene-cue scene-dayline-label" data-dayline-label="">
-          <span className="scene-cue-label">Day–night boundary</span>
+        <span
+          className="scene-cue scene-dayline-label"
+          data-dayline-label=""
+          data-nightfall={onNightfall ? "" : undefined}
+        >
+          {onNightfall ? (
+            <button
+              id="follow-nightfall"
+              className="scene-cue-label"
+              type="button"
+              onClick={({ currentTarget }) => {
+                const cue = currentTarget.parentElement;
+                const point = cue?.dataset["position"]?.split(",").map(Number);
+                requestAnimationFrame(() =>
+                  onNightfall(point ? { lon: point[0]!, lat: point[1]! } : undefined),
+                );
+              }}
+            >
+              Follow nightfall
+              <span className="sr-only" aria-hidden="true">
+                Day–night boundary
+              </span>
+              <svg viewBox="0 0 16 16" width="13" height="13" fill="none" aria-hidden="true">
+                <path d="M4 12l8-8M5 4h7v7" stroke="currentColor" stroke-width="1.3" />
+              </svg>
+            </button>
+          ) : (
+            <span className="scene-cue-label">Day–night boundary</span>
+          )}
         </span>
       ) : (
         <div key={mode} className="stage-ident">

@@ -5,6 +5,8 @@ export function storyShare(moment: StoryMoment, href: string) {
   const url = new URL(href);
   const params = new URLSearchParams();
   writeStoryMoment(params, moment);
+  url.pathname = "/";
+  url.search = "";
   url.hash = params.toString();
   const story = searchStories.find(({ id }) => id === moment.id);
   return {
