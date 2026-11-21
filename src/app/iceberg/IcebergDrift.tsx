@@ -1,4 +1,5 @@
 import { useCallback, useLayoutEffect, useMemo, useRef, useState } from "react";
+import type { CameraState } from "../../globe/controlsTypes";
 import { iceberg } from "../../sources/observations/iceberg";
 import { useStoryClock } from "../earth-stories/useStoryClock";
 import { useStoryCompletion } from "../journeys/useStoryCompletion";
@@ -25,7 +26,7 @@ export function IcebergDrift({ onView, ...panel }: ReplayProps) {
   const photoButton = useRef<HTMLButtonElement>(null);
   const readingPanel = useRef<HTMLDivElement>(null);
   const held = useRef(true);
-  const introduction = useRef(opening && !panel.map ? driftCamera(0) : undefined);
+  const introduction = useRef<CameraState | undefined>(opening && !panel.map ? driftCamera(0) : undefined);
   const framing = useMemo(() => ({ map: panel.map, onReady: () => setArrived(true) }), [panel.map]);
   const arrive = useCallback(() => {}, []);
   const { data, state, retry } = useObservationData(iceberg, choice);
