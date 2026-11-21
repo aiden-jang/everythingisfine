@@ -921,8 +921,10 @@ test("a line dragged across the map opens a section through it", async ({ page }
 
   const section = page.getByText("Cross-section", { exact: true });
   await expect(section).toHaveCount(0);
-  // The hint row says so, on the map only. A gesture nobody is told about is not shipped.
-  await expect(page.locator(".zone-canvas")).toContainText("shift-drag");
+  const shortcuts = await openKeyboardShortcuts(page);
+  await expect(shortcuts.getByText("Shift + drag", { exact: true })).toBeVisible();
+  await expect(shortcuts.getByText("Draw a cross-section", { exact: true })).toBeVisible();
+  await page.keyboard.press("Escape");
 
   const box = (await page.locator("canvas").boundingBox())!;
   const rail = (await page.locator("#chrome-rail").boundingBox())!;

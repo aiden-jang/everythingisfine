@@ -310,8 +310,25 @@
   }
 }
 @media (max-width: 599px) and (max-height: 620px) {
-  .frame[data-presentation="observe"] .zones[data-tonga-phase] {
+  .frame[data-presentation="observe"]
+    .zones:is([data-tonga-phase="inspect"], [data-tonga-phase="shared"], [data-tonga-phase="kept"]):not(
+      [data-tonga-handoff]
+    ) {
     grid-template-rows: 120px minmax(0, 1fr);
+  }
+  .zones[data-tonga-handoff] .tonga-evidence:not(.tonga-kept) {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-rows: minmax(0, 1fr) auto;
+    gap: 6px;
+  }
+  .zones[data-tonga-handoff] .tonga-evidence-body {
+    grid-column: 1 / -1;
+  }
+  .zones[data-tonga-handoff] .tonga-evidence-actions {
+    display: contents;
+  }
+  .zones[data-tonga-handoff] .tonga-evidence .story-share {
+    margin: 0;
   }
   .tonga-evidence-reading strong {
     font-size: 32px;
@@ -322,6 +339,21 @@
   .tonga-world-title {
     font-size: 22px;
     top: 8px;
+  }
+  .zones[data-tonga-phase] .tonga-world-anchors button {
+    width: 44px;
+    padding-inline: 0;
+    justify-content: center;
+    transform: translate(-50%, -50%);
+  }
+  .zones[data-tonga-phase] .tonga-world-anchors button > span + span {
+    position: absolute;
+    inset-inline-start: calc(50% + 12px);
+    width: max-content;
+    max-width: 96px;
+  }
+  .zones[data-tonga-phase] .tonga-world-anchors button:not(:focus-visible) > span + span {
+    display: none;
   }
 }
 @media (max-width: 359px) {

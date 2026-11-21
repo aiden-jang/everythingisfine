@@ -524,7 +524,7 @@
       [data-tonga-phase="follow"],
       [data-tonga-handoff]
     ) {
-    grid-template-rows: var(--tonga-compact-world, clamp(160px, 28dvh, 186px)) minmax(0, 1fr);
+    grid-template-rows: clamp(160px, 28dvh, 186px) minmax(0, 1fr);
   }
   .zones[data-tonga-phase="follow"] .observatory-intro {
     grid-template-columns: minmax(0, 1fr) auto;
@@ -559,10 +559,4 @@
 .tonga-chart-field:has(.pressure-sample-slider:is(:active, :focus-visible)) .tonga-chart-dot {
   stroke: var(--color-ink);
   stroke-width: 1.5px;
-}
-
-@media (max-width: 599px) and (max-height: 620px) {
-  .frame[data-tonga-opening] {
-    --tonga-compact-world: 120px;
-  }
 }
