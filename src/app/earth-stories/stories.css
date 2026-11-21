@@ -305,6 +305,12 @@
     visibility: hidden;
   }
 }
+@media (min-width: 740px) and (max-height: 520px) {
+  .seafloor-journey .story-dock-host {
+    inset-inline-end: 148px;
+    inset-block-end: 12px;
+  }
+}
 .story-compass {
   display: flex;
   align-items: center;

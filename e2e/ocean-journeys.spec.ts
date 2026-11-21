@@ -33,6 +33,11 @@ test("the seafloor flight folds into a shareable reading along the flown route",
   const reading = await profile.getAttribute("aria-valuetext");
   await expect(profile).toHaveValue("1");
   await story.getByRole("button", { name: "Map", exact: true }).click();
+  await page.setViewportSize({ width: 812, height: 375 });
+  const playback = await story.getByRole("group", { name: "Story playback" }).boundingBox();
+  const projection = await story.getByRole("group", { name: "Observation projection" }).boundingBox();
+  expect(playback!.x + playback!.width).toBeLessThan(projection!.x);
+  expect(Math.abs(playback!.y + playback!.height - projection!.y - projection!.height)).toBeLessThan(12);
   await page.setViewportSize({ width: 320, height: 568 });
   await expect(profile).toHaveAttribute("aria-valuetext", reading!);
   expect(await canvas!.evaluate((node) => node === document.querySelector("#globe-view canvas"))).toBe(true);
