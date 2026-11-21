@@ -1,7 +1,7 @@
 import type { ObservationId } from "./catalogue";
 import type { ObservationSource } from "./types";
 
-export const loadSource: Record<ObservationId, () => Promise<ObservationSource>> = {
+export const loadSource: Record<Exclude<ObservationId, "iceberg">, () => Promise<ObservationSource>> = {
   epic: () => import("../../sources/observations/epic").then(({ epic }) => epic),
   deep: () => import("../../sources/observations/deepTime").then(({ deepTime }) => deepTime),
   swell: () => import("../../sources/observations/swell").then(({ swell }) => swell),
@@ -13,7 +13,6 @@ export const loadSource: Record<ObservationId, () => Promise<ObservationSource>>
   wind: () => import("../../sources/observations/wind").then(({ wind }) => wind),
   air: () => import("../../sources/observations/air").then(({ air }) => air),
   lightning: () => import("../../sources/observations/lightning").then(({ lightning }) => lightning),
-  iceberg: () => import("../../sources/observations/iceberg").then(({ iceberg }) => iceberg),
   smoke: () => import("../../sources/observations/archive").then(({ smoke }) => smoke),
   tsunami: () => import("../../sources/observations/archive").then(({ tsunami }) => tsunami),
 };

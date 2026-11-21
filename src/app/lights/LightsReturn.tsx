@@ -1,95 +1,145 @@
-import { useStoryCompletion } from "../journeys/useStoryCompletion";
-import { PlaybackButton } from "../PlaybackButton";
-import { ExperienceEnding } from "../journeys/ExperienceEnding";
-import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState, type CSSProperties } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
   blackMarbleSource,
+  lightsBounds,
+  lightsCorners,
+  lightsLens,
   lightsPeriods,
   loadBlackMarble,
   mariaStudy,
   puertoRico,
 } from "../../sources/observations/blackMarble";
-import type { ObservationView } from "../observations/types";
-import { useObservatoryEscape } from "../useObservatoryEscape";
-
-import { ShareMoment, useStorySession } from "../observations/StorySession";
+import { useStoryCompletion } from "../journeys/useStoryCompletion";
+import { PlaybackButton } from "../PlaybackButton";
+import { ReplayPanel, type ReplayProps } from "../observations/RecordedReplay";
+import { StoryDock } from "../observations/StoryDock";
+import { useStorySession } from "../observations/StorySession";
+import { StoryLoading } from "../StoryLoading";
+import { lightsCities, lightsComparison } from "./lightsSurface";
 
 const MOTION = "(prefers-reduced-motion: reduce)";
 const LAST = lightsPeriods.length - 1;
-const EXIT_MS = 240;
-const locator = { at: Date.UTC(2017, 8, 20, 4), marks: [{ ...puertoRico, size: 19, color: 0xe6caa6 }] };
+const bounds = { bounds: lightsBounds, corners: lightsCorners, opacity: 1, feather: 0.045 };
+const locator = [{ lon: puertoRico.lon, lat: puertoRico.lat, size: 19, color: 0xe6caa6 }];
+const clamp = (value: number) => Math.max(0, Math.min(100, value));
+const sources = (
+  <>
+    <p>
+      NASA Black Marble HD visualizations from Suomi NPP VIIRS. The three recovery periods are dated averages.
+      The stills were aligned to the Natural Earth coast for comparison at island scale.
+    </p>
+    <a href={blackMarbleSource} target="_blank" rel="noreferrer">
+      NASA Scientific Visualization Studio
+    </a>
+    <a href={mariaStudy} target="_blank" rel="noreferrer">
+      Román and Stokes et al. · recovery study
+    </a>
+    <a href="https://www.naturalearthdata.com/" target="_blank" rel="noreferrer">
+      Natural Earth coast
+    </a>
+    <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">
+      © OpenStreetMap contributors
+    </a>
+  </>
+);
 
-interface Landing {
-  scale: number;
-  animate: boolean;
-}
-
-export function LightsReturn({
-  onView,
-  onClose,
-  closeLabel,
-}: {
-  onView: (view: ObservationView) => void;
-  onClose: () => void;
-  closeLabel: string;
-}): JSX.Element {
+export function LightsReturn({ onView, ...panel }: ReplayProps): JSX.Element {
   const { initial, remember } = useStorySession();
-  const back = useRef<HTMLButtonElement>(null);
-  const archive = useRef<HTMLDivElement>(null);
-  const skip = useRef<HTMLButtonElement>(null);
-  const play = useRef<HTMLButtonElement>(null);
-  const exit = useRef<number>();
+  const [images, setImages] = useState<HTMLImageElement[]>();
+  const [failed, setFailed] = useState(false);
   const [attempt, retry] = useState(0);
-  const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
-  const [landing, setLanding] = useState<Landing | null>(null);
-  const [index, setIndex] = useState(Math.max(0, Math.min(LAST, Math.round(Number(initial?.choice) || 0))));
-  const [playing, setPlaying] = useState(() => !initial && !matchMedia(MOTION).matches);
-  const [leaving, setLeaving] = useState(false);
-  const [compare, setCompare] = useState(initial?.chapter?.startsWith("compare:") ?? false);
-  const [split, setSplit] = useState(
-    Math.max(0, Math.min(100, Number(initial?.chapter?.split(":")[1] ?? 50) || 0)),
+  const [arrived, setArrived] = useState(false);
+  const [settled, setSettled] = useState(false);
+  const [index, setIndex] = useState(() =>
+    Math.max(0, Math.min(LAST, Math.round(Number(initial?.choice) || 0))),
   );
-  const timeline = useId();
-  const compareId = useId();
-  const frame = lightsPeriods[index]!;
-  useStoryCompletion(index === LAST && !playing);
-  const displayed = compare && split === 100 ? lightsPeriods[0] : frame;
+  const [playing, setPlaying] = useState(() => !initial && !matchMedia(MOTION).matches);
+  const [compare, setCompare] = useState(() => initial?.chapter?.startsWith("compare:") ?? false);
+  const [split, setSplit] = useState(() => clamp(Number(initial?.chapter?.split(":")[1] ?? 50) || 0));
+  const play = useRef<HTMLButtonElement>(null);
+  const skip = useRef<HTMLButtonElement>(null);
 
-  useLayoutEffect(() => back.current?.focus({ preventScroll: true }), []);
-  useEffect(() => () => window.clearTimeout(exit.current), []);
+  const period = lightsPeriods[index]!;
+  const comparing = compare && index > 0;
+  const displayed = comparing && split === 100 ? lightsPeriods[0] : period;
+  const surface = useMemo(
+    () => (comparing && images ? lightsComparison(images[0]!, images[index]!) : undefined),
+    [comparing, images, index],
+  );
+  useStoryCompletion(index === LAST && !playing);
+
   useEffect(() => {
-    let open = true;
+    let active = true;
     void loadBlackMarble().then(
-      () => open && setStatus("ready"),
-      () => open && setStatus("error"),
+      (next) => active && setImages(next),
+      () => active && setFailed(true),
     );
     return () => {
-      open = false;
+      active = false;
     };
   }, [attempt]);
 
-  const arrive = useCallback((scale: number, reduced: boolean) => {
+  const ready = useCallback(() => {
     if (document.activeElement === skip.current) play.current?.focus({ preventScroll: true });
-    setLanding((current) => current ?? { scale, animate: !reduced });
-    if (reduced) setPlaying(false);
+    setArrived(true);
   }, []);
+  const arrive = useCallback(
+    (_scale: number, reduced: boolean) => {
+      if (reduced) {
+        setPlaying(false);
+        ready();
+      }
+    },
+    [ready],
+  );
+  const framing = useMemo(
+    () => ({
+      map: panel.map,
+      onReady() {
+        setSettled(true);
+        ready();
+      },
+    }),
+    [panel.map, ready],
+  );
+
   useLayoutEffect(() => {
-    if (status === "ready")
-      onView({
-        kind: "observation",
-        target: puertoRico,
-        frame: locator,
-        image: null,
-        capture: false,
-        arrive,
-      });
-    remember?.({ choice: String(index), chapter: compare ? `compare:${split}` : "" });
-  }, [status, onView, arrive, remember, index, compare, split]);
+    if (!images) return;
+    onView({
+      kind: "observation",
+      frame: arrived
+        ? { at: period.at, raster: { ...bounds, url: period.image }, reconstruction: true }
+        : { at: period.at, marks: locator },
+      target: puertoRico,
+      image: arrived ? images[index]! : null,
+      ...(arrived && surface ? { surface, surveyDivider: split / 100 } : {}),
+      capture: arrived,
+      lens: lightsLens,
+      arrive,
+      comparisonFrame: framing,
+      holdGeography: settled,
+    });
+    remember?.({ choice: String(index), chapter: comparing ? `compare:${split}` : "", map: panel.map });
+  }, [
+    images,
+    onView,
+    period,
+    index,
+    comparing,
+    split,
+    surface,
+    arrived,
+    arrive,
+    framing,
+    settled,
+    panel.map,
+    remember,
+  ]);
 
   useEffect(() => {
-    if (!landing || !playing || index === LAST) return;
+    if (!arrived || !playing || index === LAST) return;
     let timer = 0;
-    function start() {
+    const step = () => {
       window.clearTimeout(timer);
       if (document.hidden) return;
       timer = window.setTimeout(
@@ -99,282 +149,164 @@ export function LightsReturn({
         },
         index === 0 ? 2200 : 1800,
       );
-    }
-    start();
-    document.addEventListener("visibilitychange", start);
+    };
+    step();
+    document.addEventListener("visibilitychange", step);
     return () => {
       window.clearTimeout(timer);
-      document.removeEventListener("visibilitychange", start);
+      document.removeEventListener("visibilitychange", step);
     };
-  }, [landing, index, playing]);
+  }, [arrived, index, playing]);
+
   useEffect(() => {
-    const preference = matchMedia(MOTION);
-    const change = () => {
-      if (preference.matches) setPlaying(false);
+    const motion = matchMedia(MOTION);
+    const stop = () => {
+      if (motion.matches) setPlaying(false);
     };
-    preference.addEventListener("change", change);
-    return () => preference.removeEventListener("change", change);
+    motion.addEventListener("change", stop);
+    return () => motion.removeEventListener("change", stop);
   }, []);
 
-  function close() {
-    if (exit.current !== undefined) return;
-    if (!archive.current || matchMedia(MOTION).matches || document.hidden) {
-      onClose();
-      return;
-    }
-    setPlaying(false);
-    setLeaving(true);
-    // A throttled compositor can leave an exit animation's completion promise pending.
-    exit.current = window.setTimeout(onClose, EXIT_MS);
-  }
-  useObservatoryEscape(close);
-
   return (
-    <>
-      <div
-        className="observatory-stage lights-stage"
-        data-stage="lights"
-        role="group"
-        aria-label="Puerto Rico night lights"
-      >
-        {landing && (
-          <div
-            className="lights-archive"
-            ref={archive}
-            data-arrived=""
-            data-animate={landing.animate || undefined}
-            data-playing={playing || undefined}
-            data-leaving={leaving || undefined}
-          >
-            <div
-              className="lights-map"
-              data-reference={compare || undefined}
-              style={
-                { "--lights-entry-scale": landing.scale, "--lights-split": `${split}%` } as CSSProperties
-              }
-            >
-              {lightsPeriods.map((period, i) => (
-                <img
-                  key={period.image}
-                  src={period.image}
-                  alt=""
-                  data-current={i === index || undefined}
-                  width="1840"
-                  height="863"
-                />
+    <ReplayPanel
+      {...panel}
+      title="Lights Return"
+      location="Puerto Rico"
+      subtitle="Follow the uneven return of nighttime light after Hurricane Maria."
+      className="lights-journey"
+      status={failed ? "NASA image unavailable" : !arrived ? "Approaching the island" : displayed.title}
+      at={arrived ? <span>{displayed.dates}</span> : null}
+      inset={
+        arrived && (
+          <>
+            <div className="lights-geography" aria-hidden="true">
+              {lightsCities.map(({ id, name, lon, lat }) => (
+                <span
+                  key={id}
+                  data-observation-anchor=""
+                  data-compact-anchor=""
+                  data-lon={lon}
+                  data-lat={lat}
+                >
+                  {name}
+                </span>
               ))}
-              {compare && (
-                <>
-                  <img
-                    className="lights-baseline"
-                    src={lightsPeriods[0].image}
-                    alt=""
-                    width="1840"
-                    height="863"
-                  />
-                  {split > 0 && split < 100 && <div className="lights-divider" aria-hidden="true" />}
-                </>
-              )}
-              <div className="lights-place lights-san-juan" aria-hidden="true">
-                San Juan
-              </div>
-              <div className="lights-place lights-ponce" aria-hidden="true">
-                Ponce
-              </div>
-              <div className="lights-place lights-mayaguez" aria-hidden="true">
-                Mayagüez
-              </div>
             </div>
             <div className="lights-key" aria-label="Relative nighttime light intensity">
               <span>Dimmer</span>
-              <i aria-hidden="true" data-ramp="" />
+              <i aria-hidden="true" />
               <span>Brighter</span>
             </div>
+          </>
+        )
+      }
+      sources={sources}
+    >
+      {!images && !failed && <StoryLoading>Loading NASA’s night-light archive…</StoryLoading>}
+      {failed && (
+        <div className="observatory-actions">
+          <p className="observation-note" role="status" aria-label="Image loading status">
+            NASA’s archived images couldn’t load.
+          </p>
+          <button
+            type="button"
+            onClick={() => {
+              setFailed(false);
+              retry((n) => n + 1);
+            }}
+          >
+            Retry images
+          </button>
+        </div>
+      )}
+      {images && (
+        <>
+          <div className="archive-scene-caption lights-reading" data-lights-period={index}>
+            <h3>{period.title}</h3>
+            <p>{period.note}</p>
           </div>
-        )}
-        <div className="stage-corners" aria-hidden="true">
-          <span />
-          <span />
-          <span />
-          <span />
-        </div>
-        <div className="stage-ident">
-          <span className="stage-rule" aria-hidden="true" />
-          <span>{landing ? "Puerto Rico · Black Marble" : "After Dark · Puerto Rico"}</span>
-        </div>
-        <div className="stage-readout lights-readout">
-          {compare && split > 0 && split < 100 ? (
-            <>
-              <span>Left · Before Maria</span>
-              <span>Right · {frame.title}</span>
-            </>
-          ) : (
-            <>
-              <span>
-                {landing
-                  ? displayed.title
-                  : status === "ready"
-                    ? "Approaching the island"
-                    : "Satellite archive"}
-              </span>
-              {landing && <span>{displayed.dates}</span>}
-            </>
-          )}
-        </div>
-      </div>
-      <div className="observatory-sidebar">
-        <section
-          id="observatory-intro"
-          className="observatory-intro observation-panel lights-panel"
-          aria-labelledby="lights-title"
-          tabIndex={-1}
-        >
-          <div className="observation-heading">
-            <h2 id="lights-title">Lights Return</h2>
-            <div className="observatory-actions">
-              <button type="button" onClick={close} ref={back}>
-                {closeLabel}
-              </button>
-            </div>
-          </div>
-          {status === "loading" && (
-            <p className="observation-note" role="status">
-              Loading NASA’s night-light archive…
-            </p>
-          )}
-          {status === "error" && (
-            <>
-              <p className="observation-note" role="status" aria-label="Image loading status">
-                NASA’s archived images couldn’t load.
-              </p>
-              <div className="observatory-actions">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setStatus("loading");
-                    retry(attempt + 1);
-                  }}
-                >
-                  Retry images
-                </button>
-              </div>
-            </>
-          )}
-          {status === "ready" && (
-            <>
-              <div className="lights-timeline">
-                <div className="lights-row">
-                  <label htmlFor={timeline}>Night-light period</label>
-                  <span>{frame.dates}</span>
-                </div>
+          <StoryDock label="Night-light playback" deferOnShortPhone={!arrived}>
+            <div className="lights-transport">
+              <div className="observation-transport">
+                <span>Night-light period · {period.dates}</span>
                 <input
-                  id={timeline}
-                  className="scrub-slider"
+                  className="scrub-slider observation-scrub"
                   type="range"
                   min={0}
                   max={LAST}
                   value={index}
-                  aria-valuetext={`${frame.title} · ${frame.dates}`}
+                  aria-label="Night-light period"
+                  aria-valuetext={`${period.title} · ${period.dates}`}
                   onChange={(event) => {
                     const selected = event.currentTarget.valueAsNumber;
-                    if (!landing) arrive(1, true);
+                    if (!arrived) ready();
                     setPlaying(false);
                     setIndex(selected);
                     if (selected === 0) setCompare(false);
                   }}
                 />
-              </div>
-              <div className="observatory-actions lights-actions">
-                {!landing && (
+                <div className="observatory-actions">
+                  {!arrived && (
+                    <button ref={skip} type="button" onClick={ready}>
+                      Skip approach
+                    </button>
+                  )}
+                  <PlaybackButton
+                    playing={playing}
+                    ended={index === LAST}
+                    buttonRef={play}
+                    onClick={() => {
+                      if (playing) setPlaying(false);
+                      else {
+                        if (index === LAST) setIndex(0);
+                        setCompare(false);
+                        setPlaying(true);
+                      }
+                    }}
+                  />
                   <button
                     type="button"
-                    ref={skip}
+                    aria-pressed={comparing}
+                    disabled={!arrived || index === 0}
                     onClick={() => {
-                      play.current?.focus({ preventScroll: true });
-                      setLanding({ scale: 1, animate: false });
+                      setPlaying(false);
+                      setCompare(!comparing);
                     }}
                   >
-                    Skip approach
+                    Compare with before
                   </button>
-                )}
-                <PlaybackButton
-                  playing={playing}
-                  ended={index === LAST}
-                  buttonRef={play}
-                  onClick={() => {
-                    if (playing) setPlaying(false);
-                    else {
-                      if (index === LAST) setIndex(0);
-                      setCompare(false);
-                      setPlaying(true);
-                    }
-                  }}
-                />
-                <button
-                  type="button"
-                  aria-pressed={compare}
-                  disabled={!landing || index === 0}
-                  onClick={() => {
-                    setPlaying(false);
-                    setCompare(!compare);
-                  }}
-                >
-                  Compare with before
-                </button>
+                </div>
               </div>
-              {compare && (
-                <div className="lights-timeline">
-                  <div className="lights-row">
-                    <label htmlFor={compareId}>Before and after divider</label>
-                    <span>{split}% from left</span>
+              {comparing && (
+                <div className="lights-comparison">
+                  <div className="lights-dates">
+                    <div>
+                      <strong>Before Maria</strong>
+                      <span>{lightsPeriods[0].dates}</span>
+                    </div>
+                    <div>
+                      <strong>{period.title}</strong>
+                      <span>{period.dates}</span>
+                    </div>
                   </div>
-                  <input
-                    id={compareId}
-                    className="scrub-slider"
-                    type="range"
-                    min={0}
-                    max={100}
-                    value={split}
-                    aria-valuetext={`${split}% from left`}
-                    onChange={(event) => setSplit(event.currentTarget.valueAsNumber)}
-                  />
+                  <label>
+                    <span>Before and after divider</span>
+                    <input
+                      className="scrub-slider"
+                      type="range"
+                      min={0}
+                      max={100}
+                      value={split}
+                      aria-valuetext={`${split}% from left`}
+                      onChange={(event) => setSplit(event.currentTarget.valueAsNumber)}
+                    />
+                  </label>
                 </div>
               )}
-              <p className="observation-note lights-frame-note">
-                <strong>{frame.title}.</strong> {frame.note}
-              </p>
-            </>
-          )}
-          <p className="observation-note lights-context">
-            Hurricane Maria made landfall near Yabucoa on 20 September 2017. NASA’s nighttime observations
-            trace the uneven return of light.
-          </p>
-          <details className="lights-sources">
-            <summary>Sources &amp; coverage</summary>
-            <p className="observation-note">
-              These are Black Marble HD images from NASA’s Scientific Visualization Studio. The three
-              post-storm views average multiple nights. Brightness indicates light detected from orbit, a
-              proxy for recovery that cannot establish which homes had electricity.
-            </p>
-            <div className="lights-links">
-              <a href={blackMarbleSource} target="_blank" rel="noreferrer">
-                NASA Black Marble HD
-              </a>
-              <a href={mariaStudy} target="_blank" rel="noreferrer">
-                Recovery study
-              </a>
-              <a href="https://www.nhc.noaa.gov/data/tcr/AL152017_Maria.pdf" target="_blank" rel="noreferrer">
-                NOAA landfall record
-              </a>
-              <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">
-                © OpenStreetMap contributors
-              </a>
             </div>
-          </details>
-          <ShareMoment />
-          <ExperienceEnding />
-        </section>
-      </div>
-    </>
+          </StoryDock>
+        </>
+      )}
+    </ReplayPanel>
   );
 }

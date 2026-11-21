@@ -6,8 +6,11 @@ import type {
   ObservationView,
 } from "../observations/types";
 
+import type { BasinReadings, ShorelineBasin } from "./shorelineBasins";
+
 export interface StoryFrame extends ObservationFrame {
   caption: string;
+  basins?: BasinReadings;
 }
 export interface StorySite {
   id: string;
@@ -32,6 +35,7 @@ export interface EarthStoryData {
   terrain?: ObservationTerrain;
   timelineLabel?: string;
   lunarImage?: string;
+  basins?: readonly ShorelineBasin[];
 }
 const files = import.meta.glob<string>("../../sources/earth-stories/assets/*.webp", {
   eager: true,

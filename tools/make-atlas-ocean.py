@@ -15,6 +15,7 @@ from hashlib import sha256
 from scipy.ndimage import binary_erosion
 
 from atlas_archive import CACHE, INPUTS, colorize, fetch, provenance, raster, save
+from aral_basins import BASINS, basin_readings
 
 
 def nino():
@@ -122,8 +123,11 @@ def aral():
         rgba[(data == 0) & baseline & hatch] = [178, 153, 180, 180]
         rgba[edge] = [230, 225, 197, 235]
         image = raster(Image.fromarray(rgba), 'aral-' + str(year), url + '; seasonal and permanent water; 1984–1986 observed-water boundary retained; nearest-neighbor geographic subset')
-        frames.append(dict(year=year, image=image, missing=round(float(np.mean(data[baseline] == 0) * 100), 1)))
-    save('aral', dict(bounds=bounds, frames=frames))
+        frames.append(dict(
+            year=year, image=image, missing=round(float(np.mean(data[baseline] == 0) * 100), 1),
+            basins=basin_readings(data, baseline, bounds),
+        ))
+    save('aral', dict(bounds=bounds, basins=BASINS, frames=frames))
 
 
 if __name__ == '__main__':

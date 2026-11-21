@@ -23,6 +23,10 @@ export const END = day(data.end);
 export const BREAKUP = day("2020-12-23");
 const mix = (a: number, b: number, t: number) => a + (b - a) * t;
 
+export function dayAt(at: number | undefined) {
+  return at === undefined ? 0 : Math.max(0, Math.min(END, Math.round((at - first) / DAY_MS)));
+}
+
 export function dateIso(offset: number) {
   return new Date(first + Math.floor(offset) * DAY_MS).toISOString().slice(0, 10);
 }
@@ -56,4 +60,20 @@ export function positionAt(track: Track, date: number, index = latestIndex(track
     return [from[1], from[2]];
   }
   return null;
+}
+
+const overview = { lon: -37.5, lat: -54.8, zoom: 2.4 };
+const mainTrack = tracks[0]!;
+
+export function driftCamera(day: number) {
+  const fix = mainTrack.fixes[latestIndex(mainTrack.fixes, day)] ?? mainTrack.fixes[0]!;
+  const point = positionAt(mainTrack, day) ?? [fix[1], fix[2]];
+  const progress = Math.min(1, Math.max(0, (day - (BREAKUP - 3)) / 22));
+  const release = progress * progress * (3 - 2 * progress);
+  return {
+    lon: mix(point[0] + 1.6, overview.lon, release),
+    lat: mix(point[1] + 0.45, overview.lat, release),
+    zoom: mix(3.6, overview.zoom, release),
+    bank: 0.055 * (1 - release),
+  };
 }

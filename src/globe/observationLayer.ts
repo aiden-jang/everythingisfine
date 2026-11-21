@@ -212,22 +212,28 @@ export function createObservationLayer(morph: { value: number }) {
   morphable(raster.material, morph);
   const sweep = { value: 1 };
   const divider = { value: -1 };
+  const feather = { value: 0 };
   const compileRaster = raster.material.onBeforeCompile;
   raster.material.onBeforeCompile = (shader, renderer) => {
     compileRaster(shader, renderer);
     shader.uniforms.sweep = sweep;
     shader.uniforms.surveyDivider = divider;
+    shader.uniforms.observationFeather = feather;
     const mapFragment = ShaderChunk.map_fragment.replace(
       "texture2D( map, vMapUv )",
       `texture2D( map, surveyDivider < 0.0 ? vMapUv :
         vec2(vMapUv.x, 0.5 * clamp(vMapUv.y, 0.001, 0.999) + 0.5 * (1.0 - step(surveyDivider, vMapUv.x))))`,
     );
     shader.fragmentShader =
-      `uniform float sweep;\nuniform float surveyDivider;\n${shader.fragmentShader}`.replace(
+      `uniform float sweep;\nuniform float surveyDivider;\nuniform float observationFeather;\n${shader.fragmentShader}`.replace(
         "#include <map_fragment>",
         `${mapFragment}
        #ifdef USE_MAP
        diffuseColor.a *= smoothstep(vMapUv.x - 0.025, vMapUv.x + 0.025, sweep);
+       if (observationFeather > 0.0) {
+         vec2 edgeUv = min(vMapUv, 1.0 - vMapUv);
+         diffuseColor.a *= smoothstep(0.0, observationFeather, min(edgeUv.x, edgeUv.y));
+       }
        if (surveyDivider > 0.0 && surveyDivider < 1.0) {
          float edge = fwidth(vMapUv.x);
          float white = 1.0 - smoothstep(0.1 * edge, 1.2 * edge, abs(vMapUv.x - surveyDivider));
@@ -287,6 +293,7 @@ export function createObservationLayer(morph: { value: number }) {
       dot.geometry = marks.geometry();
     }
     divider.value = view?.surveyDivider ?? -1;
+    feather.value = view?.frame.raster?.feather ?? 0;
     const image = view?.frame.raster ? (view.surface ?? view.image) : null;
     const priorImage = prior?.frame.raster ? (prior.surface ?? prior.image) : null;
     if (image !== priorImage) {

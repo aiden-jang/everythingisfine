@@ -381,3 +381,33 @@ test("an early final-year jump compares the shorelines in a steady frame on glob
   await comparison.click();
   expect(await map).toBeLessThan(2);
 });
+
+test("a basin selection keeps its recorded year and explains missing observations", async ({ page }) => {
+  await installFeeds(page, { presentation: "fresh", empty: true });
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.setViewportSize({ width: 1200, height: 800 });
+  await page.goto("/#v=observe&story=aral&p=map");
+  const panel = page.getByRole("region", { name: "Vanishing Sea", exact: true });
+  const canvas = await page.locator("#globe-view canvas").elementHandle();
+  const reading = panel.getByRole("region", { name: "Basin reading" });
+  const year = panel.getByRole("slider", { name: "Archive year", exact: true });
+  await panel.getByRole("button", { name: "Separating basins", exact: true }).click();
+  await panel.getByRole("button", { name: "Inspect East basin", exact: true }).click();
+  await expect(reading).toContainText("East basin · 1989");
+  await expect(reading).toContainText("86.6%");
+  await year.press("ArrowRight");
+  await year.press("ArrowRight");
+  await year.press("ArrowRight");
+  await year.press("ArrowRight");
+  await expect(reading).toContainText("East basin · 1997");
+  await expect(reading).toContainText("70.5%");
+  await expect(reading).toContainText("Sparse coverage");
+  await panel.getByRole("button", { name: "Globe", exact: true }).click();
+  await expect(reading.getByRole("combobox", { name: "Inspect a basin" })).toHaveValue("east");
+  await expect(reading).toContainText("1997");
+  await page.setViewportSize({ width: 812, height: 375 });
+  await panel.getByRole("button", { name: "Map", exact: true }).click();
+  await panel.getByRole("button", { name: "Inspect West basin", exact: true }).click();
+  await expect(reading).toContainText("West basin · 1997");
+  expect(await canvas!.evaluate((node) => node === document.querySelector("#globe-view canvas"))).toBe(true);
+});

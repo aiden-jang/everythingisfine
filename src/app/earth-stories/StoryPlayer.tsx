@@ -12,12 +12,11 @@ import { ObservationChart } from "../observations/ObservationChart";
 import { useStorySession } from "../observations/StorySession";
 import { type SkyCityPreference } from "../tonight/SkyCityPicker";
 import { earthStories, type EarthStoryId } from "./catalogue";
-import { asset, type EarthStoryData } from "./types";
+import { asset, point, type EarthStoryData } from "./types";
 import { useStoryClock } from "./useStoryClock";
 import { storyCamera } from "./motion";
 import transect from "../../sources/earth-stories/dust-transect.json";
-import { point } from "./types";
-import { StoryOverlay } from "./StoryOverlay";
+import { StoryOverlay, StorySitePicker } from "./StoryOverlay";
 import { StoryCompass } from "./StoryCompass";
 import { StoryRecovery } from "./StoryRecovery";
 import { DustSliceControls } from "./DustSliceControls";
@@ -26,13 +25,11 @@ import { useMooringInspection } from "./useMooringInspection";
 import { useShorelineComparison } from "./useShorelineComparison";
 import { StorySources } from "./StorySources";
 import { useTerrainSection } from "./useTerrainSection";
-
 const dustPoints = transect.points.map(point);
 const dustTarget = { lon: -84, lat: 22, zoom: 1.8 };
 const format = new Intl.DateTimeFormat("en-GB", { timeZone: "UTC", dateStyle: "medium", timeStyle: "short" });
 
 type Props = ReplayProps & { id: EarthStoryId; city: SkyCityPreference; onRadar: () => void };
-
 export function StoryPlayer({
   data,
   choice,
@@ -132,7 +129,16 @@ export function StoryPlayer({
   const duration = Math.max(1, data.frames.length - 1);
   const finished = !busy && status === "ready" && !clock.playing && clock.position >= duration;
   useStoryCompletion(finished);
-  const shoreline = useShorelineComparison(id === "aral" && finished, frame.at, panel.map, frame.raster?.url);
+  const shoreline = useShorelineComparison({
+    basins: data.basins,
+    finished,
+    frame,
+    map: panel.map,
+    chapter: initial?.chapter,
+    pause: clock.pause,
+    playing: clock.playing,
+  });
+  waiting.current ||= shoreline.holding;
   const displayedImage = shoreline.image ?? element;
   const comparingShoreline = id === "aral" && finished;
   useLayoutEffect(() => {
@@ -145,6 +151,8 @@ export function StoryPlayer({
       image: displayedImage,
       moonImage: lunarImage.element,
       onPick: section.pick,
+      ...(shoreline.pickMarks ? { pickMarks: shoreline.pickMarks } : {}),
+      ...(ready && (shoreline.holding || (shoreline.basin && !clock.playing)) ? { holdGeography: true } : {}),
       ...(data.lens && !localSky ? { lens: data.lens } : {}),
       ...(data.terrain ? { terrain: { grid: data.terrain, progress: clock.position / duration } } : {}),
       arrive,
@@ -170,7 +178,7 @@ export function StoryPlayer({
             }
           : {}),
       follow:
-        !panel.map && !localSky && clock.cinematic && clock.playing
+        !panel.map && !localSky && !shoreline.holding && clock.cinematic && clock.playing
           ? storyCamera(id, target, clock.position / duration)
           : undefined,
     });
@@ -178,7 +186,10 @@ export function StoryPlayer({
       at: frame.at,
       choice: displayedChoice,
       city: city.name,
-      chapter: section.chapter || (skyMode ? "sky" : slice ? "slice" : site ? `site:${site}` : ""),
+      chapter:
+        shoreline.chapter ||
+        section.chapter ||
+        (skyMode ? "sky" : slice ? "slice" : site ? `site:${site}` : ""),
       map: panel.map,
     });
   }, [
@@ -190,6 +201,11 @@ export function StoryPlayer({
     element,
     displayedImage,
     shoreline.framing,
+    shoreline.basin,
+    shoreline.holding,
+    shoreline.chapter,
+    shoreline.pickMarks,
+    ready,
     data.lens,
     data.terrain,
     arrive,
@@ -304,6 +320,7 @@ export function StoryPlayer({
         />
       )}
       {(busy || status === "loading") && <StoryLoading>Loading the selected observations…</StoryLoading>}
+      {shoreline.reading}
       <StoryTimeline
         startLabel={clock.cinematic && clock.position === 0 ? startLabel : undefined}
         data={data}
@@ -319,10 +336,12 @@ export function StoryPlayer({
           (id === "fire" ? "Detection time" : id === "comet" ? "July 2020 · UTC" : "Observation time")
         }
       />
-      {comparingShoreline && (
+      {comparingShoreline ? (
         <StoryFinding id={id} completed>
           {shoreline.controls}
         </StoryFinding>
+      ) : (
+        shoreline.controls
       )}
       {frame.measurements && (
         <dl className="observation-values">
@@ -338,19 +357,8 @@ export function StoryPlayer({
         <StoryCompass value={data.series[0].samples[index][1]} label={frame.measurements[1].label} />
       )}
       {data.sites && (
-        <label className="observation-picker">
-          <span>Survey measurement</span>
-          <select value={site} onChange={(e) => chooseSite(e.currentTarget.value)}>
-            <option value="">Choose a marked site</option>
-            {data.sites.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.label}
-              </option>
-            ))}
-          </select>
-        </label>
+        <StorySitePicker sites={data.sites} site={site} choose={chooseSite} value={selected?.value} />
       )}
-      {selected && <p className="observation-note">{selected.value}</p>}
       {data.series && <ObservationChart series={data.series} at={frame.at} units={data.units} />}
       {data.legend && (
         <ul className="story-legend">

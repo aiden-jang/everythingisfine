@@ -1,237 +1,141 @@
-.observatory-stage[data-stage="lights"] {
+.lights-journey .replay-stage {
   --stage-ink: #dcc8b1;
 }
 
-.lights-stage {
-  overflow: hidden;
-}
-
-.lights-archive {
+.lights-geography {
   position: absolute;
   inset: 0;
-  display: grid;
-  place-items: center;
-  background: #03040c;
+  pointer-events: none;
 }
 
-.lights-map {
-  position: relative;
-  width: 94%;
-  aspect-ratio: 1840 / 863;
-  isolation: isolate;
-}
-
-.lights-archive[data-animate] {
-  animation: lights-aperture 850ms ease-out both;
-}
-
-.lights-archive[data-animate] .lights-map {
-  animation: lights-approach 850ms cubic-bezier(0.22, 0.75, 0.2, 1) both;
-}
-
-.lights-archive[data-leaving] {
-  animation: lights-leave 240ms ease-in both;
-}
-
-@keyframes lights-leave {
-  from {
-    opacity: 1;
-  }
-  to {
-    opacity: 0;
-  }
-}
-
-@keyframes lights-aperture {
-  from {
-    opacity: 0;
-  }
-  32% {
-    opacity: 0.58;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-@keyframes lights-approach {
-  from {
-    transform: scale(var(--lights-entry-scale));
-  }
-  to {
-    transform: scale(1);
-  }
-}
-
-.lights-map img {
+.lights-geography span {
   position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  opacity: 0;
+  visibility: hidden;
+  transform: translate(-50%, calc(-100% - 8px));
+  padding: 2px 5px;
+  background: var(--color-deck);
+  font: 11px/1.4 var(--font-mono);
+  white-space: nowrap;
 }
 
-.lights-archive[data-playing] .lights-map img {
-  transition: opacity 200ms ease-out;
-}
-
-.lights-map img[data-current],
-.lights-map img.lights-baseline {
-  opacity: 1;
-}
-
-.lights-baseline {
-  z-index: 1;
-  clip-path: inset(0 calc(100% - var(--lights-split)) 0 0);
-}
-
-.lights-divider {
+.lights-geography span::after {
   position: absolute;
-  z-index: 2;
-  inset-block: 0;
-  left: var(--lights-split);
+  left: 50%;
+  top: 100%;
   width: 1px;
-  background: var(--color-dim);
-}
-
-.lights-place {
-  position: absolute;
-  z-index: 3;
-  color: var(--color-ink);
-  padding: 2px 4px;
-  background: var(--color-void);
-}
-
-.lights-san-juan {
-  left: 65%;
-  top: 14%;
-  transform: translateY(-100%);
-}
-
-.lights-ponce {
-  left: 35%;
-  top: 83%;
-}
-
-.lights-mayaguez {
-  left: 9%;
-  top: 52%;
+  height: 8px;
+  background: currentColor;
+  content: "";
 }
 
 .lights-key {
   position: absolute;
-  inset-inline: 0;
-  bottom: calc(var(--stage-inset) + 38px);
+  top: calc(var(--stage-inset) + 28px);
+  right: var(--stage-inset);
   display: flex;
-  justify-content: center;
   align-items: center;
-  gap: 9px;
+  gap: 8px;
+  color: var(--color-ink);
+  font-size: var(--text-caption);
+  pointer-events: none;
 }
 
 .lights-key i {
-  width: clamp(55px, 14%, 134px);
+  width: clamp(40px, 8vw, 96px);
   height: 5px;
   background: linear-gradient(90deg, #1a142d, #5c206a, #bb395e, #f1840b, #f7fa96);
 }
 
-.lights-readout {
-  flex-wrap: wrap;
+.lights-comparison {
+  min-width: 0;
+  margin-block-start: 6px;
+  padding-block-start: 8px;
+  border-block-start: 1px solid var(--color-hairline);
 }
 
-.lights-actions {
-  gap: 6px;
+.lights-dates {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-block-end: 3px;
 }
 
-.lights-timeline {
-  border-block: 1px solid var(--color-hairline);
-  padding-top: 8px;
+.lights-dates div {
+  display: grid;
+  gap: 4px;
 }
 
-.lights-row {
-  display: flex;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 3px 10px;
+.lights-dates strong,
+.lights-comparison label {
+  font-size: var(--text-control);
+}
+
+.lights-dates span {
   color: var(--color-dim);
-  font-size: 0.75rem;
+  font: 11px/1.5 var(--font-mono);
 }
 
-.lights-row label {
-  color: var(--color-ink);
-}
-
-.lights-row span {
-  font-family: var(--font-mono);
-  font-variant-numeric: tabular-nums;
-}
-
-.lights-timeline .scrub-slider {
+.lights-comparison input {
   display: block;
   width: 100%;
   min-height: 44px;
 }
 
-.lights-context,
-.lights-frame-note {
-  max-width: 46ch;
-}
+@media (max-height: 620px) and (min-width: 600px) {
+  .lights-journey .story-dock-host {
+    position: static;
+    padding-inline: 12px;
+  }
 
-.lights-sources summary {
-  min-height: 44px;
-  align-content: center;
-  color: var(--color-dim);
-  font-size: 0.75rem;
-  cursor: pointer;
-}
+  .lights-journey .story-dock {
+    grid-template-columns: minmax(0, 1fr);
+    padding: 4px 0;
+    border-width: 1px 0 0;
+    border-radius: 0;
+  }
 
-.lights-links {
-  display: flex;
-  flex-wrap: wrap;
-  column-gap: 14px;
-}
+  .lights-transport .observation-transport > span {
+    font-size: 11px;
+  }
 
-.lights-links a {
-  display: inline-flex;
-  align-items: center;
-  min-height: 44px;
-  color: var(--color-ink);
-  font-size: 0.75rem;
-  text-decoration: underline;
-  text-underline-offset: 3px;
+  .lights-transport:has(.lights-comparison) .observation-transport > span {
+    display: none;
+  }
+
+  .lights-dates strong {
+    font-size: 12px;
+  }
+
+  .lights-dates span {
+    font-size: 10px;
+  }
 }
 
 @media (min-width: 900px) {
-  .lights-panel {
-    align-self: start;
-    padding-block-start: clamp(32px, 15dvh, 138px);
+  .lights-transport:has(.lights-comparison) {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+
+  .lights-comparison {
+    margin: 0;
+    padding: 0 0 0 16px;
+    border-block-start: 0;
+    border-inline-start: 1px solid var(--color-hairline);
   }
 }
 
-@media (max-height: 620px) and (min-width: 600px) {
-  .lights-panel {
-    align-self: start;
-    padding-block-start: 18px;
+@media (max-width: 599px), (max-height: 620px) and (min-width: 600px) {
+  .lights-comparison label > span {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .lights-archive[data-animate],
-  .lights-archive[data-animate] .lights-map,
-  .lights-archive[data-leaving] {
-    animation: none;
-  }
-
-  .lights-archive[data-playing] .lights-map img {
-    transition: none;
-  }
-}
-
-.lights-map[data-reference] .lights-place::before {
-  display: inline-block;
-  width: 6px;
-  height: 6px;
-  margin-inline-end: 5px;
-  border: 1px solid currentColor;
-  border-radius: 50%;
-  content: "";
+.lights-journey:has(.lights-comparison) .stage-readout {
+  visibility: hidden;
 }

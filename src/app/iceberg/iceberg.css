@@ -1,0 +1,101 @@
+.iceberg-fragments {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.iceberg-fragments button {
+  position: absolute;
+  visibility: hidden;
+  z-index: 1;
+  width: 44px;
+  height: 44px;
+  transform: translate(-50%, -50%);
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+.iceberg-fragments button span {
+  position: absolute;
+  top: calc(50% + 11px);
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 2px 5px;
+  background: var(--color-deck);
+  color: var(--color-ink);
+  font: 11px/1.4 var(--font-mono);
+  white-space: nowrap;
+}
+
+.iceberg-fragments button:not([aria-pressed="true"], :hover, :focus-visible) span {
+  visibility: hidden;
+}
+
+.iceberg-reading .observation-picker {
+  margin-top: 12px;
+}
+
+.iceberg-photo {
+  position: absolute;
+  inset: 44px 20px max(70px, var(--story-dock-height, 0px));
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  justify-items: center;
+  gap: 8px;
+  margin: 0;
+  pointer-events: none;
+}
+
+.iceberg-photo img {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  object-fit: contain;
+  animation: iceberg-image 460ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.iceberg-photo figcaption {
+  padding: 3px 8px;
+  background: var(--color-deck);
+  color: var(--color-ink);
+  font-size: var(--text-caption);
+}
+
+@keyframes iceberg-image {
+  from {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .iceberg-photo img {
+    animation: none;
+  }
+}
+
+@media (max-height: 440px) and (min-width: 600px) {
+  .iceberg-journey:has(.observation-transport:not([data-drift-opening])) .story-dock-host {
+    position: static;
+    padding-inline: var(--observatory-inline);
+  }
+}
+
+@media (max-width: 599px) {
+  .iceberg-photo {
+    inset: 30px 12px 56px;
+  }
+}
+
+.iceberg-coast-label {
+  position: absolute;
+  visibility: hidden;
+  transform: translate(-50%, calc(-100% - 9px));
+  color: var(--color-dim);
+  font: 11px/1.4 var(--font-mono);
+  white-space: nowrap;
+}

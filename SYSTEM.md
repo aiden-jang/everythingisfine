@@ -308,10 +308,11 @@ available at the ocean-entry snapshot.
 The data generator [make-kilauea.py](tools/make-kilauea.py) uses Python with NumPy, Pillow,
 PyProj, PyShp, and Shapely, plus FFmpeg for the HVO excerpt.
 
-Iceberg Drift loads daily iceberg fixes and three dated satellite images on demand. The shared
-globe and map join consecutive fixes and report the last recorded date when the selected date has no
-position. The photo layer can be opened on its source date. Regenerate the bundled tracks
-and WebP images with [make-iceberg.mjs](tools/make-iceberg.mjs) using Node and `cwebp`.
+Iceberg Drift loads daily fixes and three dated satellite images on demand. The camera follows
+A-68A before widening over the fragment tracks. Selecting a world marker pauses at the current
+recorded date. The globe and map join consecutive fixes and report the last recorded date across
+gaps. The photo stays above the shared world and returns to the selected track, date and camera.
+Regenerate the tracks and WebP images with [make-iceberg.mjs](tools/make-iceberg.mjs).
 
 Megaflash samples the GLM trace from figure 1 of the published reanalysis, keeping only
 colors that match its time scale. A separate ABI scan is reprojected into the same geographic
@@ -326,11 +327,19 @@ The solar image and schematic sit over the shared scene. When opened from the ov
 holds its forecast, camera and projection. Returning restores the held view and its launch control.
 Closing cancels both requests. The wind cursor selects a dated sample that can be kept in Saved.
 
-Lights Return opens from After Dark and flies the existing globe toward Puerto Rico at local midnight
-before landfall. The archive takes over from the island’s projected size. Four matching NASA Black
-Marble HD stills are loaded only on entry. The four source images use the same crop and original
-color ramp. The three recovery frames average their labeled date ranges. A clipping divider keeps
-both views registered to the original framing. Playback advances only among those four frames.
+Lights Return approaches Puerto Rico from After Dark. Four NASA Black Marble HD stills use one
+display registration fitted to the Natural Earth 1:10m coastline. The globe and map keep the
+source color ramp and the four actual periods. The baseline fit was checked against the visible
+island outline. It is suitable for visual comparison at island scale. The divider uses the shared
+survey shader so its position changes without re-uploading the imagery. Returning restores the
+prior After Dark view.
+
+Vanishing Sea keeps the JRC 1984–1986 observed-water footprint visible over each dated archive
+image. The 1989 checkpoint marks the visible separation of north and south. Basin markers read
+three fixed windows through the same archive. The water share covers observed cells in each
+window’s early footprint. A separate coverage reading and hatching identify unobserved areas.
+[aral_basins.py](tools/aral_basins.py) derives the basin readings from the same source arrays as
+[make-atlas-ocean.py](tools/make-atlas-ocean.py).
 
 Shadow Chase reuses the globe, map and local horizon. The globe follows NASA’s WGS84 centerline samples
 and draws the northern and southern limits. The moving shadow and local Sun–Moon geometry use the

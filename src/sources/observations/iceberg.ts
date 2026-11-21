@@ -54,7 +54,7 @@ export const iceberg: ObservationSource = {
         }
         if (segment.length > 1) paths.push({ points: segment, color });
         const fix = positionAt(track, day, stop);
-        if (fix) marks.push({ ...point(...fix), color, size: highlighted ? 14 : 8 });
+        if (fix) marks.push({ ...point(...fix), id: track.id, color, size: highlighted ? 14 : 8 });
       }
       const date = dateIso(day);
       const photograph = photos.get(date);

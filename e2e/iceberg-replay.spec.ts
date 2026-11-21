@@ -14,10 +14,25 @@ test("Iceberg Drift shares dated fragment tracks, satellite views and the select
   const trigger = page.getByRole("button", { name: "Iceberg Drift", exact: true });
   await trigger.click();
   const panel = page.getByRole("region", { name: "Iceberg Drift", exact: true });
+  await panel.getByRole("button", { name: "Fragments", exact: true }).click();
+  await panel.getByRole("button", { name: "Map", exact: true }).click();
+  const date = panel.getByRole("slider", { name: "Track date" });
+  const fragment = panel.getByRole("button", { name: "Inspect A-68E", exact: true });
+  await expect(date).toHaveAttribute("aria-valuetext", "Jan 11, 2021");
+  await fragment.click();
+  await expect(panel.getByRole("combobox", { name: "Iceberg" })).toHaveValue("E");
+  await expect(date).toHaveAttribute("aria-valuetext", "Jan 11, 2021");
   await panel.getByRole("button", { name: "Breakup", exact: true }).click();
   await panel.getByRole("button", { name: "Show satellite image" }).click();
   await expect(page.getByRole("img", { name: "Landsat 8 · Dec 23, 2020 · False color" })).toBeVisible();
+  await panel.getByRole("button", { name: "Globe", exact: true }).click();
   await panel.getByRole("button", { name: "Return to tracks" }).click();
+  await expect(panel.getByRole("button", { name: "Show satellite image" })).toBeFocused();
+  await expect(panel.getByRole("button", { name: "Map", exact: true })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
+  await expect(date).toHaveAttribute("aria-valuetext", "Dec 23, 2020");
   const ice = panel.getByRole("combobox", { name: "Iceberg" });
   await ice.selectOption({ label: "A-68J" });
   const slider = panel.getByRole("slider", { name: "Track date" });

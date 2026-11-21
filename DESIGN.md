@@ -594,10 +594,10 @@ globe or map. The wind cursor selects a measured minute independently of the GOE
 Back to the oval restores the forecast edition, camera and projection. Reduced motion opens on
 Earth with the same three chapter controls.
 
-Lights Return approaches Puerto Rico from After Dark, then opens the satellite archive at the
-island’s projected size. Black Marble’s colors represent observed nighttime lighting in this bounded
-archive view. The before-and-after divider holds the same position and scale in both images.
-Reduced motion opens the baseline directly, with the same manual playback and comparison controls.
+Lights Return approaches Puerto Rico from After Dark and reveals the registered Black Marble stills
+at the island’s scale. Both dates remain visible when the before-and-after divider is open. The
+globe and map preserve the landscape beneath the divider. Reduced motion opens the baseline
+directly with the same playback and comparison controls.
 
 Katrina opens on a banked view of the Gulf horizon, follows the eye along NOAA’s best track and
 settles to an overview at the Buras landfall. Track dots mark published fixes. Wind outlines use
@@ -655,10 +655,14 @@ HVO overflight marks the ocean entry. The camera levels at the bay for the shore
 holds scale and position so the former coast and the new land can be compared. Reduced motion
 uses fixed maps and the manual wipe.
 
-Iceberg Drift opens on Terra MODIS, banks along A-68A’s track, and cuts to Landsat and VIIRS
-on their capture dates. The flight levels into a regional map as the tracks diverge. Selecting
-a fragment highlights its path and jumps to its last recorded fix. Reduced motion opens a
-still and keeps the date slider and track picker available.
+Iceberg Drift banks along A-68A’s track and widens as the fragments separate. Selecting a world
+marker pauses on that date and connects the route to its reading. The track picker can jump to
+a fragment’s last fix. Terra MODIS, Landsat and VIIRS images open at their capture dates and
+return to the same track and framing. Reduced motion keeps the dates and markers available.
+
+Vanishing Sea reveals the labeled basins as the early shoreline separates. A basin marker opens
+the observed-water and coverage reading for the held year. The early shoreline and gaps remain
+visible as the archive changes underneath.
 
 Megaflash banks over a false-color infrared scan and slows the observed optical spread
 so the newest pulses stand out against the accumulated trace. It levels into a five-state

@@ -24,15 +24,15 @@ test("Lights Return compares NASA recovery periods and returns to the same After
     "NASA’s archived images couldn’t load.",
   );
   await panel.getByRole("button", { name: "Retry images" }).click();
-  const stage = page.getByRole("group", { name: "Puerto Rico night lights" });
-  const active = stage.locator("img[data-current]");
-  await expect(active).toHaveAttribute("src", /maria-before-/);
-  await expect(await saveImageButton(page)).toBeDisabled();
+  const stage = panel.locator(".replay-stage");
+  const periodTitle = panel.locator(".lights-reading h3");
+  await expect(stage.locator(".stage-readout")).toContainText("Before Maria");
+  await expect(await saveImageButton(page)).toBeEnabled();
   const period = panel.getByRole("slider", { name: "Night-light period" });
   const compare = panel.getByRole("button", { name: "Compare with before" });
   await expect(compare).toBeDisabled();
   await period.press("ArrowRight");
-  await expect(active).toHaveAttribute("src", /maria-early-/);
+  await expect(periodTitle).toHaveText("Early aftermath");
   await expect(period).toHaveAttribute("aria-valuetext", /20 Sep – 20 Nov 2017/);
   await compare.click();
   const divider = panel.getByRole("slider", { name: "Before and after divider" });
@@ -42,16 +42,28 @@ test("Lights Return compares NASA recovery periods and returns to the same After
   await divider.press("Home");
   await expect(stage.locator(".stage-readout")).toContainText("Early aftermath");
   await divider.press("ArrowRight");
-  await expect(stage.locator(".lights-map")).toHaveCSS("--lights-split", "1%");
+  await expect(divider).toHaveValue("1");
+  await expect(panel.locator(".lights-dates")).toContainText("Pre-storm baseline");
+  const anchor = stage.getByText("Ponce", { exact: true });
+  await expect(anchor).toBeVisible();
+  const before = (await anchor.boundingBox())!;
+  await divider.press("ArrowRight");
+  const after = (await anchor.boundingBox())!;
+  expect(Math.hypot(after.x - before.x, after.y - before.y)).toBeLessThan(2);
+  await panel.getByRole("button", { name: "Map", exact: true }).click();
+  await expect(panel.getByRole("button", { name: "Map", exact: true })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
+  await expect(divider).toHaveValue("2");
   await period.press("End");
-  await expect(active).toHaveAttribute("src", /maria-late-/);
+  await expect(periodTitle).toHaveText("Months 5–6");
   await expect(period).toHaveAttribute("aria-valuetext", /21 Jan – 20 Mar 2018/);
-  await expect(active).toHaveJSProperty("naturalWidth", 1840);
   await page.setViewportSize({ width: 812, height: 375 });
   await expect(period).toBeInViewport();
   await panel.getByRole("button", { name: "Replay" }).click();
-  await expect(active).toHaveAttribute("src", /maria-before-/);
-  await expect(active).toHaveAttribute("src", /maria-early-/);
+  await expect(periodTitle).toHaveText("Before Maria");
+  await expect(periodTitle).toHaveText("Early aftermath");
   await panel.getByRole("button", { name: "Pause" }).click();
   await expect(period).toHaveValue("1");
   await page.keyboard.press("Escape");
@@ -61,13 +73,13 @@ test("Lights Return compares NASA recovery periods and returns to the same After
   await page.emulateMedia({ reducedMotion: "no-preference" });
   await open.click();
   await expect(stage.getByText("Approaching the island", { exact: true })).toBeVisible();
-  await expect(active).toHaveAttribute("src", /maria-early-/);
+  await expect(periodTitle).toHaveText("Early aftermath");
   await expect(period).toHaveValue("1");
   await expect(panel.getByRole("button", { name: "Play", exact: true })).toBeVisible();
   await period.press("End");
   await compare.click();
   await divider.press("End");
-  await expect(stage.locator(".lights-archive")).toHaveCSS("opacity", "1");
+  await expect(stage.locator(".stage-readout")).toContainText("Before Maria");
   await panel.getByRole("button", { name: "Back to stories" }).click();
   await expect(open).toBeFocused();
   expect(await canvas.evaluate((element, prior) => element === prior, original)).toBe(true);

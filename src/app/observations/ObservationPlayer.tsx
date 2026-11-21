@@ -26,7 +26,6 @@ export function ObservationPlayer({
   id,
   source,
   horizon,
-  photo,
   map,
   update,
   picker,
@@ -34,7 +33,6 @@ export function ObservationPlayer({
   id: ObservationId;
   source: ObservationSource;
   horizon: boolean;
-  photo: boolean;
   map: boolean;
   update: (view: ObservationView | null) => void;
   picker?: { value: string; select: (value: string) => void };
@@ -120,7 +118,7 @@ export function ObservationPlayer({
     if (frame)
       remember?.({
         choice: option,
-        chapter: gauge ? `gauge:${gauge.id}` : horizon ? "horizon" : photo ? "photo" : "",
+        chapter: gauge ? `gauge:${gauge.id}` : horizon ? "horizon" : "",
         ...(id === "orbit" ? { city: option } : {}),
       });
   }, [
@@ -135,7 +133,6 @@ export function ObservationPlayer({
     remember,
     option,
     id,
-    photo,
     inspect,
     playing,
     preparing,
@@ -208,12 +205,7 @@ export function ObservationPlayer({
       {frame && data && (
         <>
           <StoryDock>
-            <div
-              className="observation-transport"
-              data-drift-opening={
-                (id === "iceberg" && index === 0 && selectedAt === null && !playing) || undefined
-              }
-            >
+            <div className="observation-transport">
               <span>
                 {id === "lightning" && frame === latest ? "Latest available scan" : metadata.time}
                 {" · "}
@@ -240,15 +232,8 @@ export function ObservationPlayer({
                   <PlaybackButton
                     playing={playing}
                     ended={index === frames.length - 1}
-                    startLabel={
-                      id === "iceberg" && index === 0 && selectedAt === null ? "Follow the drift" : undefined
-                    }
                     onClick={() => {
-                      if (
-                        !playing &&
-                        (index === frames.length - 1 || (id === "iceberg" && selectedAt === null))
-                      )
-                        setSelectedAt(frames[0]!.at);
+                      if (!playing && index === frames.length - 1) setSelectedAt(frames[0]!.at);
                       setPlaying(!playing);
                     }}
                   />

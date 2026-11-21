@@ -21,6 +21,10 @@ const EarthStory = lazy(() =>
   import("../earth-stories/EarthStory").then(({ EarthStory }) => ({ default: EarthStory })),
 );
 
+const IcebergDrift = lazy(() =>
+  import("../iceberg/IcebergDrift").then(({ IcebergDrift }) => ({ default: IcebergDrift })),
+);
+
 const LightsReturn = lazy(() =>
   import("../lights/LightsReturn").then(({ LightsReturn }) => ({ default: LightsReturn })),
 );
@@ -101,8 +105,24 @@ export function ObservationDeckShell({
             city={city}
             onRadar={onRadar}
           />
+        ) : entry === "iceberg" ? (
+          <IcebergDrift
+            map={deck.map}
+            readCamera={readCamera}
+            restoreCamera={restoreCamera}
+            onMap={deck.setMap}
+            onView={deck.update}
+            onClose={close}
+            closeLabel={closeLabel}
+          />
         ) : entry === "lights" ? (
-          <LightsReturn onView={deck.update} onClose={close} closeLabel={closeLabel} />
+          <LightsReturn
+            map={deck.map}
+            onMap={deck.setMap}
+            onView={deck.update}
+            onClose={close}
+            closeLabel={closeLabel}
+          />
         ) : entry === "shadow" ? (
           <ShadowChase
             city={city.city}

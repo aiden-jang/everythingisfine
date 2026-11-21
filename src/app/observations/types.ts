@@ -27,6 +27,7 @@ export interface ObservationRaster {
   bounds?: readonly [west: number, south: number, east: number, north: number];
   opacity?: number;
   sweep?: boolean;
+  feather?: number;
   corners?: readonly [GeoPoint, GeoPoint, GeoPoint, GeoPoint];
 }
 

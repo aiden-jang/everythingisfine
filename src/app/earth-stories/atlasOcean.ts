@@ -2,6 +2,8 @@ import type { SkyCity } from "../../geo/tonight";
 import { atlasArchive, atlasImage } from "./atlasArchive";
 import { date, type EarthStoryData, type StoryFrame } from "./types";
 
+import type { BasinReadings, ShorelineBasin } from "./shorelineBasins";
+
 type Bounds = [number, number, number, number];
 type RasterFrame = {
   day: string;
@@ -76,13 +78,18 @@ export async function springStory(choice: string, city: SkyCity): Promise<EarthS
 export async function aralStory(): Promise<EarthStoryData> {
   const data = await atlasArchive<{
     bounds: Bounds;
-    frames: { year: number; image: string; missing: number }[];
+    basins: ShorelineBasin[];
+    frames: { year: number; image: string; missing: number; basins: BasinReadings }[];
   }>("aral");
   const frames = data.frames.map((f): StoryFrame => ({
     at: date(`${f.year}-06-01`),
     timeLabel: `${f.year} · annual water classification`,
     dateTime: String(f.year),
-    caption: "The early water boundary stays in place as the sea retreats",
+    caption:
+      f.year === 1989
+        ? "North and south are largely separated"
+        : "The early water boundary stays in place as the sea retreats",
+    basins: f.basins,
     raster: { url: atlasImage(f.image), bounds: data.bounds },
     measurements: [{ label: "Missing observations inside reference", value: `${f.missing}%` }],
   }));
@@ -90,7 +97,13 @@ export async function aralStory(): Promise<EarthStoryData> {
     frames,
     target: { lon: 59.5, lat: 45, zoom: 2 },
     lens: { globe: 5, map: 10 },
-    chapters: chapters(frames, ["Early shoreline", "Separating basins", "Recent archive"]),
+    basins: data.basins,
+    timelineLabel: "Archive year",
+    chapters: [
+      { at: frames[0]!.at, label: "Early shoreline" },
+      { at: date("1989-06-01"), label: "Separating basins" },
+      { at: frames.at(-1)!.at, label: "Recent archive" },
+    ],
     legend: [
       { color: "#e6e1c5", label: "1984–1986 observed-water boundary" },
       { color: "#3987b2", label: "Permanent water" },

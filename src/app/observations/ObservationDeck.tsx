@@ -16,7 +16,9 @@ import { StoryProjection } from "./StoryProjection";
 
 import { ShareMoment, useStorySession } from "./StorySession";
 
-type Deck = Omit<ReturnType<typeof useObservationDeck>, "entry"> & { entry: ObservationId };
+type Deck = Omit<ReturnType<typeof useObservationDeck>, "entry"> & {
+  entry: Exclude<ObservationId, "iceberg">;
+};
 
 export function ObservationDeck({
   deck,
@@ -30,7 +32,6 @@ export function ObservationDeck({
   city: { name: string; select: (name: string) => void };
 }): JSX.Element {
   const { initial } = useStorySession();
-  const [photo, setPhoto] = useState(initial?.chapter === "photo");
   const back = useRef<HTMLButtonElement>(null);
   const [loaded, setLoaded] = useState<{ id: ObservationId; source: ObservationSource | null } | null>(null);
   const [revision, retry] = useState(0);
@@ -41,7 +42,6 @@ export function ObservationDeck({
   const meta = observations[id];
   const title = meta.title;
   const photograph = deck.view?.frame.photograph;
-  const showPhoto = id === "epic" || (!deck.map && photo);
   const picker =
     id === "orbit"
       ? { value: city.name, select: city.select }
@@ -79,7 +79,7 @@ export function ObservationDeck({
             : `${title} on the ${deck.map ? "map" : deck.horizon ? "horizon" : "globe"}`
         }
       >
-        {photograph && showPhoto && (
+        {photograph && id === "epic" && (
           <div className="observation-photograph" data-loaded={deck.view?.image ? "true" : "false"}>
             {deck.view?.image && <img src={deck.view.image.src} alt={photograph.alt} />}
           </div>
@@ -93,7 +93,7 @@ export function ObservationDeck({
         </div>
         <div className="stage-ident">
           <span className="stage-rule" aria-hidden="true" />
-          <span>{id === "iceberg" ? "Scotia Sea · South Georgia" : meta.source}</span>
+          <span>{meta.source}</span>
         </div>
         {!deck.map && deck.view?.frame.tide && <TideGauge tide={deck.view.frame.tide} />}
         <div className="stage-readout">
@@ -156,17 +156,8 @@ export function ObservationDeck({
                 </button>
               </div>
             </div>
-            <p className="observation-note observation-introduction">
-              {id === "iceberg" ? meta.summary : meta.description}
-            </p>
+            <p className="observation-note observation-introduction">{meta.description}</p>
             <SharedStory />
-            {id === "iceberg" && photograph && !deck.map && (
-              <div className="observatory-actions">
-                <button type="button" aria-pressed={photo} onClick={() => setPhoto(!photo)}>
-                  {photo ? "Return to tracks" : "Show satellite image"}
-                </button>
-              </div>
-            )}
             {loaded?.id === id ? (
               loaded.source ? (
                 <ObservationPlayer
@@ -174,7 +165,6 @@ export function ObservationDeck({
                   id={id}
                   source={loaded.source}
                   horizon={deck.horizon}
-                  photo={photo}
                   map={deck.map}
                   update={deck.update}
                   {...(picker ? { picker } : {})}
@@ -191,41 +181,6 @@ export function ObservationDeck({
               )
             ) : (
               <StoryLoading>Opening {title}…</StoryLoading>
-            )}
-            {id === "iceberg" && (
-              <details className="observation-details">
-                <summary>Sources &amp; coverage</summary>
-                <div className="lights-links">
-                  <a
-                    href="https://science.nasa.gov/earth/earth-observatory/iceberg-a-68a-nears-south-georgia-147535/"
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    Terra MODIS
-                  </a>
-                  <a
-                    href="https://science.nasa.gov/earth/earth-observatory/iceberg-goes-with-the-flow-147715/"
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    Landsat 8
-                  </a>
-                  <a
-                    href="https://science.nasa.gov/earth/earth-observatory/pieces-of-iceberg-a-68a-147785/"
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    NOAA-20 VIIRS
-                  </a>
-                  <a
-                    href="https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/"
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    OGL v3.0
-                  </a>
-                </div>
-              </details>
             )}
             <ShareMoment />
             <ExperienceEnding />

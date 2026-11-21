@@ -1,5 +1,5 @@
 import type { ObservationFrame, ObservationView } from "../observations/types";
-import type { EarthStoryData } from "./types";
+import type { EarthStoryData, StorySite } from "./types";
 
 export function StoryOverlay({
   localSky,
@@ -46,6 +46,35 @@ export function StoryOverlay({
             ))}
         </div>
       )}
+    </>
+  );
+}
+
+export function StorySitePicker({
+  sites,
+  site,
+  choose,
+  value,
+}: {
+  sites: readonly StorySite[];
+  site: string;
+  choose: (id: string) => void;
+  value: string | undefined;
+}) {
+  return (
+    <>
+      <label className="observation-picker">
+        <span>Survey measurement</span>
+        <select value={site} onChange={(event) => choose(event.currentTarget.value)}>
+          <option value="">Choose a marked site</option>
+          {sites.map(({ id, label }) => (
+            <option key={id} value={id}>
+              {label}
+            </option>
+          ))}
+        </select>
+      </label>
+      {value && <p className="observation-note">{value}</p>}
     </>
   );
 }
