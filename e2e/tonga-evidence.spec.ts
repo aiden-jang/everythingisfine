@@ -132,7 +132,7 @@ test("a station link has source-specific metadata and opens its paused recipient
   await expect(story.getByRole("button", { name: "Play", exact: true })).toBeVisible();
 });
 
-test("Tonga’s opening fits its primary action above the credit in short landscape", async ({ page }) => {
+test("Tonga’s landscape opening keeps the action and scan clear of other controls", async ({ page }) => {
   await page.setViewportSize({ width: 812, height: 375 });
   await page.emulateMedia({ reducedMotion: "reduce" });
   await installFeeds(page, { presentation: "fresh", empty: true });
@@ -142,6 +142,18 @@ test("Tonga’s opening fits its primary action above the credit in short landsc
   const action = (await follow.boundingBox())!;
   const credit = (await page.locator(".creator-credit").boundingBox())!;
   expect(action.y + action.height).toBeLessThanOrEqual(credit.y);
+  const stage = page.locator(".replay-stage");
+  const photo = stage.locator(".replay-inset");
+  const caption = stage.locator(".stage-readout");
+  const projection = stage.locator(".story-projection");
+  await expect(photo).toBeInViewport({ ratio: 1 });
+  await expect(caption).toContainText("Scan");
+  await expect(caption).toBeInViewport({ ratio: 1 });
+  const [image, readout, tabs] = await Promise.all(
+    [photo, caption, projection].map((element) => element.boundingBox()),
+  );
+  expect(image!.y + image!.height).toBeLessThanOrEqual(readout!.y);
+  expect(readout!.y + readout!.height).toBeLessThan(tabs!.y);
   await follow.click();
   await expect(page.getByRole("slider", { name: "Replay time", exact: true })).toBeVisible();
 });

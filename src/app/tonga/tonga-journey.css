@@ -448,8 +448,11 @@
     margin: 0;
     font-size: 13px;
   }
+  .zones[data-tonga-phase="discover"] .replay-inset {
+    bottom: calc(var(--stage-inset) + 112px);
+  }
   .zones[data-tonga-phase="discover"] .replay-stage:has(.replay-inset) .stage-readout {
-    inset: auto 5% 16% auto;
+    inset: auto 5% calc(var(--stage-inset) + 64px) auto;
     width: min(38%, 410px);
     font-size: 11px;
   }
