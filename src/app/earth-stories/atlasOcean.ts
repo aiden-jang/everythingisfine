@@ -14,6 +14,7 @@ type RasterFrame = {
   sst?: number | null;
 };
 type RasterArchive = { bounds: Bounds; frames: RasterFrame[] };
+const formatDay = new Intl.DateTimeFormat("en-GB", { dateStyle: "medium", timeZone: "UTC" });
 const chapters = (frames: readonly StoryFrame[], labels: readonly string[]) =>
   labels.map((label, i) => ({
     label,
@@ -24,10 +25,14 @@ export async function bloomStory(choice: string): Promise<EarthStoryData> {
   const data = await atlasArchive<RasterArchive>("bloom");
   const frames = data.frames.map((f): StoryFrame => {
     const image = choice === "Natural color" ? f.natural : f.image;
+    const paired = choice === "Natural color" ? f.image : f.natural;
     return {
       at: date(f.day),
+      dateTime: f.day,
+      timeLabel: formatDay.format(date(f.day)),
       caption: image ? `${choice} · Aqua MODIS observation` : "No usable satellite coverage on this date",
       ...(image ? { raster: { url: atlasImage(image), bounds: data.bounds } } : {}),
+      ...(image && paired ? { pairedImage: atlasImage(paired) } : {}),
       measurements: [
         {
           label: "Observation coverage",
@@ -38,7 +43,10 @@ export async function bloomStory(choice: string): Promise<EarthStoryData> {
   });
   return {
     frames,
-    target: { lon: -23, lat: 52, zoom: 1.6 },
+    openingAt: date("2024-05-06"),
+    timelineLabel: "Satellite date",
+    target: { lon: -22.5, lat: 53, zoom: 1.6 },
+    lens: { globe: 1.8, map: 2.7 },
     chapters: chapters(frames, ["April", "May", "June"]),
     legend:
       choice === "Natural color"
@@ -193,7 +201,7 @@ export async function ninoStory(): Promise<EarthStoryData> {
   }));
   return {
     frames,
-    target: { lon: -160, lat: 15, zoom: 1.1 },
+    target: { lon: -160, lat: -6, zoom: 1.1 },
     chapters: chapters(frames, ["Early 1997", "Warm layer shifts", "Late 1998"]),
     legend: [
       { color: "#1e3971", label: "8°C" },

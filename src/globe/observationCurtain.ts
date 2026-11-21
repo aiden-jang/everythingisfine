@@ -84,6 +84,8 @@ export function createObservationCurtain(morph: { value: number }) {
       opened: { value: 0 },
       down: { value: false },
       map: { value: null as Texture | null },
+      focusAt: { value: -1 },
+      focusLon: { value: 360 },
     },
     vertexShader: `${curtainProjection}
       varying vec2 sampleAt;
@@ -91,8 +93,11 @@ export function createObservationCurtain(morph: { value: number }) {
         sampleAt=vec2(uv.x,down ? 1.0-uv.y : uv.y);
         gl_Position=projectSection();
       }`,
-    fragmentShader: `uniform sampler2D map; uniform float opened; varying vec2 sampleAt;
-      void main(){ gl_FragColor=texture2D(map,sampleAt); gl_FragColor.a *= opened*0.94;
+    fragmentShader: `uniform sampler2D map; uniform float opened; uniform float focusAt; varying vec2 sampleAt;
+      void main(){ gl_FragColor=texture2D(map,sampleAt);
+      float band=1.0-smoothstep(0.002,0.009,abs(sampleAt.x-focusAt));
+      gl_FragColor.rgb=mix(gl_FragColor.rgb,vec3(0.93,0.83,0.60),band*0.32);
+      gl_FragColor.a *= opened*0.94;
       #include <colorspace_fragment>
       }`,
     side: DoubleSide,
@@ -106,15 +111,21 @@ export function createObservationCurtain(morph: { value: number }) {
     new ShaderMaterial({
       uniforms: { ...material.uniforms, sampleOpacity, pixelRatio: { value: 1 } },
       vertexShader: `${curtainProjection}
-      uniform float pixelRatio;
-      void main(){ gl_Position=projectSection(); gl_PointSize=4.5*pixelRatio; }`,
-      fragmentShader: `uniform float opened; uniform float sampleOpacity;
+      uniform float pixelRatio; uniform float focusLon; varying float chosen;
+      void main(){
+        chosen=1.0-step(0.01,abs(mod(aLonLat.x-focusLon+180.0,360.0)-180.0));
+        if(focusLon>180.0) chosen=0.0;
+        gl_Position=projectSection(); gl_PointSize=mix(4.5,6.5,chosen)*pixelRatio;
+      }`,
+      fragmentShader: `uniform float opened; uniform float sampleOpacity; uniform float focusLon; varying float chosen;
       void main(){
         float r=2.0*length(gl_PointCoord-0.5);
         float edge=max(fwidth(r),0.02);
         float ink=smoothstep(0.54-edge,0.54+edge,r);
-        vec3 color=mix(vec3(0.94,0.97,0.94),vec3(0.035,0.065,0.08),ink);
-        gl_FragColor=vec4(color,(1.0-smoothstep(1.0-edge,1.0,r))*opened*sampleOpacity);
+        vec3 core=mix(vec3(0.94,0.97,0.94),vec3(0.97,0.87,0.60),chosen);
+        vec3 color=mix(core,vec3(0.035,0.065,0.08),ink);
+        float visibility=focusLon>180.0 ? 1.0 : mix(0.44,1.0,chosen);
+        gl_FragColor=vec4(color,(1.0-smoothstep(1.0-edge,1.0,r))*opened*sampleOpacity*visibility);
         #include <colorspace_fragment>
       }`,
       transparent: true,
@@ -136,6 +147,13 @@ export function createObservationCurtain(morph: { value: number }) {
   return {
     object,
     set(next: Curtain | undefined) {
+      const focus = next?.mooringFocus;
+      material.uniforms.focusLon!.value = focus ?? 360;
+      if (next && focus !== undefined) {
+        const start = next.points[0]!.lon;
+        const span = (next.points.at(-1)!.lon - start + 360) % 360;
+        material.uniforms.focusAt!.value = ((focus - start + 360) % 360) / span;
+      } else material.uniforms.focusAt!.value = -1;
       if (next?.moorings !== prior?.moorings) {
         samples.visible = !!next?.moorings;
         if (!prior?.moorings) sampleOpacity.value = 0;

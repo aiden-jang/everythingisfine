@@ -1,6 +1,18 @@
 import type { GeoPoint, ObservationTerrain } from "../observations/types";
 import { distanceKm } from "../../geo/sphere";
 export type TerrainLine = readonly [GeoPoint, GeoPoint];
+export const seafloorFlight: TerrainLine = [
+  { lon: 148, lat: 17 },
+  { lon: 142.2, lat: 11.35 },
+];
+
+export function sectionPoint(line: TerrainLine, fraction: number): GeoPoint {
+  return {
+    lon: line[0].lon + (line[1].lon - line[0].lon) * fraction,
+    lat: line[0].lat + (line[1].lat - line[0].lat) * fraction,
+  };
+}
+
 export function terrainSample(grid: ObservationTerrain, lon: number, lat: number) {
   const [west, south, east, north] = grid.bounds;
   if (lon < west || lon > east || lat < south || lat > north) return null;
@@ -39,7 +51,8 @@ export function terrainSource(code: number): string {
 
 export function readTerrainSection(value: string | undefined, grid: ObservationTerrain): TerrainLine | null {
   if (!value?.startsWith("section:")) return null;
-  const parts = value.slice(8).split(",").map(Number);
+  if (value.split(":")[1] === "flight") return seafloorFlight;
+  const parts = value.split(":")[1]!.split(",").map(Number);
   if (parts.length !== 4 || !parts.every(Number.isFinite)) return null;
   const line: TerrainLine = [
     { lon: parts[0]!, lat: parts[1]! },
@@ -55,8 +68,8 @@ export function sectionSamples(grid: ObservationTerrain, line: TerrainLine) {
   const length = distanceKm(line[0].lon, line[0].lat, line[1].lon, line[1].lat);
   return Array.from({ length: 101 }, (_, i) => {
     const p = i / 100;
-    const lon = line[0].lon + (line[1].lon - line[0].lon) * p;
-    const lat = line[0].lat + (line[1].lat - line[0].lat) * p;
-    return { km: p * length, meters: terrainSample(grid, lon, lat)?.elevation ?? null };
+    const { lon, lat } = sectionPoint(line, p);
+    const cell = terrainSample(grid, lon, lat);
+    return { lon, lat, km: p * length, meters: cell?.elevation ?? null, source: cell?.tid };
   });
 }

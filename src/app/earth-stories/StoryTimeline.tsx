@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState } from "react";
+import { useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { useStoryNavigation } from "../journeys/StoryNavigation";
 import { PlaybackButton } from "../PlaybackButton";
 import type { EarthStoryData, StoryFrame } from "./types";
@@ -20,6 +20,7 @@ export function StoryTimeline({
   label,
   time,
   restored,
+  comparison,
 }: {
   startLabel?: string | undefined;
   data: EarthStoryData;
@@ -31,6 +32,7 @@ export function StoryTimeline({
   label: string;
   time: string;
   restored: boolean;
+  comparison?: ReactNode;
 }) {
   const annual = frame.dateTime?.length === 4;
   const [expandedAt, expand] = useState<number | null>(null);
@@ -129,6 +131,7 @@ export function StoryTimeline({
             </button>
           )}
         </div>
+        {comparison}
       </StoryDock>
       <div className="story-milestones" role="group" aria-label="Story moments">
         {milestones.map((chapter) => {

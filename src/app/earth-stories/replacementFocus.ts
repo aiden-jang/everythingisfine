@@ -26,15 +26,19 @@ export function captureStoryFocus(): (() => void) | undefined {
   if (!panel) return;
   const target = identity(active);
   const scroll = panel.querySelector(".observatory-intro")?.scrollTop ?? 0;
-  const open = Array.from(panel.querySelectorAll("details[open]")).map(
-    (details) => details.querySelector("summary")?.textContent,
+  const disclosures = new Map(
+    Array.from(panel.querySelectorAll("details"), (details) => [
+      details.querySelector("summary")?.textContent,
+      details.open,
+    ]),
   );
   const fallback = active.closest("details")?.querySelector("summary")?.textContent;
   return () => {
     const replacement = document.querySelector<HTMLElement>(".replay-region");
     if (!replacement) return;
     replacement.querySelectorAll("details").forEach((details) => {
-      details.open = open.includes(details.querySelector("summary")?.textContent);
+      const open = disclosures.get(details.querySelector("summary")?.textContent);
+      if (open !== undefined) details.open = open;
     });
     const match = Array.from(
       replacement.querySelectorAll<HTMLElement>("button, input, select, summary, a[href]"),

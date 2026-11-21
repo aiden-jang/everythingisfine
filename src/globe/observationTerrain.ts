@@ -100,10 +100,12 @@ export function createObservationTerrain(morph: { value: number }) {
   object.visible = false;
   let prior: ObservationTerrain | undefined;
   let reveal = 0;
+  let progress = 0;
   return {
     object,
     set(view: ObservationView["terrain"]) {
       object.visible = !!view;
+      progress = view?.progress ?? 0;
       if (view?.grid === prior) return;
       mesh.geometry.dispose();
       mesh.geometry = view ? seafloorGeometry(view.grid) : new BufferGeometry();
@@ -113,11 +115,14 @@ export function createObservationTerrain(morph: { value: number }) {
     },
     step(dt: number, reduced: boolean) {
       if (!prior) return false;
-      reveal = reduced ? 1 : Math.min(1, reveal + dt / 1.4);
+      const target = reduced ? 1 : progress;
+      const remaining = target - reveal;
+      reveal =
+        reduced || Math.abs(remaining) <= dt / 0.8 ? target : reveal + (Math.sign(remaining) * dt) / 0.8;
       material.uniforms.reveal!.value = 1 - (1 - reveal) ** 3;
       waterMaterial.uniforms.opacity!.value = 0.8 * (1 - reveal) ** 2;
       water.visible = reveal < 1;
-      return reveal < 1;
+      return reveal !== target;
     },
     dispose() {
       mesh.geometry.dispose();

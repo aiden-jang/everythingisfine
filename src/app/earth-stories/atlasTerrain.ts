@@ -2,21 +2,25 @@ import type { ObservationTerrain } from "../observations/types";
 import { atlasArchive, atlasImage } from "./atlasArchive";
 import { date, point, type EarthStoryData, type StoryFrame } from "./types";
 
-import { terrainSample, terrainSource } from "./terrainSection";
+import { seafloorFlight, sectionPoint, terrainSample, terrainSource } from "./terrainSection";
 
 export async function seafloorStory(): Promise<EarthStoryData> {
   const grid = await atlasArchive<ObservationTerrain & { image: string }>("seafloor");
+  const route = Array.from({ length: 121 }, (_, i) => ({
+    ...sectionPoint(seafloorFlight, i / 120),
+    lift: 0.066,
+  }));
   const frames = Array.from({ length: 121 }, (_, i): StoryFrame => {
     const progress = i / 120;
-    const lon = 148 - 5.8 * progress,
-      lat = 17 - 5.65 * progress;
+    const { lon, lat } = route[i]!;
     const reading = terrainSample(grid, lon, lat)!;
     return {
       at: date("2026-01-01") + i,
       sequence: true,
       timeLabel: `${Math.round(progress * 100)}% · ${i < 35 ? "Across the Pacific" : i < 95 ? "Into the trench" : "Challenger Deep region"}`,
-      caption: "GEBCO 2026 terrain · an authored flight over the measured and inferred seafloor",
+      caption: "Authored route · GEBCO seafloor grid",
       marks: [{ lon, lat, lift: 0.072, size: 9, color: 0xe8e4bd }],
+      paths: [{ points: route.slice(0, i + 1), color: 0xe8e4bd }],
       raster: { url: atlasImage(grid.image), bounds: grid.bounds, opacity: 0.9 },
       measurements: [
         { label: "Sampled seafloor elevation", value: `${reading.elevation.toLocaleString()} m` },
@@ -29,8 +33,8 @@ export async function seafloorStory(): Promise<EarthStoryData> {
     frames,
     terrain: grid,
     timelineLabel: "Flight progress",
-    target: { lon: 144.6, lat: 13.5, zoom: 1.8 },
-    lens: { globe: 3.6, map: 7 },
+    target: { lon: 145.1, lat: 14.175, zoom: 1.65 },
+    lens: { globe: 4.25, map: 6 },
     chapters: [
       { at: frames[0]!.at, label: "Pacific" },
       { at: frames[50]!.at, label: "Trench" },

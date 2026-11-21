@@ -6,6 +6,7 @@ export function useStoryClock(
   waiting: RefObject<boolean>,
   restored: boolean,
   autoPlay: boolean,
+  duration = Math.min(24000, Math.max(6000, count * 900)),
 ) {
   const [position, setPosition] = useState(initial);
   const [playing, setPlaying] = useState(
@@ -23,10 +24,7 @@ export function useStoryClock(
       const dt = previous === undefined ? 0 : Math.min(100, now - previous);
       previous = now;
       if (!waiting.current)
-        clock.current = Math.min(
-          count - 1,
-          clock.current + (dt * (count - 1)) / Math.min(24000, Math.max(6000, count * 900)),
-        );
+        clock.current = Math.min(count - 1, clock.current + (dt * (count - 1)) / duration);
       if (now - readout >= 65 || clock.current === count - 1) {
         setPosition(clock.current);
         readout = now;
@@ -45,7 +43,7 @@ export function useStoryClock(
       cancelAnimationFrame(request);
       document.removeEventListener("visibilitychange", visibility);
     };
-  }, [count, playing, waiting]);
+  }, [count, duration, playing, waiting]);
   useEffect(() => {
     const media = matchMedia("(prefers-reduced-motion: reduce)");
     const stop = () => {

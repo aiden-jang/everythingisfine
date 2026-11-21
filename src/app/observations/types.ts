@@ -142,6 +142,7 @@ export interface ObservationView {
     image: HTMLImageElement;
     down?: boolean;
     moorings?: MooringSection | undefined;
+    mooringFocus?: number | undefined;
   };
   terrain?: { grid: ObservationTerrain; progress: number };
   fault?: { model: ObservationFault; seconds: number; amount: number };

@@ -28,3 +28,13 @@ export function StoryRecovery({
     </div>
   );
 }
+export function StoryImageRecovery({ retry }: { retry: () => void }) {
+  return (
+    <p role="status" className="observation-note">
+      This satellite image could not load. The last available view stays visible.{" "}
+      <button type="button" onClick={retry}>
+        Retry image
+      </button>
+    </p>
+  );
+}

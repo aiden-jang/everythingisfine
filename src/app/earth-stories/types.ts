@@ -11,6 +11,7 @@ import type { BasinReadings, ShorelineBasin } from "./shorelineBasins";
 export interface StoryFrame extends ObservationFrame {
   caption: string;
   basins?: BasinReadings;
+  pairedImage?: string;
 }
 export interface StorySite {
   id: string;
@@ -22,6 +23,7 @@ export interface StorySite {
 }
 export interface EarthStoryData {
   frames: readonly StoryFrame[];
+  openingAt?: number;
   sky?: (at: number) => NonNullable<ObservationView["sky"]>;
   geometry?: (frame: StoryFrame) => ObservationFrame;
   target: CameraState;

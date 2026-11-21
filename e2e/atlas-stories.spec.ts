@@ -110,7 +110,7 @@ for (const [id, title, chapter, choice] of stories) {
     });
     await page.goto(`/#v=observe&story=${id}&choice=${encodeURIComponent(choice)}`);
     const panel = page.getByRole("region", { name: title, exact: true });
-    const slider = panel.getByRole("slider");
+    const slider = panel.getByRole("group", { name: "Story playback" }).getByRole("slider");
     await expect(slider).toBeVisible();
     await panel.getByRole("button", { name: chapter, exact: true }).click();
     await expect(panel.getByText("Loading the selected observations…", { exact: true })).toHaveCount(0);
@@ -154,7 +154,7 @@ for (const [id, title, chapter, choice] of stories) {
     expect(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)).toBe(false);
     await page.setViewportSize({ width: 390, height: 844 });
     expect(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)).toBe(false);
-    await expect(panel.getByRole("slider")).toBeVisible();
+    await expect(slider).toBeVisible();
     await panel.evaluate((node) => {
       const scroll = node.closest(".observatory-intro");
       if (scroll) scroll.scrollTop = 0;
@@ -186,7 +186,8 @@ test("seafloor sections accept coordinates and reopen at the shared measured lin
     "aria-pressed",
     "true",
   );
-  await page.evaluate(() =>
+  await page.evaluate(() => {
+    Object.defineProperty(navigator, "canShare", { configurable: true, value: () => false });
     Object.defineProperty(navigator, "clipboard", {
       configurable: true,
       value: {
@@ -194,9 +195,10 @@ test("seafloor sections accept coordinates and reopen at the shared measured lin
           Object.assign(window, { copiedAtlas: value });
         },
       },
-    }),
-  );
+    });
+  });
   await panel.getByRole("button", { name: "Share this moment" }).click();
+  await expect(panel.getByRole("status", { name: "Sharing status" })).toContainText("Link copied");
   const url = await page.evaluate(() => Reflect.get(window, "copiedAtlas") as string);
   expect(decodeURIComponent(url)).toContain("section:142,11,143,12");
   await page.goto(url);

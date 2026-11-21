@@ -80,6 +80,231 @@
 .terrain-section figcaption {
   color: var(--color-ink);
 }
+.terrain-section[data-flight-profile] {
+  transform-origin: 50% 0;
+  animation: fold-depth-profile 540ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+@keyframes fold-depth-profile {
+  from {
+    opacity: 0;
+    transform: perspective(420px) rotateX(-72deg);
+  }
+  to {
+    opacity: 1;
+    transform: perspective(420px) rotateX(0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .terrain-section[data-flight-profile] {
+    animation: none;
+  }
+}
+.terrain-profile-point {
+  fill: var(--color-ink);
+  stroke: var(--color-deck);
+  stroke-width: 2px;
+}
+.terrain-profile-control,
+.terrain-profile-reading {
+  display: grid;
+  gap: 3px;
+  font-size: var(--text-caption);
+}
+.terrain-profile-control input {
+  width: 100%;
+  min-height: 44px;
+}
+.terrain-profile-reading strong {
+  color: var(--color-ink);
+  font-family: var(--font-mono);
+}
+@media (max-width: 599px) {
+  .terrain-section {
+    padding: 8px;
+  }
+  .terrain-section svg {
+    height: 104px;
+  }
+  .seafloor-journey .story-dock {
+    grid-template-columns: minmax(0, 1fr) auto;
+    column-gap: 10px;
+    align-items: end;
+  }
+  .seafloor-journey .story-dock > .observatory-actions {
+    justify-content: flex-end;
+  }
+  .seafloor-journey .story-dock > .observatory-actions button {
+    padding-inline: 6px;
+  }
+}
+.nino-moorings {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.replay-region:is(.nino-journey, .seafloor-journey) .stage-readout {
+  inset-block: calc(var(--stage-inset) + 34px) auto;
+  width: fit-content;
+  max-width: min(380px, calc(100% - 150px));
+  padding: 4px 7px;
+  background: var(--color-void);
+}
+.nino-moorings button {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  transform: translate(-50%, -50%);
+  visibility: hidden;
+  pointer-events: auto;
+  cursor: pointer;
+}
+.nino-moorings button::before {
+  width: 10px;
+  height: 10px;
+  border: 1px solid var(--color-ink);
+  border-radius: 50%;
+  background: var(--color-void);
+  content: "";
+}
+.nino-moorings button[data-mooring-gap]::before {
+  border-style: dashed;
+}
+.nino-moorings button:is([aria-pressed="true"], :hover, :focus-visible)::before {
+  background: var(--color-ink);
+}
+.nino-moorings button span {
+  position: absolute;
+  bottom: calc(50% + 8px);
+  padding: 3px 5px;
+  background: var(--color-deck);
+  font: 11px/1.4 var(--font-mono);
+  white-space: nowrap;
+}
+.nino-moorings button:not([aria-pressed="true"], :hover, :focus-visible) span {
+  visibility: hidden;
+}
+.bloom-comparison {
+  grid-column: 1 / -1;
+  display: grid;
+  justify-items: stretch;
+  column-gap: 12px;
+  color: var(--color-dim);
+  font-size: var(--text-caption);
+}
+.bloom-comparison button {
+  justify-self: start;
+  min-height: 44px;
+  padding-inline: 10px;
+  border: 1px solid var(--color-hairline);
+  border-radius: 7px;
+  color: var(--color-ink);
+  cursor: pointer;
+}
+.bloom-comparison button:is(:hover, [aria-pressed="true"]) {
+  background: var(--color-raised);
+}
+.bloom-divider-label {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 6px;
+}
+.bloom-comparison input {
+  width: 100%;
+  min-height: 44px;
+}
+.bloom-compare-compact {
+  display: none;
+}
+@media (min-width: 900px) and (min-height: 621px) {
+  .bloom-journey .story-dock:has(.bloom-comparison[data-comparing]) {
+    grid-template-columns: minmax(0, 1.1fr) auto minmax(0, 1fr);
+  }
+  .bloom-comparison[data-comparing] {
+    grid-area: 1 / 3 / span 2;
+    padding-inline-start: 14px;
+    border-inline-start: 1px solid var(--color-hairline);
+  }
+}
+@media (max-height: 620px) and (min-width: 600px) {
+  .terrain-section {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    column-gap: 10px;
+    padding: 8px;
+  }
+  .terrain-section figcaption {
+    grid-column: 1 / -1;
+  }
+  .terrain-section svg {
+    align-self: center;
+    grid-row: 2 / span 2;
+  }
+  .bloom-journey .story-dock-host {
+    position: static;
+    padding-inline: var(--observatory-inline);
+  }
+  .bloom-journey .story-dock {
+    border-width: 1px 0 0;
+    border-radius: 0;
+    padding: 4px 0;
+  }
+}
+@media (max-width: 599px) and (max-height: 700px), (max-height: 620px) and (min-width: 600px) {
+  .bloom-journey .story-dock {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 2px 8px;
+    padding-block: 4px;
+  }
+  .bloom-journey .story-time {
+    grid-area: 1 / 1;
+  }
+  .bloom-journey .story-time label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+  .bloom-journey .story-time input,
+  .bloom-journey .ending-timeline-toggle {
+    grid-column: 1 / -1;
+  }
+  .bloom-journey .story-dock > .observatory-actions {
+    grid-area: 1 / 2;
+    align-self: end;
+  }
+  .bloom-journey .story-dock > .observatory-actions button {
+    padding-inline: 6px;
+  }
+  .bloom-comparison[data-comparing] {
+    grid-template-columns: minmax(0, 1fr) auto;
+    column-gap: 8px;
+  }
+  .bloom-comparison[data-comparing] > button {
+    grid-area: 1 / 2 / span 2;
+    align-self: end;
+  }
+  .bloom-comparison [role="status"] {
+    grid-column: 1 / -1;
+  }
+  .bloom-divider-label {
+    margin-top: 0;
+  }
+  .bloom-compare-compact {
+    display: inline;
+  }
+  .bloom-compare-full,
+  .bloom-journey:has(.bloom-comparison[data-comparing]) .stage-readout {
+    display: none;
+  }
+}
+@media (max-width: 599px) and (max-height: 700px) {
+  .seafloor-journey .stage-readout {
+    visibility: hidden;
+  }
+}
 .story-compass {
   display: flex;
   align-items: center;

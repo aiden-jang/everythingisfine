@@ -1,19 +1,24 @@
 import type { EarthStoryId } from "./catalogue";
 import type { CameraState } from "../../globe/controls";
 import type { ReplayCamera } from "../observations/types";
+import { seafloorFlight, sectionPoint } from "./terrainSection";
 
 export function storyCamera(id: EarthStoryId, target: CameraState, progress: number): ReplayCamera {
   const p = Math.min(1, Math.max(0, progress));
   const settle = 1 - (1 - p) ** 3;
   const bank = Math.sin(p * Math.PI);
-  if (id === "seafloor")
+  if (id === "seafloor") {
+    const point = sectionPoint(seafloorFlight, p);
+    const approach = Math.min(1, Math.max(0, (p - 0.73) / 0.21));
+    const widen = approach * approach * (3 - 2 * approach);
     return {
-      lon: 148 - 5.8 * settle,
-      lat: 17 - 5.65 * settle,
-      zoom: 1.7 + 0.15 * bank,
+      lon: point.lon + (target.lon - point.lon) * widen,
+      lat: point.lat + (target.lat - point.lat) * widen - 1.15 * bank,
+      zoom: 1.65 + 0.5 * bank - 0.4 * widen,
       bank: -0.045 * bank,
-      pitch: 0.1 * bank,
+      pitch: 0.16 * bank,
     };
+  }
   if (id === "glacier")
     return {
       ...target,

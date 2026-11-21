@@ -664,6 +664,16 @@ Vanishing Sea reveals the labeled basins as the early shoreline separates. A bas
 the observed-water and coverage reading for the held year. The early shoreline and gaps remain
 visible as the archive changes underneath.
 
+Seafloor Flight lowers the water veil during the descent and leaves the flown line on the world.
+The line opens into a sampled depth profile at Challenger Deep. The profile cursor moves the world
+marker without moving the camera. The readout uses the grid depth and source type rather than the
+vertical scale of the relief.
+
+El Niño Pulse unfolds its equatorial section after arrival. A buoy selection highlights the matching
+column and keeps its longitude when a month has no usable observations. Ocean Bloom opens on the
+6 May 2024 observation and compares natural color and chlorophyll on a single registered surface.
+Changing dates keeps the divider and geography in place, with coverage gaps left transparent.
+
 Megaflash banks over a false-color infrared scan and slows the observed optical spread
 so the newest pulses stand out against the accumulated trace. It levels into a five-state
 map. Scrubbing and reduced motion use the same level framing.

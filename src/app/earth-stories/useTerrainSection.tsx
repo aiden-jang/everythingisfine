@@ -1,7 +1,14 @@
 import { useCallback, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { GeoPoint, ObservationTerrain } from "../observations/types";
 import { distanceKm } from "../../geo/sphere";
-import { terrainSample, readTerrainSection, sectionSamples, type TerrainLine } from "./terrainSection";
+import {
+  terrainSample,
+  readTerrainSection,
+  seafloorFlight,
+  sectionSamples,
+  type TerrainLine,
+} from "./terrainSection";
+import { TerrainProfile } from "./TerrainProfile";
 
 const preset: TerrainLine = [
   { lon: 141.6, lat: 10.7 },
@@ -12,10 +19,16 @@ export function useTerrainSection(
   grid: ObservationTerrain | undefined,
   initial: string | undefined,
   openMap: () => void,
+  completed: boolean,
 ) {
-  const [line, setLine] = useState<TerrainLine | null>(() =>
-    grid ? readTerrainSection(initial, grid) : null,
+  const [custom, setLine] = useState<TerrainLine | null | undefined>(() =>
+    grid ? (readTerrainSection(initial, grid) ?? undefined) : undefined,
   );
+  const line = custom === undefined ? (completed && grid ? seafloorFlight : null) : custom;
+  const [index, setIndex] = useState(() => {
+    const value = Number(initial?.split(":")[2]);
+    return Number.isInteger(value) && value >= 0 && value <= 100 ? value : undefined;
+  });
   const [start, setStart] = useState<GeoPoint | null>(null);
   const [drawing, setDrawing] = useState(false);
   const [hint, setHint] = useState("");
@@ -41,6 +54,7 @@ export function useTerrainSection(
           return;
         }
         setLine([start, rounded]);
+        setIndex(undefined);
         setStart(null);
         setDrawing(false);
         setHint("");
@@ -49,10 +63,21 @@ export function useTerrainSection(
     [grid, start],
   );
   const samples = useMemo(() => (grid && line ? sectionSamples(grid, line) : null), [grid, line]);
-  const paths = useMemo(() => (line ? [{ points: line, color: 0xf0dbad }] : []), [line]);
-  const marks = useMemo(() => (start ? [{ ...start, size: 10, color: 0xf0dbad }] : []), [start]);
+  const active = index ?? (line === seafloorFlight ? 100 : 0);
+  const paths = useMemo(
+    () =>
+      samples
+        ? [{ points: samples.map(({ lon, lat }) => ({ lon, lat, lift: 0.066 })), color: 0xf0dbad }]
+        : [],
+    [samples],
+  );
+  const marks = useMemo(() => {
+    const point = start ?? samples?.[active];
+    return point ? [{ lon: point.lon, lat: point.lat, lift: 0.073, size: 16, color: 0xf0dbad }] : [];
+  }, [active, samples, start]);
   const select = (next: TerrainLine | null) => {
     setLine(next);
+    setIndex(undefined);
     setStart(null);
     setDrawing(false);
     setHint("");
@@ -61,7 +86,10 @@ export function useTerrainSection(
     pick: drawing ? pick : undefined,
     paths,
     marks,
-    chapter: line ? `section:${line.flatMap((p) => [p.lon, p.lat]).join(",")}` : "",
+    inspecting: !!line,
+    chapter: line
+      ? `section:${line === seafloorFlight ? "flight" : line.flatMap((p) => [p.lon, p.lat]).join(",")}:${active}`
+      : "",
     controls: grid ? (
       <>
         <div className="observatory-actions">
@@ -146,38 +174,13 @@ export function useTerrainSection(
       </>
     ) : null,
     chart: samples ? (
-      <figure ref={chart} className="terrain-section">
-        <figcaption>Seafloor along your section · sampled GEBCO depths</figcaption>
-        <svg
-          viewBox="0 0 340 150"
-          role="img"
-          aria-label={`Depth section across ${Math.round(samples.at(-1)!.km)} kilometres`}
-        >
-          <path d="M38 12V120H332" fill="none" stroke="currentColor" opacity=".5" />
-          {[0, 5, 10].map((km) => (
-            <text key={km} x="1" y={18 + km * 9}>
-              {km} km
-            </text>
-          ))}
-          <path
-            d={samples
-              .map(
-                (p, i) =>
-                  `${i ? "L" : "M"}${38 + i * 2.9},${12 + (Math.max(0, -(p.meters ?? 0)) / 1000) * 9}`,
-              )
-              .join(" ")}
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.6"
-          />
-          <text x="38" y="143">
-            0
-          </text>
-          <text x="332" y="143" textAnchor="end">
-            {Math.round(samples.at(-1)!.km)} km
-          </text>
-        </svg>
-      </figure>
+      <TerrainProfile
+        chart={chart}
+        samples={samples}
+        index={active}
+        select={setIndex}
+        flight={line === seafloorFlight}
+      />
     ) : null,
   };
 }

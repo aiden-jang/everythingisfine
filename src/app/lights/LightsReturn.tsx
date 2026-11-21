@@ -15,7 +15,8 @@ import { ReplayPanel, type ReplayProps } from "../observations/RecordedReplay";
 import { StoryDock } from "../observations/StoryDock";
 import { useStorySession } from "../observations/StorySession";
 import { StoryLoading } from "../StoryLoading";
-import { lightsCities, lightsComparison } from "./lightsSurface";
+import { lightsCities } from "./lightsSurface";
+import { surveyComparison } from "../observations/surveyComparison";
 
 const MOTION = "(prefers-reduced-motion: reduce)";
 const LAST = lightsPeriods.length - 1;
@@ -63,7 +64,7 @@ export function LightsReturn({ onView, ...panel }: ReplayProps): JSX.Element {
   const comparing = compare && index > 0;
   const displayed = comparing && split === 100 ? lightsPeriods[0] : period;
   const surface = useMemo(
-    () => (comparing && images ? lightsComparison(images[0]!, images[index]!) : undefined),
+    () => (comparing && images ? surveyComparison(images[0]!, images[index]!) : undefined),
     [comparing, images, index],
   );
   useStoryCompletion(index === LAST && !playing);

@@ -56,7 +56,7 @@ export const atlasStories = {
   bloom: {
     title: "Ocean Bloom",
     summary: "Watch a North Atlantic spring unfold in chlorophyll and natural-color satellite views.",
-    location: "North Atlantic · April–June 2024",
+    location: "North Atlantic",
     scene: "live",
     source: "NASA Aqua MODIS via GIBS",
     url: "https://oceancolor.gsfc.nasa.gov/",
