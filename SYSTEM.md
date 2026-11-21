@@ -342,10 +342,13 @@ sunset using the visible day–night boundary when available. The landing camera
 restored independently.
 
 Moonfall lazily loads the lunar mosaic, a local elevation grid and orthomosaic, and the three Apollo 17
-traverses. The Moon and valley use dedicated perspective and landing-map cameras in the existing renderer. Its finite
-approach and descent are illustrative. The terrain uses the LRO survey at about 64 m per sample and
+traverses. The orbit camera hands off to a valley camera in the same renderer.
+Terrain and Landing map blend perspective and orthographic framing around the selected stop.
+Terrain height, route lines and marker positions flatten together. The descent and low-angle terrain light
+are illustrative. The terrain uses the LRO survey at about 64 m per sample and
 keeps the traverse segments and geology stops in the survey’s transverse Mercator grid. The rover
-cursor follows cumulative mapped distance and leaves gaps in the source geometry open. Closing
+cursor follows cumulative mapped distance and leaves gaps in the source geometry open. Projected
+stop buttons and the picker select the same route distance and reading from the mission journal. Closing
 Moonfall disposes its GPU resources and restores the original local sky view. The source URLs and
 conversion parameters are in [make-moonfall.py](tools/make-moonfall.py). Named stops have static share
 previews built from the same survey and route geometry. The link fragment preserves the sky moment and

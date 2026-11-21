@@ -88,3 +88,142 @@
 .moonfall-finding p {
   margin-block: 6px 3px;
 }
+
+.moonfall-stops {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.moonfall-stops button {
+  position: absolute;
+  inset: -22px auto auto -22px;
+  width: 44px;
+  height: 44px;
+  visibility: hidden;
+  pointer-events: auto;
+  cursor: pointer;
+  border-radius: 50%;
+}
+
+.moonfall-stops button[data-visible] {
+  visibility: visible;
+}
+
+.moonfall-stops button::before {
+  position: absolute;
+  inset: 17px;
+  border: 1px solid var(--color-ink);
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px var(--color-void);
+  opacity: 0.7;
+  content: "";
+}
+
+.moonfall-stops button:is(:hover, :focus-visible, [aria-pressed="true"])::before {
+  opacity: 1;
+  transform: scale(1.8);
+}
+
+.moonfall-station-note {
+  margin-block: 10px;
+  max-width: 39ch;
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.moonfall-station-note a {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  color: var(--color-dim);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.moonfall-stage-readout {
+  gap: 8px 12px;
+  padding: 0;
+  background: transparent;
+  font-variant-numeric: tabular-nums;
+}
+
+.moonfall-locator {
+  display: grid;
+  justify-items: start;
+  gap: 2px;
+}
+
+.moonfall-locator strong {
+  padding: 1px 5px;
+  background: var(--color-void);
+  font-family: var(--font-sans);
+  font-size: 13px;
+}
+
+.moonfall-projection {
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid var(--color-hairline);
+  border-radius: 7px;
+  background: var(--color-deck);
+  pointer-events: auto;
+}
+
+.moonfall-projection button {
+  min-height: 44px;
+  padding-inline: 10px;
+  border-radius: 4px;
+  color: var(--color-dim);
+  font: 13px var(--font-sans);
+  cursor: pointer;
+}
+
+.moonfall-projection button:is(:hover, [aria-pressed="true"]) {
+  background: var(--color-raised);
+  color: var(--color-ink);
+}
+
+@media (max-width: 599px), (max-height: 460px) {
+  .observatory-stage[data-stage="moonfall"] .moonfall-stage-readout {
+    display: flex;
+    inset: auto var(--stage-inset) var(--stage-inset);
+    flex-wrap: nowrap;
+  }
+
+  .moonfall-projection button {
+    padding-inline: 8px;
+    white-space: nowrap;
+    font-size: 12px;
+  }
+}
+
+@media (min-width: 600px) and (max-height: 620px) {
+  .replay-sidebar > .observatory-intro > .tonight-heading[data-moonfall-panel] {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .tonight-heading[data-moonfall-panel] h2 {
+    font-size: 28px;
+  }
+
+  .replay-sidebar > .observatory-intro > [data-moonfall-panel] > .tonight-back {
+    order: 0;
+    flex-shrink: 0;
+  }
+
+  .replay-sidebar:has([data-moonfall-panel]) .story-dock-host {
+    position: static;
+    padding-inline: var(--observatory-inline);
+  }
+
+  .replay-sidebar:has([data-moonfall-panel]) .story-dock {
+    padding: 6px 0;
+    border-width: 1px 0 0;
+    border-radius: 0;
+  }
+}

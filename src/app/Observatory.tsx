@@ -169,7 +169,12 @@ function ObservatoryContent({
       ) : radar.active ? (
         <RadarReadout map={observations.map} onMap={observations.setMap} region={radar.view?.region} />
       ) : tonight.view?.moonfall ? (
-        <MoonfallReadout view={tonight.view.moonfall} />
+        <MoonfallReadout
+          view={tonight.view.moonfall}
+          wake={() => {
+            if (tonight.view) tonight.update({ ...tonight.view });
+          }}
+        />
       ) : tonight.active ? (
         <Suspense fallback={null}>
           <TonightCompass

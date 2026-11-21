@@ -8,7 +8,6 @@ import {
   Mesh,
   MeshBasicMaterial,
   MeshStandardMaterial,
-  OrthographicCamera,
   PerspectiveCamera,
   RingGeometry,
   Scene,
@@ -18,16 +17,19 @@ import {
   type WebGLRenderer,
 } from "three";
 import { DEG } from "../../geo/sphere";
-import { traverses, valley, type loadLunarSurvey } from "../../sources/moonfall/apollo17";
+import { traverses, type loadLunarSurvey } from "../../sources/moonfall/apollo17";
 import { roverRoutes } from "./routes";
 import { lunarTerrain, lunarTexture } from "./terrain";
+
+import { createValleyCamera, easeLunarMotion as ease } from "./valleyCamera";
+import { createStopMarkers } from "./stopMarkers";
 
 const FLIGHT_SECONDS = 6.4;
 const ORBIT_END = 3.45;
 const RADIUS = 1737.4;
 const VOID = new Color(0x050b16);
 const INSTRUMENT = new Color(0x0a101c);
-const ease = (t: number) => t * t * (3 - 2 * t);
+const PROJECTION_SECONDS = 0.64;
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 const limit = (t: number) => Math.min(1, Math.max(0, t));
 
@@ -55,12 +57,8 @@ export type MoonfallProgress = Pick<
 export function createMoonfall(data: Awaited<ReturnType<typeof loadLunarSurvey>>, reduced: boolean) {
   const scene = new Scene();
   const camera = new PerspectiveCamera(38, 1, 0.025, 460_000);
-  const map = new OrthographicCamera(-10, 10, 10, -10, 0.025, 120);
-  const centerX = (valley.left + valley.right) / 2;
-  const centerZ = (valley.near + valley.far) / 2;
-  map.position.set(centerX, 48, centerZ);
-  map.up.set(0, 0, -1);
-  map.lookAt(centerX, 0, centerZ);
+  const surveyCamera = createValleyCamera();
+  const placeStops = createStopMarkers();
   const space = new Group();
   const surface = new Group();
   const ambient = new HemisphereLight(0xd9dbed, 0x777785, 1.14);
@@ -79,13 +77,24 @@ export function createMoonfall(data: Awaited<ReturnType<typeof loadLunarSurvey>>
 
   let flight = reduced ? FLIGHT_SECONDS : 0;
   let flying = !reduced;
+  let skipMotion = reduced;
   let mapped = false;
+  let projection = 0;
   let eva = 0;
   let distance = 0;
   let station: number | null = null;
   let playing = false;
   let disposed = false;
-  let current = { phase: "", flying, eva, meters: -1, station: null as number | null, playing, mapped };
+  let current = {
+    phase: "",
+    flying,
+    eva,
+    meters: -1,
+    station: null as number | null,
+    playing,
+    mapped,
+    turning: false,
+  };
   const listeners = new Set<() => void>();
 
   function update() {
@@ -97,6 +106,7 @@ export function createMoonfall(data: Awaited<ReturnType<typeof loadLunarSurvey>>
           ? "Valley descent"
           : "Lunar approach";
     const meters = Math.round(distance * 1000);
+    const turning = projection !== Number(mapped);
     if (
       current.phase === phase &&
       current.flying === flying &&
@@ -104,10 +114,11 @@ export function createMoonfall(data: Awaited<ReturnType<typeof loadLunarSurvey>>
       current.meters === meters &&
       current.station === station &&
       current.playing === playing &&
-      current.mapped === mapped
+      current.mapped === mapped &&
+      current.turning === turning
     )
       return;
-    current = { phase, flying, eva, meters, station, playing, mapped };
+    current = { phase, flying, eva, meters, station, playing, mapped, turning };
     for (const listener of listeners) listener();
   }
   update();
@@ -137,31 +148,28 @@ export function createMoonfall(data: Awaited<ReturnType<typeof loadLunarSurvey>>
       target.set(0, -RADIUS * (1 - aim), 0);
       light.position.set(-950, 810, 800);
       ambient.intensity = 0.37;
+      light.intensity = 1.75;
       scene.background = VOID;
-    } else {
-      const t = limit((flight - ORBIT_END) / (FLIGHT_SECONDS - ORBIT_END));
-      const flyBy = Math.sin(Math.PI * t);
-      const fit = Math.max(0.72, 1.12 / aspect);
-      const locator = routes.set(eva, distance, station);
-      camera.near = 0.025;
-      camera.far = 120;
-      camera.position.set(
-        lerp(4.2, -0.55, ease(t)) * fit,
-        (lerp(8.5, 10.9, ease(t)) - 5.6 * flyBy) * fit,
-        (lerp(8.5, 8.3, ease(t)) - 1.4 * flyBy) * fit,
-      );
-      camera.up.set(0.19 * flyBy, 1, 0);
-      target.set(lerp(1.25, -0.65, ease(t)), 0.6, lerp(-1.7, 0.2, ease(t)));
-      if (flight === FLIGHT_SECONDS && (playing || station !== null || distance > 0)) {
-        target.x += (locator.x - target.x) * 0.13;
-        target.z += (locator.z - target.z) * 0.13;
-      }
-      light.position.set(-8, 6, -2);
-      ambient.intensity = 1.15;
-      scene.background = INSTRUMENT;
+      camera.lookAt(target);
+      camera.updateProjectionMatrix();
+      return camera;
     }
-    camera.lookAt(target);
-    camera.updateProjectionMatrix();
+    const overhead = ease(projection);
+    const relief = lerp(1, 0.02, overhead);
+    surface.scale.y = relief;
+    routes.set(eva, distance, station);
+    light.position.set(-9 * (1 - overhead), lerp(3, 9, overhead), -4 * (1 - overhead));
+    light.intensity = lerp(2.15, 0.55, overhead);
+    ambient.intensity = lerp(0.8, 1.35, overhead);
+    scene.background = INSTRUMENT;
+    const t = limit((flight - ORBIT_END) / (FLIGHT_SECONDS - ORBIT_END));
+    return surveyCamera(
+      aspect,
+      overhead,
+      relief,
+      t,
+      station === null ? undefined : routes.stops(eva)[station],
+    );
   }
 
   return {
@@ -172,6 +180,7 @@ export function createMoonfall(data: Awaited<ReturnType<typeof loadLunarSurvey>>
     },
     step(dt: number, reduceMotion: boolean) {
       if (disposed) return false;
+      skipMotion = reduceMotion;
       if (reduceMotion && flight < FLIGHT_SECONDS) {
         finishFlight();
         update();
@@ -181,34 +190,35 @@ export function createMoonfall(data: Awaited<ReturnType<typeof loadLunarSurvey>>
         if (flight >= FLIGHT_SECONDS) finishFlight();
         update();
       }
+      const projectionTarget = Number(mapped);
+      if (projection !== projectionTarget) {
+        const increment = dt / PROJECTION_SECONDS;
+        projection = reduceMotion
+          ? projectionTarget
+          : mapped
+            ? Math.min(1, projection + increment)
+            : Math.max(0, projection - increment);
+        update();
+      }
       if (playing) {
         const { km } = traverses[eva]!;
         distance = Math.min(km, distance + (dt / 12) * km);
         playing = distance < km;
         update();
       }
-      return flying || playing;
+      return flying || playing || current.turning;
     },
     render(renderer: WebGLRenderer, aspect: number) {
       if (disposed) return false;
-      frame(aspect);
-      if (mapped) {
-        const halfHeight = Math.max(
-          (valley.near - valley.far) / 2,
-          (valley.right - valley.left) / (2 * aspect),
-        );
-        map.top = halfHeight;
-        map.bottom = -halfHeight;
-        map.right = halfHeight * aspect;
-        map.left = -map.right;
-        map.updateProjectionMatrix();
-      }
-      renderer.render(scene, mapped ? map : camera);
+      const view = frame(aspect);
+      renderer.render(scene, view);
+      if (!flying) placeStops(renderer.domElement, view, surface.matrixWorld, routes.stops(eva));
       return true;
     },
-    project(next: boolean) {
-      if (next) finishFlight();
+    project(next: boolean, instant = skipMotion) {
+      finishFlight();
       mapped = next;
+      if (instant) projection = Number(next);
       update();
     },
     select(index: number) {
@@ -247,6 +257,7 @@ export function createMoonfall(data: Awaited<ReturnType<typeof loadLunarSurvey>>
     },
     replay() {
       mapped = false;
+      projection = 0;
       flight = 0;
       flying = true;
       playing = false;

@@ -44,11 +44,12 @@ export function roverRoutes(height: (point: LunarPoint) => number) {
       return pin;
     });
     root.add(group);
-    return { group, played, segments, pins };
+    return { group, played, segments, pins, positions: pins.map(({ position }) => position) };
   });
 
   return {
     root,
+    stops: (eva: number) => routes[eva]!.positions,
     set(eva: number, distance: number, station: number | null) {
       for (const [i, route] of routes.entries()) route.group.visible = i === eva;
       const { segments, played, pins } = routes[eva]!;
@@ -63,7 +64,6 @@ export function roverRoutes(height: (point: LunarPoint) => number) {
       if (selected) locator.position.copy(selected.position);
       else locator.position.set(point[0], height(point) + 0.035, point[1]);
       locator.position.y += 0.065;
-      return locator.position;
     },
   };
 }

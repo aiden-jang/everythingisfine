@@ -163,3 +163,60 @@ test("Nightfall connects the landing globe to a shareable Apollo 17 stop and res
   );
   await expect(lunar.getByRole("button", { name: "Pause", exact: true })).toHaveCount(0);
 });
+
+test("Moonfall keeps a tapped stop in place as the valley turns, including at phone sizes", async ({
+  page,
+}) => {
+  await configure(page);
+  await page.emulateMedia({ reducedMotion: "no-preference" });
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto("/share/moonfall/2/1/");
+  const moon = page.getByRole("region", { name: "Moonfall", exact: true });
+  const markers = moon.getByRole("group", { name: "Stops on the traverse" });
+  const shorty = markers.getByRole("button", { name: "Inspect Shorty Crater", exact: true });
+  await shorty.click();
+  const stop = moon.getByRole("combobox", { name: "Geology stop" });
+  const distance = moon.getByRole("slider", { name: "Mapped distance" });
+  await expect(stop).toHaveValue("2");
+  await expect(moon.getByRole("heading", { name: "Shorty Crater", exact: true })).toBeVisible();
+  await expect(moon.getByText(/Schmitt spotted orange soil/)).toBeVisible();
+  await expect(moon.getByRole("link", { name: "Read the mission journal" })).toHaveAttribute(
+    "href",
+    "https://apollojournals.org/alsj/a17/a17.sta4.html",
+  );
+  const savedDistance = await distance.inputValue();
+  const before = (await shorty.boundingBox())!;
+  const terrain = moon.getByRole("button", { name: "Terrain", exact: true });
+  await terrain.press("Enter");
+  await expect(markers).toHaveAttribute("data-turning", "true");
+  await expect(markers).not.toHaveAttribute("data-turning", "true");
+  const after = (await shorty.boundingBox())!;
+  expect(after.x).toBeCloseTo(before.x, 0);
+  expect(after.y).toBeCloseTo(before.y, 0);
+  await expect(distance).toHaveValue(savedDistance);
+
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  for (const size of [
+    { width: 320, height: 568 },
+    { width: 812, height: 375 },
+  ]) {
+    await page.setViewportSize(size);
+    const map = moon.getByRole("button", { name: "Landing map", exact: true });
+    await expect(map).toBeInViewport({ ratio: 1 });
+    await expect(shorty).toBeInViewport({ ratio: 1 });
+    const terrainPoint = (await shorty.boundingBox())!;
+    await map.click();
+    await expect(map).toHaveAttribute("aria-pressed", "true");
+    await expect(markers).not.toHaveAttribute("data-turning", "true");
+    const mapPoint = (await shorty.boundingBox())!;
+    expect(mapPoint.x).toBeCloseTo(terrainPoint.x, 0);
+    expect(mapPoint.y).toBeCloseTo(terrainPoint.y, 0);
+    await expect(shorty).toHaveAttribute("aria-pressed", "true");
+    await expect(distance).toHaveValue(savedDistance);
+    await terrain.click();
+    if (size.width === 812) {
+      await shorty.click();
+      await expect(distance).toHaveValue(savedDistance);
+    }
+  }
+});

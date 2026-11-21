@@ -6,6 +6,7 @@ import { useEffect, useId, useState, useSyncExternalStore } from "react";
 import { createMoonfall, type MoonfallProgress, type MoonfallView } from "../../globe/moonfall/scene";
 import { loadLunarSurvey, lunarSources, traverses } from "../../sources/moonfall/apollo17";
 import type { TonightPresentation } from "../../globe/scenePresentation";
+import { lunarStationNotes } from "../../sources/moonfall/stationNotes";
 import type { TonightView } from "../../geo/tonight";
 
 const motion = "(prefers-reduced-motion: reduce)";
@@ -31,7 +32,7 @@ export function Moonfall({
         created = createMoonfall(survey, matchMedia(motion).matches);
         if (resume) {
           created.select(resume.eva);
-          created.project(resume.mapped);
+          created.project(resume.mapped, true);
           if (resume.station !== null) created.stopAt(resume.station);
           else created.seek(resume.meters);
         }
@@ -70,12 +71,13 @@ export function Moonfall({
 }
 
 function TraverseControls({ view, wake }: { view: MoonfallView; wake: () => void }): JSX.Element {
-  const { eva, flying, meters, playing, station, mapped } = useSyncExternalStore(view.subscribe, view.read);
+  const { eva, flying, meters, playing, station } = useSyncExternalStore(view.subscribe, view.read);
   const id = useId();
   const navigation = useStoryNavigation();
   const route = traverses[eva]!;
   const length = Math.round(route.km * 1000);
   const stop = station === null ? null : route.stations[station];
+  const note = stop && lunarStationNotes[stop.name];
   const kept = !!navigation?.library.saved.some(
     ({ id, position }) =>
       id === "moonfall" && position.sky?.lunar?.eva === eva && position.sky.lunar.station === station,
@@ -99,7 +101,15 @@ function TraverseControls({ view, wake }: { view: MoonfallView; wake: () => void
             ? "The approach leads to the Apollo 17 landing site."
             : `Apollo 17 · ${route.day} 1972 · Traverse ${eva + 1} to ${route.title}`}
         </p>
-        {stop && navigation && (
+        {note && !flying && (
+          <div className="moonfall-station-note">
+            <p>{note.text}</p>
+            <a href={note.journal} target="_blank" rel="noreferrer">
+              Read the mission journal
+            </a>
+          </div>
+        )}
+        {stop && navigation && !flying && (
           <div className="observatory-actions moonfall-actions">
             <button
               type="button"
@@ -126,14 +136,6 @@ function TraverseControls({ view, wake }: { view: MoonfallView; wake: () => void
       </div>
       {!flying && (
         <>
-          <div className="observatory-actions moonfall-actions" role="group" aria-label="Lunar projection">
-            <button type="button" aria-pressed={!mapped} onClick={() => act(() => view.project(false))}>
-              Terrain
-            </button>
-            <button type="button" aria-pressed={mapped} onClick={() => act(() => view.project(true))}>
-              Landing map
-            </button>
-          </div>
           <label className="tonight-city">
             Rover traverse
             <select
@@ -195,9 +197,10 @@ function TraverseControls({ view, wake }: { view: MoonfallView; wake: () => void
           <span>Terrain &amp; routes</span>
         </summary>
         <p>
-          The descent is a virtual camera flight. Rover playback is paced by mapped distance. Elevations come
-          from LRO stereo imagery registered to laser altimetry. Haase and colleagues reconstructed the paths
-          and stops from the mission map, surface photographs, and orbital images.
+          Apollo 17 landed at 20.19° N, 30.77° E. Rover playback is paced by mapped distance. Elevations come
+          from LRO stereo imagery registered to laser altimetry. The descent and low-angle light are
+          illustrative. Haase and colleagues reconstructed the paths and stops from the mission map, surface
+          photographs, and orbital images.
         </p>
         <div className="moonfall-links">
           <a href={lunarSources.terrain} target="_blank" rel="noreferrer">
