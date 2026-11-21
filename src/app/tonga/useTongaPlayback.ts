@@ -133,6 +133,10 @@ export function useTongaPlayback(initial: StoryMoment | undefined) {
     minute: minuteFor(view),
     ended: view.elapsed >= duration(view),
     seek: (minute: number, station?: TongaStation) => update(survey(minute, station)),
+    inspect(minute: number, station: TongaStation) {
+      const current = clock.current;
+      update(survey(minute, station, current.anchor ?? minuteFor(current)));
+    },
     scrub(minute: number) {
       const current = clock.current;
       update(survey(minute, current.station, current.anchor ?? minuteFor(current)));

@@ -284,9 +284,6 @@
   .observatory-tour-step button:hover:not(:disabled) {
     background: var(--color-raised);
   }
-  .frame[data-presentation="observe"] .key-hints {
-    display: none;
-  }
 
   @media (max-width: 899px) {
     .frame[data-presentation="observe"] .zones {

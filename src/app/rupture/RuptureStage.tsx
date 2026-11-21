@@ -12,6 +12,7 @@ import {
   useState,
 } from "react";
 import { ReplayPanel, type ReplayProps } from "../observations/RecordedReplay";
+import { captureReplayFrame, restoreReplayFrame } from "../observations/replayReturn";
 import { StoryDock } from "../observations/StoryDock";
 import { useObservationImage } from "../observations/useObservationData";
 import {
@@ -112,11 +113,9 @@ export function RuptureStage({ onView, ...panel }: ReplayProps): JSX.Element {
   const waveReturn = useRef<{
     mode: Mode;
     clock: number;
-    map: boolean;
-    scroll: number;
-    camera?: ReturnType<NonNullable<ReplayProps["readCamera"]>> | undefined;
+    frame: ReturnType<typeof captureReplayFrame>;
   }>();
-  const restoredCamera = useRef(waveReturn.current?.camera);
+  const restoredCamera = useRef(waveReturn.current?.frame.camera);
   const rememberWaves = useCallback((reading: WaveReading) => {
     waveReading.current = reading;
   }, []);
@@ -229,9 +228,7 @@ export function RuptureStage({ onView, ...panel }: ReplayProps): JSX.Element {
     waveReturn.current = {
       mode: mode === "playing" ? "paused" : mode,
       clock: elapsed.current,
-      map: panel.map,
-      scroll: document.getElementById("observatory-intro")?.scrollTop ?? 0,
-      camera: panel.readCamera?.(),
+      frame: captureReplayFrame(panel),
     };
     setWaves(true);
     document.getElementById("observatory-intro")?.scrollTo(0, 0);
@@ -239,18 +236,14 @@ export function RuptureStage({ onView, ...panel }: ReplayProps): JSX.Element {
 
   function closeWaves() {
     const previous = waveReturn.current;
-    restoredCamera.current = previous?.camera;
+    restoredCamera.current = previous?.frame.camera;
     setMode(previous?.mode ?? "shaking");
     if (previous) {
       elapsed.current = previous.clock;
       setClock(previous.clock);
-      panel.onMap(previous.map);
     }
     setWaves(false);
-    requestAnimationFrame(() => {
-      if (previous) document.getElementById("observatory-intro")?.scrollTo(0, previous.scroll);
-      recordedButton.current?.focus({ preventScroll: true });
-    });
+    restoreReplayFrame(previous?.frame, panel, () => recordedButton.current);
   }
 
   return (

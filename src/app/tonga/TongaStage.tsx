@@ -3,6 +3,7 @@ import { ExperienceEnding } from "../journeys/ExperienceEnding";
 import { useStoryCompletion } from "../journeys/useStoryCompletion";
 import { ReplayPanel, type ReplayProps } from "../observations/RecordedReplay";
 import { TongaTimelineDock } from "./TongaTimelineDock";
+import { captureReplayFrame, restoreReplayFrame } from "../observations/replayReturn";
 import { WorldEvidence } from "../observations/WorldEvidence";
 import { ReplayInset } from "../observations/ReplayInset";
 import { ShareMoment, useStorySession } from "../observations/StorySession";
@@ -32,6 +33,7 @@ import {
   vapor,
 } from "./tongaTimeline";
 
+const playbackFocus = () => document.querySelector<HTMLElement>(".story-playback");
 export function TongaStage({ onView, ...panel }: ReplayProps): JSX.Element {
   const { initial, shared, remember } = useStorySession();
   const playback = useTongaPlayback(initial);
@@ -51,9 +53,15 @@ export function TongaStage({ onView, ...panel }: ReplayProps): JSX.Element {
   const scanCanvas = useRef<HTMLCanvasElement>(null);
   const scanOrigin = useRef<DOMRect | null>(null);
   const focus = useRef<"sample" | "playback" | "kept" | null>(null);
+  const previous = useRef<ReturnType<typeof captureReplayFrame>>();
+  const [held, setHeld] = useState(false);
+  const frameHeld = held && !view.playing;
   useLayoutEffect(() => {
     const zones = document.querySelector<HTMLElement>(".zones");
-    if (zones) zones.dataset["tongaPhase"] = phase;
+    if (zones) {
+      zones.dataset["tongaPhase"] = phase;
+      zones.toggleAttribute("data-tonga-handoff", held);
+    }
     const selector =
       focus.current === "sample"
         ? ".pressure-sample-slider"
@@ -90,9 +98,12 @@ export function TongaStage({ onView, ...panel }: ReplayProps): JSX.Element {
         : null;
     return () => {
       scanFlight?.cancel();
-      if (zones) delete zones.dataset["tongaPhase"];
+      if (zones) {
+        delete zones.dataset["tongaPhase"];
+        zones.removeAttribute("data-tonga-handoff");
+      }
     };
-  }, [phase]);
+  }, [phase, held]);
 
   const anchor = view.anchor;
   const framing = ["inspect", "shared", "kept"].includes(phase) ? station.peak : anchor;
@@ -107,16 +118,17 @@ export function TongaStage({ onView, ...panel }: ReplayProps): JSX.Element {
     onView({
       kind: "observation",
       ...geographic,
-      ...(phase !== "follow" ? { follow: undefined } : {}),
+      ...(phase !== "follow" || frameHeld ? { follow: undefined } : {}),
+      ...(frameHeld ? { holdGeography: true } : {}),
       image: null,
       target,
-      arrive,
+      ...(frameHeld ? {} : { arrive }),
     });
     remember?.({
       choice: station.id,
       chapter: ["inspect", "kept", "shared"].includes(phase) ? "pressure" : "journey",
     });
-  }, [minute, station, anchor, target, onView, arrive, remember, phase]);
+  }, [minute, station, anchor, target, onView, arrive, remember, phase, frameHeld]);
   useStoryCompletion(ended && !view.playing);
 
   const hasInfrared = images.infrared !== null,
@@ -149,16 +161,23 @@ export function TongaStage({ onView, ...panel }: ReplayProps): JSX.Element {
       : "False-color infrared shows the eruption cloud expanding over the Pacific.";
 
   function inspect(next: number, selected = station) {
-    playback.seek(next, selected);
-    focus.current = "sample";
+    if (phase !== "inspect" && phase !== "shared") {
+      previous.current = captureReplayFrame(panel);
+      setHeld(true);
+      focus.current = "sample";
+    } else if (phase === "shared") focus.current = "sample";
+    playback.inspect(next, selected);
     setPhase("inspect");
   }
   function journey(restart: boolean) {
     if (restart) {
+      previous.current = undefined;
+      setHeld(false);
       if (phase === "discover") scanOrigin.current = scanCanvas.current?.getBoundingClientRect() ?? null;
       playback.begin();
     }
-    focus.current = "playback";
+    if (restart || !previous.current) focus.current = "playback";
+    else restoreReplayFrame(previous.current, panel, playbackFocus);
     setPhase("follow");
   }
   function kept() {
@@ -168,7 +187,6 @@ export function TongaStage({ onView, ...panel }: ReplayProps): JSX.Element {
   const atPressurePeak = pressureAt(station, minute) === null;
   const overview = phase === "discover";
   const inspecting = phase === "inspect" || phase === "shared";
-
   const scanTime = <time dateTime={scan.at}>Scan {timeLabel(scan.minute)} UTC</time>;
   const frameScan = phase === "follow" && orbitMix < 1 && hasImage && !isOrbit;
   const image = (
@@ -229,7 +247,9 @@ export function TongaStage({ onView, ...panel }: ReplayProps): JSX.Element {
             phase={phase}
             station={station}
             signal={signal}
-            onInspect={(selected) => inspect(selected.peak, selected)}
+            onInspect={(selected) =>
+              inspect(pressureAt(selected, minute) === null ? selected.peak : Math.floor(minute), selected)
+            }
           />
         </>
       }

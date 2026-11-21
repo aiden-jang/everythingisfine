@@ -157,3 +157,36 @@ test("Tonga’s landscape opening keeps the action and scan clear of other contr
   await follow.click();
   await expect(page.getByRole("slider", { name: "Replay time", exact: true })).toBeVisible();
 });
+
+test("Tonga holds the station while inspecting and returns at the scrubbed minute", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await installFeeds(page, { presentation: "fresh", empty: true });
+  const at = Date.parse("2022-01-15T08:59:00Z");
+  await page.goto(`/#v=observe&story=tonga&t=${at}&choice=PHNL&chapter=journey`);
+  const story = page.getByRole("region", { name: "Tonga’s shockwave", exact: true });
+  const canvas = page.locator("#globe-view canvas");
+  const world = await canvas.elementHandle();
+  const station = story.getByRole("button", { name: "Inspect Honolulu pressure", exact: true });
+  await expect(station).toBeInViewport();
+  await expect(story.getByRole("slider", { name: "Replay time", exact: true })).toHaveValue("539");
+  const before = (await station.boundingBox())!;
+  await station.click();
+  const sample = story.getByRole("slider", { name: "Station pressure time" });
+  await expect(sample).toHaveValue("539");
+  await sample.press("ArrowRight");
+  await expect(sample).toHaveValue("540");
+  const after = (await station.boundingBox())!;
+  expect(after.x).toBeCloseTo(before.x, 0);
+  expect(after.y).toBeCloseTo(before.y, 0);
+  await story.getByRole("button", { name: "Map", exact: true }).click();
+  await story.getByRole("button", { name: "Back to journey", exact: true }).click();
+  await expect(story.getByRole("button", { name: "Globe", exact: true })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
+  await expect(story.getByRole("slider", { name: "Replay time", exact: true })).toHaveValue("540");
+  await expect(story.getByRole("button", { name: "Play", exact: true })).toBeVisible();
+  await expect(station).toBeFocused();
+  expect(await world!.evaluate((node) => node === document.querySelector("#globe-view canvas"))).toBe(true);
+});

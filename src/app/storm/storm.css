@@ -352,3 +352,16 @@
     line-height: 1.45;
   }
 }
+
+@media (min-width: 600px) and (max-height: 620px) {
+  .storm-journey .story-dock-host {
+    position: static;
+    padding-inline: var(--observatory-inline);
+  }
+
+  .storm-journey .story-dock {
+    padding: 6px 0;
+    border-width: 1px 0 0;
+    border-radius: 0;
+  }
+}

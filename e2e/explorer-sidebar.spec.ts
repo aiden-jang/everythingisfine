@@ -103,8 +103,8 @@ test("phone sheet offers three sizes without losing the globe or covering its co
   expect(await canvas!.evaluate((node) => node === document.querySelector("#globe-view canvas"))).toBe(true);
   expect(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)).toBe(false);
   await page.getByRole("button", { name: "View options", exact: true }).click();
-  await page.getByText("Keyboard controls", { exact: true }).filter({ visible: true }).click();
-  await expect(page.locator(".mobile-key-hints .keyboard-controls")).toBeVisible();
+  await page.getByText("Keyboard shortcuts", { exact: true }).filter({ visible: true }).click();
+  await expect(page.locator(".view-keyboard-help .keyboard-controls")).toBeVisible();
   await page.keyboard.press("Escape");
   await page.getByRole("button", { name: "Sources & legend", exact: true }).click();
   await expect(legend).toBeInViewport({ ratio: 1 });
@@ -114,32 +114,32 @@ test("phone sheet offers three sizes without losing the globe or covering its co
   await legend.getByRole("button", { name: "Close sources and legend", exact: true }).click();
 });
 
-test("opening desktop keyboard help holds the trigger and world footer in place", async ({ page }) => {
+test("keyboard shortcuts stay in View options without moving the world footer", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
   await installFeeds(page, { radar: "default" });
   for (const view of [
-    { width: 1440, height: 900, projection: "globe", action: "orbit" },
-    { width: 812, height: 375, projection: "map", action: "pan" },
+    { width: 1440, height: 900, projection: "globe", action: "Orbit the globe" },
+    { width: 812, height: 375, projection: "map", action: "Pan the map" },
   ]) {
     await page.setViewportSize(view);
     await page.goto(`/?projection=${view.projection}#v=explore&p=${view.projection}&at=15,25,1.5`);
-    const trigger = page.locator(".key-hints summary");
-    const help = page.locator(".key-hints .keyboard-controls");
+    const options = page.getByRole("button", { name: "View options", exact: true });
+    const panel = page.getByRole("region", { name: "View options", exact: true });
     const sources = page.getByRole("button", { name: "Sources & legend", exact: true });
-    const divider = page.locator(".canvas-footer");
-    const geometry = () => Promise.all([trigger.boundingBox(), sources.boundingBox(), divider.boundingBox()]);
-    await expect(trigger).toBeVisible();
+    const geometry = () => Promise.all([options.boundingBox(), sources.boundingBox()]);
+    await expect(page.locator("#globe-view")).not.toContainText("Keyboard shortcuts");
     await expect(sources).toBeVisible();
     await page.evaluate(() => document.fonts.ready.then(() => undefined));
     const before = await geometry();
+    await options.click();
+    const trigger = panel.getByText("Keyboard shortcuts", { exact: true });
     await trigger.click();
-    await expect(help).toContainText(view.action);
-    await expect(help).toBeInViewport({ ratio: 1 });
+    await expect(panel.getByText(view.action, { exact: true })).toBeVisible();
+    await expect(panel.getByText(view.action, { exact: true })).toBeInViewport();
     await expect.poll(geometry).toEqual(before);
-    await sources.click({ trial: true, timeout: 3_000 });
-    await trigger.press("Enter");
-    await expect(help).toBeHidden();
-    await expect(trigger).toBeFocused();
+    await page.keyboard.press("Escape");
+    await expect(panel).toBeHidden();
+    await expect(options).toBeFocused();
     await expect.poll(geometry).toEqual(before);
   }
 });

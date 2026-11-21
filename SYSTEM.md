@@ -270,7 +270,9 @@ subsets: originals remain the authority for scientific analysis.
 Tōhoku draws the USGS finite-fault patches in the shared renderer, anchored by their longitude and
 latitude. The four-times depth offset and modeled slip timing are shader uniforms, so scrubbing
 does not rebuild the mesh. ShakeMap contours follow on the same surface. The Pacific station
-comparison keeps a fixed camera and a shared time cursor for the two recorded traces. Regenerate the packed
+comparison keeps a shared time cursor for both recorded traces. Selecting a station on the globe or
+map pauses playback and links that station to its trace. Returning to the rupture restores the
+previous framing and time. Regenerate the packed
 asset with [make-tohoku.mjs](tools/make-tohoku.mjs).
 
 Megaflash banks over the infrared scan as the GOES-16 optical detections appear. The finished
@@ -281,7 +283,8 @@ Katrina opens with a resized WebP of [NASA Terra MODIS imagery from 28 August 20
 courtesy of the MODIS Rapid Response Team at Goddard Space Flight Center. The photograph dissolves
 as the camera follows the interpolated center. The track and measured wind radii stay registered to
 Earth. The final Gulf overview holds the camera steady while the reader compares any of seven NOAA
-fixes. Each fix can be saved independently. Regenerate the packed HURDAT2 track with
+fixes, each with measured wind and pressure. The comparison restores the incoming projection and
+replay position on return. Each fix can be saved independently. Regenerate the packed HURDAT2 track with
 [make-katrina.mjs](tools/make-katrina.mjs).
 
 Tonga crossfades two compressed satellite atlases into the shared globe and map. Its replay clock
@@ -291,6 +294,7 @@ window. The atlas metadata records the source keys and ASOS requests. Regenerate
 `useTongaPlayback` owns that clock and image lifecycle. `WorldEvidence` keeps the bounded reading
 panel beside the same canvas, while `evidenceConnector` projects the selected station to the chart.
 The pressure inspector seeks actual samples and keeps station/minute observations independently.
+Returning to the journey restores its framing and keeps the inspected minute selected.
 Build-generated Tonga share pages contain source-specific metadata for the bundled readings without
 a new endpoint. `tools/tonga-share-pages.mjs` emits their HTML; regenerate the three station trace
 images with `node tools/tonga-share-cards.mjs`. `pressureShare` validates these routes before the

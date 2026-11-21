@@ -567,6 +567,13 @@ test("notches compound off where the camera is heading", { tag: "@dev" }, async 
   await expect.poll(() => linkField(page, "at"), { timeout: CAMERA_SETTLE_MS }).toMatch(/,1\.7$/);
 });
 
+async function openKeyboardShortcuts(page: Page) {
+  const options = page.getByRole("region", { name: "View options", exact: true });
+  await page.getByRole("button", { name: "View options", exact: true }).click();
+  await options.getByText("Keyboard shortcuts", { exact: true }).click();
+  return options.locator(".keyboard-controls");
+}
+
 test("the globe is operable from the keyboard, and the keys are written down", async ({ page }) => {
   // The canvas is aria-hidden and unfocusable on purpose, because the accessible feed is the screen-reader
   // interface. A sighted person with no mouse could not move the globe at all.
@@ -576,11 +583,12 @@ test("the globe is operable from the keyboard, and the keys are written down", a
   await page.locator("#globe-view").focus();
   await expect(page.locator("canvas")).toBeVisible({ timeout: 25_000 });
 
-  // The hints moved onto the map, next to the thing the keys move.
-  const zones = page.locator(".zones");
-  await expect(zones).toContainText("orbit");
-  await expect(zones).toContainText("zoom");
-  await expect(zones).toContainText("reset");
+  const shortcuts = await openKeyboardShortcuts(page);
+  for (const action of ["Orbit the globe", "Zoom", "Reset camera"]) {
+    await expect(shortcuts.getByText(action, { exact: true })).toBeVisible();
+  }
+  await page.keyboard.press("Escape");
+  await page.locator("#globe-view").focus();
 
   // After the entrance has landed. Pressing during the flight compounds off a moving target, which is
   // correct behaviour and makes the destination depend on when the key arrived.
@@ -692,15 +700,12 @@ test.describe("on a touch screen", () => {
     await expect.poll(() => linkField(page, "at"), { timeout: CAMERA_SETTLE_MS }).toMatch(/,2\.\d$/);
   });
 
-  test("the key hints are not offered to a device with no keys", async ({ page }) => {
+  test("a touch device keeps keyboard shortcuts out of the scene", async ({ page }) => {
     await page.emulateMedia({ reducedMotion: "reduce" });
-    // Every entry names something touch cannot do. The row describes what works in the current view, so on a
-    // phone the honest version is empty. The desktop test above asserts the pair: hidden here has to mean
-    // "no keyboard", not "narrow".
     await installFeeds(page, { silent: true });
     await page.goto("/#at=140,20,1&m=2&w=24&s=usgs&r=thermal");
     await expect(page.locator("canvas")).toBeVisible({ timeout: 25_000 });
-    await expect(page.locator(".key-hints")).toBeHidden();
+    await expect(page.locator("#globe-view")).not.toContainText("Keyboard shortcuts");
   });
 });
 
@@ -1140,9 +1145,11 @@ test("the transport has a keyboard path, and the keys are written down", async (
   await openLayer(page);
   await page.locator("#globe-view").focus();
 
-  const zones = page.locator(".zones");
-  await expect(zones).toContainText("play");
-  await expect(zones).toContainText("step");
+  const shortcuts = await openKeyboardShortcuts(page);
+  await expect(shortcuts.getByText("Start playback", { exact: true })).toBeVisible();
+  await expect(shortcuts.getByText("Step through time", { exact: true })).toBeVisible();
+  await page.keyboard.press("Escape");
+  await page.locator("#globe-view").focus();
 
   const cursor = page.getByRole("slider", { name: "Time in the window" });
   await expect(cursor).toHaveValue("1000");
@@ -1773,7 +1780,6 @@ test("fullscreen makes the window bigger and takes nothing away", async ({ page 
       return {
         head: shown("#chrome-head"),
         rail: shown("#chrome-rail"),
-        hints: shown(".key-hints"),
         key: shown("#globe-view .layer-times-toggle"),
         panels: document.querySelectorAll(".zone-panel").length,
         full: document.fullscreenElement ? document.fullscreenElement.className : "",
@@ -1800,7 +1806,7 @@ test("fullscreen makes the window bigger and takes nothing away", async ({ page 
   const during = await chrome();
   expect(during.head, "the bar stays").toBe(true);
   expect(during.rail, "the panel stays").toBe(true);
-  expect(during.hints, "the key hints stay").toBe(true);
+  await expect(page.getByRole("button", { name: "View options", exact: true })).toBeVisible();
   expect(during.key, "the marks key stays").toBe(true);
 
   // Pinned from inside fullscreen, because the detail is the thing the mode used to trade away.
@@ -1832,7 +1838,6 @@ test("the panel folds where it covers the globe, and stays folded", async ({ pag
     rail: boolean;
     resizer: number;
     footerCentre: number;
-    hintsRight: number;
     railWidth: number;
   }> =>
     page.evaluate(() => {
@@ -1840,8 +1845,7 @@ test("the panel folds where it covers the globe, and stays folded", async ({ pag
         const el = document.querySelector(sel);
         return el !== null && (el as HTMLElement).checkVisibility();
       };
-      const hints = document.querySelector(".key-hints")!.getBoundingClientRect();
-      const footer = document.querySelector(".canvas-footer")!.getBoundingClientRect();
+      const footer = document.querySelector(".canvas-information")!.getBoundingClientRect();
       return {
         head: shown("#chrome-head"),
         rail: shown("#chrome-rail"),
@@ -1849,7 +1853,6 @@ test("the panel folds where it covers the globe, and stays folded", async ({ pag
         // measured once as a one-pixel bright line down a frame whose whole point is that it is empty.
         resizer: document.querySelector('[aria-label="Rail width"]')?.getBoundingClientRect().width ?? -1,
         footerCentre: Math.round((footer.left + footer.right) / 2),
-        hintsRight: Math.round(hints.right),
         railWidth: Math.round(document.querySelector("#chrome-rail")!.getBoundingClientRect().width),
       };
     });
@@ -1865,9 +1868,8 @@ test("the panel folds where it covers the globe, and stays folded", async ({ pag
   expect(folded.rail, "the panel folds").toBe(false);
   expect(folded.head, "and the bar is still there").toBe(true);
   expect(folded.resizer, "the rail's handle goes with the rail").toBe(0);
-  // The footer reclaims the panel's space while keyboard help stays at the right edge.
+  // The footer reclaims the panel's space.
   expect(folded.footerCentre, "the footer recentres").toBeLessThan(open.footerCentre);
-  expect(folded.hintsRight).toBe(open.hintsRight);
 
   await page.reload();
   await waitForData(page);
@@ -1878,7 +1880,6 @@ test("the panel folds where it covers the globe, and stays folded", async ({ pag
   const back = await chrome();
   expect(back.rail).toBe(true);
   expect(back.footerCentre).toBe(open.footerCentre);
-  expect(back.hintsRight).toBe(open.hintsRight);
 
   /*
    * The rail comes back the width it was. It did not: the fold shipped storing "1" and "0" under `rail`,

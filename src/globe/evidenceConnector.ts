@@ -15,17 +15,20 @@ export function positionEvidenceConnector(
   const parent = source?.parentElement ? parents.get(source.parentElement) : undefined;
   const end = target?.getBoundingClientRect();
   const body = target?.closest("[data-evidence-body]")?.getBoundingClientRect();
+  const reading = target?.closest("#observatory-intro")?.getBoundingClientRect();
   if (
+    source?.style.visibility !== "visible" ||
     !point ||
     !parent ||
     !end ||
     !body ||
     point.x < parent.left + 24 ||
     point.x > parent.right - 24 ||
-    point.y < parent.top + 55 ||
-    point.y > parent.bottom - 55 ||
+    point.y < parent.top + 24 ||
+    point.y > parent.bottom - 24 ||
     end.y < body.top ||
-    end.bottom > body.bottom
+    end.bottom > body.bottom ||
+    (reading && (end.y < reading.top || end.bottom > reading.bottom))
   ) {
     svg.style.visibility = "hidden";
     return;

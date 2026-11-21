@@ -39,6 +39,7 @@ export function ObservationDeckShell({
   scene,
   city,
   readCamera,
+  restoreCamera,
   onClose,
   onRadar,
 }: {
@@ -47,6 +48,7 @@ export function ObservationDeckShell({
   scene: EarthScene;
   city: SkyCityPreference;
   readCamera: NonNullable<ReplayProps["readCamera"]>;
+  restoreCamera: NonNullable<ReplayProps["restoreCamera"]>;
   onClose: () => void;
   onRadar: () => void;
 }): JSX.Element {
@@ -121,6 +123,7 @@ export function ObservationDeckShell({
           <RecordedReplay
             entry={entry}
             readCamera={readCamera}
+            restoreCamera={restoreCamera}
             map={deck.map}
             onMap={deck.setMap}
             onView={deck.update}

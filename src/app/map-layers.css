@@ -131,33 +131,6 @@
   gap: 4px 16px;
   padding: 12px var(--canvas-inline-padding) 16px;
 }
-.canvas-footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 4px 16px;
-  order: 2;
-  width: 100%;
-  padding-top: 8px;
-  border-top: 1px solid var(--color-hairline);
-  font-size: 11px;
-}
-.key-hints {
-  margin-left: auto;
-}
-.key-hints > .keyboard-controls {
-  position: absolute;
-  inset-inline-end: var(--canvas-inline-padding);
-  inset-block-end: calc(100% + 8px);
-  width: max-content;
-  max-width: min(600px, calc(100% - 2 * var(--canvas-inline-padding)));
-  padding: 8px 12px;
-  border: 1px solid var(--color-hairline);
-  border-radius: 7px;
-  background: var(--color-deck);
-  color: var(--color-ink);
-}
 .layer-times-toggle {
   display: inline-flex;
   align-items: center;
@@ -230,39 +203,6 @@
   }
   .radar-credit-prefix,
   .radar-canvas-credit > span {
-    display: none;
-  }
-  .canvas-footer {
-    padding-top: 0;
-    border: 0;
-  }
-}
-
-.mobile-key-hints {
-  display: none;
-}
-@media (max-width: 767px) {
-  .key-hints {
-    display: none;
-  }
-  .mobile-key-hints {
-    display: block;
-    font-size: 12px;
-  }
-  .mobile-key-hints summary {
-    min-height: 44px;
-    align-content: center;
-    padding-inline: 8px;
-    cursor: pointer;
-  }
-  .mobile-key-hints .keyboard-controls {
-    padding: 8px;
-  }
-}
-
-@media (hover: none) and (pointer: coarse) {
-  .key-hints,
-  .mobile-key-hints {
     display: none;
   }
 }

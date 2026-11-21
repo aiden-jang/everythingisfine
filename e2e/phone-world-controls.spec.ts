@@ -44,7 +44,7 @@ test("expanded phone sheet keeps projection, legend and recorded radar sources r
     { width: 667, height: 375 },
   ]) {
     await page.setViewportSize(viewport);
-    await expect(page.locator(".key-hints")).toBeHidden();
+    await expect(page.locator("#globe-view")).not.toContainText("Keyboard shortcuts");
     await sheet.press("Home");
     for (const control of [projection, information, credit]) {
       await expect(control).toBeInViewport({ ratio: 1 });
@@ -76,7 +76,7 @@ test("expanded phone sheet keeps projection, legend and recorded radar sources r
   await projection.focus();
   await page.setViewportSize({ width: 812, height: 375 });
   await expect(page.locator("#chrome-head #view-projection")).toBeFocused();
-  await expect(page.locator(".key-hints")).toBeHidden();
+  await expect(page.locator("#globe-view")).not.toContainText("Keyboard shortcuts");
   await page.setViewportSize({ width: 390, height: 844 });
   await expect(page.locator(".canvas-information #view-projection")).toBeFocused();
   for (const viewport of [
@@ -85,7 +85,13 @@ test("expanded phone sheet keeps projection, legend and recorded radar sources r
   ]) {
     await page.setViewportSize(viewport);
     await page.getByRole("button", { name: "View options", exact: true }).click();
-    await expect(page.locator(".mobile-key-hints")).toBeHidden();
+    const panel = page.getByRole("region", { name: "View options", exact: true });
+    const shortcuts = panel.getByText("Keyboard shortcuts", { exact: true });
+    const open = await panel
+      .locator(".view-keyboard-help")
+      .evaluate((node) => (node as HTMLDetailsElement).open);
+    if (!open) await shortcuts.click();
+    await expect(panel.locator(".keyboard-controls")).toBeVisible();
     await page.keyboard.press("Escape");
   }
 });

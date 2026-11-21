@@ -40,3 +40,19 @@
     margin: 14px 18px;
   }
 }
+
+@media (prefers-reduced-motion: no-preference) {
+  .world-evidence-connector[data-trace] path {
+    stroke-dasharray: 1;
+    animation: evidence-trace 480ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  @keyframes evidence-trace {
+    from {
+      stroke-dashoffset: 1;
+    }
+    to {
+      stroke-dashoffset: 0;
+    }
+  }
+}

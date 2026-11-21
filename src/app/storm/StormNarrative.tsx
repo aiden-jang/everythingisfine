@@ -52,7 +52,10 @@ export function StormFinding({
           aria-pressed={selected === PEAK_INDEX}
           onClick={() => onInspect(PEAK_MINUTE)}
         >
-          <strong>{PEAK.wind} kt</strong> <span>Offshore peak</span>
+          <strong>
+            {PEAK.wind} kt · {PEAK.pressure} hPa
+          </strong>{" "}
+          <span>Offshore peak</span>
         </button>
         <button
           type="button"
@@ -60,7 +63,10 @@ export function StormFinding({
           aria-pressed={selected === FIXES.length - 1}
           onClick={() => onInspect(TRACK_MINUTES)}
         >
-          <strong>{LANDFALL.wind} kt</strong> <span>Buras landfall</span>
+          <strong>
+            {LANDFALL.wind} kt · {LANDFALL.pressure} hPa
+          </strong>{" "}
+          <span>Buras landfall</span>
         </button>
       </div>
       {actions}

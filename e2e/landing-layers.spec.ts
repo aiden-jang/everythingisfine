@@ -356,7 +356,7 @@ test("radar rewind reveals the current scan before showing playback @dev", async
   expect(shaderErrors).toEqual([]);
 });
 
-test("the first radar timestamp preserves the position of Sources and keyboard help", async ({ page }) => {
+test("the first radar timestamp preserves the position of Sources and View options", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.emulateMedia({ reducedMotion: "reduce" });
   await installFeeds(page, { presentation: "explore", radar: "default", empty: true });
@@ -377,7 +377,7 @@ test("the first radar timestamp preserves the position of Sources and keyboard h
   );
   await page.goto("/#v=explore");
   const sources = page.getByRole("button", { name: "Sources & legend", exact: true });
-  const keyboard = page.locator(".key-hints summary");
+  const keyboard = page.getByRole("button", { name: "View options", exact: true });
   const positions = () => Promise.all([sources.boundingBox(), keyboard.boundingBox()]);
   await expect(sources).toBeVisible();
   await expect(keyboard).toBeVisible();

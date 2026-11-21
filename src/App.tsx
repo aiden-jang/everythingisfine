@@ -21,7 +21,7 @@ import { explorerCamera, useGlobeCamera } from "./app/useGlobeCamera";
 import { WaveReplayControls } from "./app/WaveReplayControls";
 import { useEventInspection } from "./app/useEventInspection";
 import { SequenceReplayControls } from "./app/SequenceReplayControls";
-import { CanvasFooter, CanvasStamp, KeyboardHelp } from "./app/CanvasFooter";
+import { CanvasStamp, KeyboardHelp } from "./app/CanvasFooter";
 import { LayerReadout } from "./app/LayerReadout";
 import { Observatory, type ObservatoryProps } from "./app/Observatory";
 import { journeyFor, observatorySummary, observatoryFeedNote } from "./app/journeys";
@@ -1055,7 +1055,6 @@ export function App(): JSX.Element {
         <GlobeHeader
           keyboard={
             <KeyboardHelp
-              mobile
               flat={flat}
               playing={view.playing}
               archived={archived}
@@ -1397,14 +1396,6 @@ export function App(): JSX.Element {
                   onClose={() => closeReading("section")}
                 />
               ) : null}
-              {chase.frame || inspection.run ? null : (
-                <CanvasFooter
-                  flat={flat}
-                  playing={view.playing}
-                  archived={archived}
-                  clearable={Boolean(query || sectionLine || view.at !== null || selected || markId)}
-                />
-              )}
             </div>
           </section>
 

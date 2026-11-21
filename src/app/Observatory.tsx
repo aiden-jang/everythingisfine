@@ -154,6 +154,7 @@ function ObservatoryContent({
         scene={scene}
         city={skyCity}
         readCamera={explorer.read}
+        restoreCamera={explorer.restore}
         onClose={closeStory}
         onRadar={() => radar.open("pacific", true)}
       />

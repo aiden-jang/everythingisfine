@@ -23,6 +23,7 @@ import "./world-evidence.css";
 export interface ReplayProps {
   map: boolean;
   readCamera?: () => CameraState;
+  restoreCamera?: (camera: CameraState) => void;
   onMap: (map: boolean) => void;
   onView: (view: ObservationView) => void;
   onClose: () => void;

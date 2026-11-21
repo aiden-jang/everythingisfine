@@ -1,10 +1,11 @@
-import { useMemo, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useCallback, useMemo, useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { ObservationView } from "../observations/types";
 import stations from "../../sources/observations/recordings/tohoku-waves.json";
-
 import { useStorySession } from "../observations/StorySession";
 import { useStoryNavigation } from "../journeys/StoryNavigation";
+import { EvidenceConnector } from "../observations/EvidenceConnector";
 import { StoryDock } from "../observations/StoryDock";
+import { WaveStationPicker } from "./WaveStationPicker";
 
 const origin = Date.parse("2011-03-11T05:46:24Z");
 const duration = 90 * 60;
@@ -29,13 +30,17 @@ const waves = stations.map((station) => ({
     .join(" "),
 }));
 type Station = (typeof waves)[number];
-
 export interface WaveReading {
   first: number;
   second: number;
   seconds: number;
 }
-export type WavePin = Pick<Station, "id" | "name" | "lon" | "lat"> & { reached: boolean };
+export type WavePin = Pick<Station, "id" | "name" | "lon" | "lat"> & {
+  reached: boolean;
+  slot?: "first" | "second";
+  linked: boolean;
+  inspect: () => void;
+};
 
 const reached = (station: Station, seconds: number) => station.first !== null && seconds >= station.first;
 
@@ -63,12 +68,23 @@ function waveTime(seconds: number) {
 const timeAt = (seconds: number) =>
   new Date(origin + Math.round(seconds) * 1000).toISOString().slice(11, 19) + " UTC";
 
-function Trace({ station, seconds, second }: { station: Station; seconds: number; second?: boolean }) {
+function Trace({
+  station,
+  seconds,
+  second,
+  linked,
+}: {
+  station: Station;
+  seconds: number;
+  second?: boolean;
+  linked?: boolean;
+}) {
   const x = (seconds / duration) * width;
   return (
     <div
       className="recorded-trace"
       data-second={second || undefined}
+      data-evidence-body=""
       data-reached={reached(station, seconds) || undefined}
     >
       <div>
@@ -97,34 +113,16 @@ function Trace({ station, seconds, second }: { station: Station; seconds: number
             y2="60"
           />
         )}
-        <line className="recorded-cursor" x1={x} x2={x} y1="0" y2="60" />
+        <line
+          className="recorded-cursor"
+          data-evidence-point={linked || undefined}
+          x1={x}
+          x2={x}
+          y1="0"
+          y2="60"
+        />
       </svg>
     </div>
-  );
-}
-
-function StationPicker({
-  label,
-  index,
-  other,
-  select,
-}: {
-  label: string;
-  index: number;
-  other: number;
-  select: (index: number) => void;
-}) {
-  return (
-    <label>
-      <span>{label}</span>
-      <select value={index} onChange={(event) => select(Number(event.currentTarget.value))}>
-        {waves.map((station, i) => (
-          <option key={station.id} value={i} disabled={i === other}>
-            {station.name.split(",")[0]}
-          </option>
-        ))}
-      </select>
-    </label>
   );
 }
 
@@ -162,18 +160,46 @@ export function RecordedWaves({
         : 0),
   );
   const [playing, play] = useState(false);
+  const [linked, setLinked] = useState(false);
   const cursor = useRef<HTMLInputElement>(null);
   const sound = useRef<HTMLAudioElement>(null);
   const a = waves[first]!;
   const b = waves[second]!;
-  const reachedA = reached(a, seconds);
-  const reachedB = reached(b, seconds);
+  const inspect = useCallback(
+    (index: number) => {
+      play(false);
+      sound.current?.pause();
+      if (index === second) setSecond(first);
+      setFirst(index);
+      setLinked(true);
+      requestAnimationFrame(() =>
+        document.querySelector(".recorded-trace")?.scrollIntoView({ block: "nearest" }),
+      );
+    },
+    [first, second],
+  );
+  const arrivalMask = waves.reduce(
+    (mask, station, index) => (reached(station, seconds) ? mask | (1 << index) : mask),
+    0,
+  );
   const pins = useMemo(
-    () => [
-      { id: a.id, name: a.name, lon: a.lon, lat: a.lat, reached: reachedA },
-      { id: b.id, name: b.name, lon: b.lon, lat: b.lat, reached: reachedB },
-    ],
-    [a, b, reachedA, reachedB],
+    () =>
+      [first, second, ...waves.map((_, i) => i).filter((i) => i !== first && i !== second)].map(
+        (index): WavePin => {
+          const { id, name, lon, lat } = waves[index]!;
+          return {
+            id,
+            name,
+            lon,
+            lat,
+            reached: !!(arrivalMask & (1 << index)),
+            ...(index === first ? { slot: "first" } : index === second ? { slot: "second" } : {}),
+            linked: index === first && linked,
+            inspect: () => inspect(index),
+          };
+        },
+      ),
+    [first, second, arrivalMask, linked, inspect],
   );
   useLayoutEffect(() => onPins(pins), [pins, onPins]);
   const at = origin + seconds * 1000;
@@ -191,6 +217,8 @@ export function RecordedWaves({
       cameraKey: "waves",
       image: null,
       target,
+      holdGeography: linked,
+      pickMarks: { points: waves, select: inspect },
       frame: {
         at,
         marks: [
@@ -215,7 +243,22 @@ export function RecordedWaves({
     });
     remember?.({ chapter: "waves", choice });
     onReading({ first, second, seconds });
-  }, [at, choice, seconds, a, b, first, second, onView, onReading, remember, playing, reduced]);
+  }, [
+    at,
+    choice,
+    seconds,
+    a,
+    b,
+    first,
+    second,
+    onView,
+    onReading,
+    remember,
+    playing,
+    reduced,
+    linked,
+    inspect,
+  ]);
   const running = playing && seconds < duration;
   useEffect(() => cursor.current?.focus({ preventScroll: true }), []);
   useEffect(() => {
@@ -242,20 +285,33 @@ export function RecordedWaves({
         <div className="archive-scene-caption recorded-chapter">
           <h3>Two stations. One event.</h3>
           <p>
-            Stations light up at the approximate onset picked from each recording. The traces share one clock
-            and are normalized per instrument.
+            Tap a station to inspect its trace. Stations light up at the approximate recorded onset. The
+            traces share one clock and are normalized per instrument.
           </p>
         </div>
         <div className="recorded-controls">
           <div className="recorded-pickers">
-            <StationPicker label="First station" index={first} other={second} select={setFirst} />
-            <StationPicker label="Second station" index={second} other={first} select={setSecond} />
+            <WaveStationPicker
+              stations={waves}
+              label="First station"
+              index={first}
+              other={second}
+              select={setFirst}
+            />
+            <WaveStationPicker
+              stations={waves}
+              label="Second station"
+              index={second}
+              other={first}
+              select={setSecond}
+            />
           </div>
           <div className="recorded-traces">
-            <Trace station={a} seconds={seconds} />
+            <Trace station={a} seconds={seconds} linked={linked} />
             <Trace station={b} seconds={seconds} second />
             <OnsetInterval a={a} b={b} />
           </div>
+          {linked && <EvidenceConnector key={a.id} trace />}
           <StoryDock label="Recorded wave playback">
             <label className="recorded-time">
               <span>Recording time · {timeAt(seconds)}</span>
@@ -271,19 +327,17 @@ export function RecordedWaves({
                 onChange={(event) => seek(event.currentTarget.valueAsNumber)}
               />
             </label>
-            <div className="archive-scene-controls">
-              <button
-                data-playback-start={!running || undefined}
-                type="button"
-                className="archive-scene-button"
-                onClick={() => {
-                  if (seconds >= duration) setSeconds(0);
-                  play(!running);
-                }}
-              >
-                {running ? "Pause recording" : seconds >= duration ? "Replay recording" : "Play recording"}
-              </button>
-            </div>
+            <button
+              data-playback-start={!running || undefined}
+              type="button"
+              className="archive-scene-button"
+              onClick={() => {
+                if (seconds >= duration) setSeconds(0);
+                play(!running);
+              }}
+            >
+              {running ? "Pause recording" : seconds >= duration ? "Replay recording" : "Play recording"}
+            </button>
           </StoryDock>
           <div className="archive-scene-controls">
             {a.first !== null && (

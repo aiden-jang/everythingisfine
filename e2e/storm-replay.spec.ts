@@ -133,6 +133,15 @@ test("Katrina’s visible track points select their exact readings on the same g
       await expect(panel.locator(".storm-measurements")).toContainText(`${pressure} hPa`);
     }
   }
+  await panel.getByRole("button", { name: "Back to replay", exact: true }).click();
+  await expect(panel.getByRole("slider", { name: "Track time" })).toHaveAttribute(
+    "aria-valuetext",
+    "28 Aug · 00:00 UTC",
+  );
+  await expect(panel.getByRole("button", { name: "Globe", exact: true })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
   expect(await canvas.evaluate((el, prior) => el === prior, original)).toBe(true);
 });
 

@@ -2,6 +2,8 @@ import { useStoryCompletion } from "../journeys/useStoryCompletion";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { ReplayPanel, type ReplayProps } from "../observations/RecordedReplay";
 import { gulf, stormGeography, stormLens, stormTarget } from "./stormGlobe";
+import { EvidenceConnector } from "../observations/EvidenceConnector";
+import { captureReplayFrame, restoreReplayFrame } from "../observations/replayReturn";
 import { useObservationImage } from "../observations/useObservationData";
 import {
   FIXES,
@@ -22,7 +24,6 @@ import { StormFinding, StormInvitation } from "./StormNarrative";
 import { StormTransport } from "./StormTransport";
 
 const comparisonTarget = { ...stormTarget, lat: 26.55 };
-const comparisonLens = { globe: stormLens.globe, map: 8.2 };
 const MOTION = "(prefers-reduced-motion: reduce)";
 
 interface Playback {
@@ -60,6 +61,10 @@ export function StormStage({ onView, ...panel }: ReplayProps): JSX.Element {
   const playback = useRef<HTMLButtonElement>(null);
   const reading = useRef<HTMLHeadingElement>(null);
   const replayPoint = useRef<Playback | null>(null);
+  const from = useRef<ReturnType<typeof captureReplayFrame>>();
+  const hold = useRef(false);
+  const camera = useRef(panel);
+  camera.current = panel;
   const [archiveReady, setArchiveReady] = useState(false);
   const { element: coast } = useObservationImage(gulf.url);
   const [ready, setReady] = useState(false);
@@ -86,7 +91,10 @@ export function StormStage({ onView, ...panel }: ReplayProps): JSX.Element {
           ? fixedComparison(TRACK_MINUTES)
           : { ...current, elapsed, playing: true };
       clock.current = next;
-      if (!next.playing) replayPoint.current = seekTo(TRACK_MINUTES);
+      if (!next.playing) {
+        replayPoint.current = seekTo(TRACK_MINUTES);
+        from.current = captureReplayFrame(camera.current);
+      }
       if (!next.playing || now - lastReadout >= 75) {
         setView(next);
         lastReadout = now;
@@ -121,7 +129,11 @@ export function StormStage({ onView, ...panel }: ReplayProps): JSX.Element {
   const invited = view.phase === "intro";
   const compareAt = useCallback(
     (minute: number) => {
-      if (!comparing) replayPoint.current = invited ? seekTo(0) : { ...clock.current, playing: false };
+      if (!comparing) {
+        replayPoint.current = invited ? seekTo(0) : { ...clock.current, playing: false };
+        from.current = captureReplayFrame(camera.current);
+      }
+      hold.current = false;
       update(fixedComparison(minute));
       if (!comparing) requestAnimationFrame(() => reading.current?.focus({ preventScroll: true }));
     },
@@ -144,11 +156,12 @@ export function StormStage({ onView, ...panel }: ReplayProps): JSX.Element {
     onView({
       kind: "observation",
       ...stormGeography(frame, !view.survey, comparing),
+      ...(hold.current ? { holdGeography: true, follow: undefined } : {}),
       capture: !visibleArchive,
       image: coast,
       target: comparing ? comparisonTarget : stormTarget,
-      lens: comparing ? comparisonLens : stormLens,
-      arrive,
+      lens: stormLens,
+      ...(hold.current ? {} : { arrive }),
       pickMarks: invited || visibleArchive ? undefined : { points: FIXES, select: inspectFix },
     });
     remember?.({ chapter: comparing ? "compare" : "" });
@@ -169,6 +182,7 @@ export function StormStage({ onView, ...panel }: ReplayProps): JSX.Element {
   const atFix = storm.at === fix.time;
 
   function toggle() {
+    hold.current = false;
     const current = clock.current;
     if (current.playing) update({ ...current, playing: false });
     else if (current.phase === "compare" || current.elapsed >= duration(current)) {
@@ -185,9 +199,15 @@ export function StormStage({ onView, ...panel }: ReplayProps): JSX.Element {
     requestAnimationFrame(() => playback.current?.focus({ preventScroll: true }));
   }
 
+  function backToReplay() {
+    hold.current = !!from.current;
+    update(replayPoint.current ?? seekTo(minute));
+    restoreReplayFrame(from.current, panel, () => playback.current);
+  }
+
   const readings = (
-    <div className="archive-scene-caption storm-reading">
-      <h3 ref={reading} tabIndex={-1}>
+    <div className="archive-scene-caption storm-reading" data-evidence-body="">
+      <h3 ref={reading} tabIndex={-1} data-evidence-point={comparing || undefined}>
         {title}
       </h3>
       <p
@@ -223,7 +243,7 @@ export function StormStage({ onView, ...panel }: ReplayProps): JSX.Element {
           {kept ? "Fix kept" : "Keep this fix"}
         </button>
       )}
-      <button type="button" onClick={() => update(replayPoint.current ?? seekTo(minute))}>
+      <button type="button" onClick={backToReplay}>
         Back to replay
       </button>
       {navigation?.library.notice && (
@@ -267,9 +287,13 @@ export function StormStage({ onView, ...panel }: ReplayProps): JSX.Element {
           )}
           {comparing && (
             <div className="storm-map-labels" aria-hidden="true">
+              <EvidenceConnector key={fix.at} trace />
               <span
                 data-observation-anchor=""
                 data-storm-fix={storm.fixIndex}
+                data-evidence-source="true"
+                data-compact-anchor=""
+                data-projection-anchor=""
                 data-lon={fix.lon}
                 data-lat={fix.lat}
               >
@@ -327,7 +351,10 @@ export function StormStage({ onView, ...panel }: ReplayProps): JSX.Element {
             playing={view.playing}
             ended={ended}
             buttonRef={playback}
-            onSeek={(value) => (comparing ? inspectFix(value) : update(seekTo(value)))}
+            onSeek={(value) => {
+              if (comparing) inspectFix(value);
+              else update(seekTo(value));
+            }}
             onInspect={compareAt}
             onToggle={toggle}
           />

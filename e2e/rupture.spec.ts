@@ -75,6 +75,15 @@ test("Tōhoku recordings restore the station pair, cursor, and prior projection"
     "aria-valuetext",
     "05:55:40 UTC",
   );
+  await reveal.getByRole("button", { name: "Map", exact: true }).click();
+  await hawaii.click();
+  await expect(reveal.getByRole("combobox", { name: "First station" })).toHaveValue("3");
+  await expect(reveal.getByRole("slider", { name: /Recording time/ })).toHaveAttribute(
+    "aria-valuetext",
+    "05:55:40 UTC",
+  );
+  await expect(hawaii).toHaveAttribute("aria-pressed", "true");
+  await expect(reveal.locator(".recorded-trace").first()).toContainText("KIP");
   await reveal.getByRole("button", { name: "Back to surface shaking" }).click();
 });
 

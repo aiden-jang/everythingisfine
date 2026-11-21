@@ -63,3 +63,41 @@
   display: block;
   padding: 8px;
 }
+
+.view-keyboard-help summary {
+  min-height: 44px;
+  align-content: center;
+  padding-inline: 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: var(--text-control);
+}
+
+.view-keyboard-help summary:hover {
+  background: var(--color-raised);
+}
+
+.view-keyboard-help .keyboard-controls {
+  display: grid;
+  gap: 6px;
+  padding: 4px 8px 10px;
+}
+
+.view-keyboard-help .keyboard-controls > div {
+  display: grid;
+  grid-template-columns: 88px minmax(0, 1fr);
+  align-items: baseline;
+  gap: 8px;
+  color: var(--color-dim);
+  font-size: var(--text-caption);
+}
+
+.view-keyboard-help kbd {
+  display: inline-block;
+  padding: 2px 5px;
+  border: 1px solid var(--color-hairline);
+  border-radius: 6px;
+  color: var(--color-ink);
+  font-family: var(--font-mono);
+  white-space: nowrap;
+}

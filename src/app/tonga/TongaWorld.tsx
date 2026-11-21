@@ -1,4 +1,4 @@
-import { createPortal } from "react-dom";
+import { EvidenceConnector } from "../observations/EvidenceConnector";
 import { ORIGIN, stations, timeIso, timeLabel } from "./tongaTimeline";
 import { PressureChart } from "./PressureChart";
 import type { TongaStation } from "./useTongaPlayback";
@@ -42,6 +42,7 @@ export function TongaWorld({
                 : undefined
             }
             data-station-signal={signal?.id === item.id ? "" : undefined}
+            data-compact-anchor=""
             data-projection-anchor={station.id === item.id || undefined}
             onClick={() => onInspect(item)}
             aria-label={`Inspect ${item.name} pressure`}
@@ -91,13 +92,7 @@ export function TongaWorld({
           )}
         </div>
       )}
-      {createPortal(
-        <svg className="world-evidence-connector" data-evidence-connector="" aria-hidden="true">
-          <path fill="none" />
-          <circle r="3" />
-        </svg>,
-        document.querySelector(".zones") ?? document.body,
-      )}
+      <EvidenceConnector key={phase === "inspect" ? station.id : phase} trace={phase === "inspect"} />
     </>
   );
 }

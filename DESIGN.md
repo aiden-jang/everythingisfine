@@ -336,7 +336,7 @@ keep their own positions beside it. The full scan date stays available in the in
 regional radar remains in the radar inspector, and returning restores the camera and compatible scan time.
 The phone radar dock reserves its own space below the reading and keeps the selected time, scan
 window and Latest action together. Expanding the globe tucks playback away without clearing the scan.
-Phone keyboard help lives in View options so it does not cover the globe. The author credit stays
+Keyboard shortcuts live inside View options on desktop and mobile. The author credit stays
 at the lower-left viewport edge across home, scenes, Explore and players, outside the moving
 canvas and reading regions. It is rendered once by `CreatorCredit` through `GlobeHeader`. Its
 left inset is 34px on desktop, 24px below 900px and 18px at 380px or less. The bottom inset is

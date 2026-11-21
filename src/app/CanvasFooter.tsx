@@ -10,63 +10,41 @@ export function CanvasStamp({ cursor, day }: { cursor: number | null; day: numbe
   ) : null;
 }
 
-export function CanvasFooter({
-  flat,
-  playing,
-  archived,
-  clearable,
-}: {
-  flat: boolean;
-  playing: boolean;
-  archived: boolean;
-  clearable: boolean;
-}): JSX.Element {
-  return (
-    <div className="canvas-footer">
-      <KeyboardHelp flat={flat} playing={playing} archived={archived} clearable={clearable} />
-    </div>
-  );
-}
-
 export function KeyboardHelp({
   flat,
   playing,
   archived,
   clearable,
-  mobile = false,
 }: {
   flat: boolean;
   playing: boolean;
   archived: boolean;
   clearable: boolean;
-  mobile?: boolean;
 }) {
+  const shortcuts = [
+    ["Arrows", flat ? "Pan the map" : "Orbit the globe"],
+    ["+ / −", "Zoom"],
+    ["0", "Reset camera"],
+    ["Space", playing ? "Pause playback" : "Start playback"],
+    [", / .", "Step through time"],
+    ...(archived ? [["[ / ]", "Change archive day"]] : []),
+    ...(flat ? [["Shift + drag", "Draw a cross-section"]] : []),
+    ["F", "Fullscreen"],
+    ...(clearable ? [["Esc", "Clear the current selection"]] : []),
+  ];
   return (
-    <details className={mobile ? "mobile-key-hints" : "key-hints pointer-events-auto text-faint"}>
-      <summary>Keyboard controls</summary>
-      <div className="keyboard-controls">
-        {/* What the keys do in this projection: a row saying orbit while the drag pans is worse than none. */}
-        {(
-          [
-            ["arrows", flat ? "pan" : "orbit"],
-            ["+ -", "zoom"],
-            ["0", "reset"],
-            ["space", playing ? "pause" : "play"],
-            [", .", "step"],
-            ...(archived ? [["[ ]", "day"] as const] : []),
-            ...(flat ? [["shift-drag", "section"] as const] : []),
-            ["f", "full"],
-            /* Only when there is something to clear, or the app offers `esc` on every first load. `markId`
-                belongs in this list and in the ladder: a mark card is a pin. */
-            ...(clearable ? [["esc", "clear"] as const] : []),
-          ] as const
-        ).map(([key, what]) => (
-          <span key={key} className="mr-3 inline-flex items-baseline gap-1.5">
-            <span className="text-dim">{key}</span>
-            {what}
-          </span>
+    <details className="view-keyboard-help">
+      <summary>Keyboard shortcuts</summary>
+      <dl className="keyboard-controls">
+        {shortcuts.map(([key, action]) => (
+          <div key={key}>
+            <dt>
+              <kbd>{key}</kbd>
+            </dt>
+            <dd>{action}</dd>
+          </div>
         ))}
-      </div>
+      </dl>
     </details>
   );
 }

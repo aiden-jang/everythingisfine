@@ -10,15 +10,19 @@ export function positionObservationAnchors(canvas: HTMLCanvasElement, controls: 
   const zoom = controls.state().zoom;
   const parents = new Map<Element, DOMRect>();
   const placeWidths = new Map<HTMLElement, number>();
+  let evidenceSource: HTMLElement | undefined;
   for (const anchor of anchors) {
+    if (anchor.dataset["evidenceSource"] === "true") evidenceSource ??= anchor;
     const parent = anchor.parentElement;
     if (parent && !parents.has(parent)) parents.set(parent, parent.getBoundingClientRect());
     if (!story && anchor.hasAttribute("data-place-label") && zoom >= Number(anchor.dataset["minZoom"])) {
       placeWidths.set(anchor, anchor.offsetWidth);
     }
   }
-  positionEvidenceConnector(canvas, controls, parents);
-  for (const anchor of anchors) {
+  const ordered = evidenceSource
+    ? [evidenceSource, ...Array.from(anchors).filter((anchor) => anchor !== evidenceSource)]
+    : anchors;
+  for (const anchor of ordered) {
     const place = anchor.hasAttribute("data-place-label");
     if ((place && (story || places >= 5)) || zoom < Number(anchor.dataset["minZoom"] ?? 0)) {
       anchor.style.visibility = "hidden";
@@ -29,13 +33,14 @@ export function positionObservationAnchors(canvas: HTMLCanvasElement, controls: 
     const x = (point?.x ?? 0) - (parent?.left ?? 0);
     const y = (point?.y ?? 0) - (parent?.top ?? 0);
     const inset = Math.max(24, (placeWidths.get(anchor) ?? 0) / 2 + 4);
+    const blockInset = anchor.hasAttribute("data-compact-anchor") ? 24 : 55;
     const visible =
       point &&
       parent &&
       x > inset &&
       x < parent.width - inset &&
-      y > 55 &&
-      y < parent.height - 55 &&
+      y > blockInset &&
+      y < parent.height - blockInset &&
       !occupied.some((p) => Math.hypot(p.x - x, p.y - y) < (place ? 100 : 44));
     anchor.style.visibility = visible ? "visible" : "hidden";
     if (visible) {
@@ -45,4 +50,5 @@ export function positionObservationAnchors(canvas: HTMLCanvasElement, controls: 
       anchor.style.top = `${y}px`;
     }
   }
+  positionEvidenceConnector(canvas, controls, parents);
 }

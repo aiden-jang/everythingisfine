@@ -393,16 +393,6 @@
   opacity: 0.5;
   cursor: default;
 }
-.key-hints summary {
-  min-height: 24px;
-  align-content: center;
-  cursor: pointer;
-}
-.keyboard-controls {
-  max-width: 600px;
-  padding-top: 8px;
-  line-height: 1.8;
-}
 .weather-layer button:hover {
   background: var(--color-raised);
   color: var(--color-ink);

@@ -39,16 +39,13 @@ for (const width of [320, 390, 768, 1024, 1440]) {
     await capture("live");
     if (width >= 768) {
       const rail = (await page.locator("#chrome-rail").boundingBox())!;
-      for (const selector of [".key-hints", ".layer-times-toggle"]) {
-        const box = (await page.locator(selector).boundingBox())!;
-        expect(box.x, `${selector} clears the rail`).toBeGreaterThanOrEqual(rail.x + rail.width);
-      }
+      const sources = (await page.locator(".layer-times-toggle").boundingBox())!;
+      expect(sources.x, "sources clear the rail").toBeGreaterThanOrEqual(rail.x + rail.width);
       const credit = (await page.locator(".creator-credit").boundingBox())!;
       expect(credit.y, "the fixed credit has its own space below the rail").toBeGreaterThanOrEqual(
         rail.y + rail.height,
       );
-      const hints = (await page.locator(".key-hints").boundingBox())!;
-      expect(credit.y >= hints.y + hints.height || hints.x >= credit.x + credit.width).toBe(true);
+      expect(credit.y >= sources.y + sources.height || sources.x >= credit.x + credit.width).toBe(true);
     }
     const marks = page.getByRole("button", { name: "Sources & legend", exact: true });
     await marks.click();

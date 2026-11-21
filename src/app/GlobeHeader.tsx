@@ -97,7 +97,6 @@ export function GlobeHeader({
           >
             {!observing && (
               <>
-                {keyboard}
                 <button
                   type="button"
                   onClick={() => refreshAnnotations({ camera: "reset", home: home.current })}
@@ -112,6 +111,7 @@ export function GlobeHeader({
                 >
                   {snapshot.archive ? "Reset to live" : "Reset view & filters"}
                 </button>
+                {keyboard}
                 {!chromeFloats && (
                   <button
                     type="button"
