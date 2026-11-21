@@ -13,7 +13,6 @@ import { captureReplayFrame, restoreReplayFrame } from "../observations/replayRe
 import { StoryLoading } from "../StoryLoading";
 import { BREAKUP, END, dayAt, driftCamera, tracks } from "./icebergTimeline";
 import { IcebergWorld, icebergSources } from "./IcebergWorld";
-import "./iceberg.css";
 
 export function IcebergDrift({ onView, ...panel }: ReplayProps) {
   const { initial, remember } = useStorySession();
@@ -171,7 +170,7 @@ export function IcebergDrift({ onView, ...panel }: ReplayProps) {
                   if (!track) return;
                   setChoice(track.id);
                   setLinked(true);
-                  seek(track.fixes.at(-1)![0]);
+                  seek(marks.some(({ id }) => id === track.id) ? index : track.fixes.at(-1)![0]);
                 }}
               >
                 {iceberg.options?.map(({ id, label }) => (

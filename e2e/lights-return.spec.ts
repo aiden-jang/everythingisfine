@@ -25,7 +25,7 @@ test("Lights Return compares NASA recovery periods and returns to the same After
   );
   await panel.getByRole("button", { name: "Retry images" }).click();
   const stage = panel.locator(".replay-stage");
-  const periodTitle = panel.locator(".lights-reading h3");
+  const periodTitle = panel.locator("[data-lights-period] h3");
   await expect(stage.locator(".stage-readout")).toContainText("Before Maria");
   await expect(await saveImageButton(page)).toBeEnabled();
   const period = panel.getByRole("slider", { name: "Night-light period" });

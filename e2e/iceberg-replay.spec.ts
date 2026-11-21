@@ -22,6 +22,9 @@ test("Iceberg Drift shares dated fragment tracks, satellite views and the select
   await fragment.click();
   await expect(panel.getByRole("combobox", { name: "Iceberg" })).toHaveValue("E");
   await expect(date).toHaveAttribute("aria-valuetext", "Jan 11, 2021");
+  await panel.getByRole("slider", { name: "Track date" }).press("ArrowLeft");
+  await panel.getByRole("combobox", { name: "Iceberg" }).selectOption({ label: "A-68A" });
+  await expect(date).toHaveAttribute("aria-valuetext", "Jan 10, 2021");
   await panel.getByRole("button", { name: "Breakup", exact: true }).click();
   await panel.getByRole("button", { name: "Show satellite image" }).click();
   await expect(page.getByRole("img", { name: "Landsat 8 · Dec 23, 2020 · False color" })).toBeVisible();

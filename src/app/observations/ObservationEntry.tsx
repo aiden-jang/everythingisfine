@@ -11,6 +11,7 @@ import { searchStories } from "../storyIndex";
 import { isEarthStory } from "../earth-stories/catalogue";
 import "../earth-stories/stories.css";
 import "./observations.css";
+import "../iceberg/iceberg.css";
 import "../lights/lights.css";
 import "../shadow/shadow.css";
 

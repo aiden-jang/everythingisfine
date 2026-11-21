@@ -221,7 +221,7 @@ export function LightsReturn({ onView, ...panel }: ReplayProps): JSX.Element {
       )}
       {images && (
         <>
-          <div className="archive-scene-caption lights-reading" data-lights-period={index}>
+          <div className="archive-scene-caption" data-lights-period={index}>
             <h3>{period.title}</h3>
             <p>{period.note}</p>
           </div>
