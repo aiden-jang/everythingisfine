@@ -111,13 +111,17 @@
   justify-content: flex-end;
   pointer-events: auto;
 }
+.frame {
+  --credit-bottom: max(8px, env(safe-area-inset-bottom));
+  --credit-target: 32px;
+}
 .frame .creator-credit {
   position: absolute;
   display: flex;
   align-items: center;
   gap: 12px;
   left: 34px;
-  bottom: max(8px, env(safe-area-inset-bottom));
+  bottom: var(--credit-bottom);
   z-index: 5;
   padding: 0;
   pointer-events: none;
@@ -127,7 +131,7 @@
 .frame .creator-credit a {
   display: inline-flex;
   align-items: center;
-  min-height: 32px;
+  min-height: var(--credit-target);
   text-decoration: none;
   pointer-events: auto;
 }
@@ -397,14 +401,14 @@
 }
 
 @media (max-width: 899px) {
+  .frame {
+    --credit-target: 44px;
+  }
   .observatory-sidebar {
     padding-bottom: max(56px, calc(48px + env(safe-area-inset-bottom)));
   }
   .frame .creator-credit {
     left: 24px;
-  }
-  .frame .creator-credit a {
-    min-height: 44px;
   }
 }
 @media (max-width: 767px) {

@@ -131,6 +131,25 @@
   gap: 4px 16px;
   padding: 12px var(--canvas-inline-padding) 16px;
 }
+@media (min-width: 900px) {
+  .frame[data-presentation="explore"] .canvas-information:has(> .layer-readout) {
+    padding-block-end: var(--credit-bottom);
+  }
+  .frame[data-presentation="explore"] .canvas-information > .layer-readout {
+    justify-content: flex-end;
+    min-height: var(--credit-target);
+  }
+  .frame[data-presentation="explore"] .zones:not(:has(#chrome-rail:not([hidden]))) .layer-readout {
+    flex: 0 1 50%;
+    margin-inline-start: auto;
+  }
+}
+@media (768px <= width < 900px) {
+  .frame[data-presentation="explore"] .canvas-information:has(> .layer-readout) {
+    bottom: calc(var(--credit-bottom) + var(--credit-target) + 8px);
+    padding-block-end: 0;
+  }
+}
 .layer-times-toggle {
   display: inline-flex;
   align-items: center;

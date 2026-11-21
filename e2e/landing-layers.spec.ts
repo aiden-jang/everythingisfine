@@ -391,3 +391,50 @@ test("the first radar timestamp preserves the position of Sources and View optio
   );
   expect(await positions()).toEqual(before);
 });
+
+test("the radar footer clears the pinned credit when Explore folds and reflows", async ({ page }, info) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await installFeeds(page, { presentation: "explore", radar: "default", empty: true });
+  await radarSource(page);
+  await page.goto("/#v=explore&layers=radar");
+  const credit = page.locator(".creator-credit");
+  const radar = page.getByRole("link", { name: "Radar by RainViewer" });
+  const sources = page.getByRole("button", { name: "Sources & legend" });
+  await expect(page.locator(".radar-canvas-credit time")).toBeVisible();
+  await page.evaluate(() => document.fonts.ready.then(() => undefined));
+  const original = await credit.boundingBox();
+  const originalSources = await sources.boundingBox();
+  await page.getByRole("button", { name: "Hide the panel" }).click();
+  await expect(page.locator("#chrome-rail")).toBeHidden();
+  for (const viewport of [
+    { width: 1440, height: 900 },
+    { width: 812, height: 375 },
+    { width: 720, height: 450 },
+    { width: 320, height: 568 },
+  ]) {
+    await page.setViewportSize(viewport);
+    const footer = (await credit.boundingBox())!;
+    if (viewport.width === 1440) {
+      expect(footer).toEqual(original);
+      expect(await sources.boundingBox()).toEqual(originalSources);
+      await page.getByRole("button", { name: "Map", exact: true }).click();
+      await expect(page.getByRole("region", { name: "Map", exact: true })).toBeVisible();
+    }
+    if (process.env["EIF_CAPTURE_UI"])
+      await page.screenshot({ path: info.outputPath(`footer-${viewport.width}.png`) });
+    for (const control of [radar, sources]) {
+      await expect(control).toBeInViewport({ ratio: 1 });
+      const box = (await control.boundingBox())!;
+      expect(
+        box.x >= footer.x + footer.width + 8 || box.y + box.height <= footer.y - 8,
+        `footer clearance at ${viewport.width}px`,
+      ).toBe(true);
+    }
+    await sources.click();
+    const legend = page.getByRole("region", { name: "Sources & legend" });
+    await expect(legend).toBeInViewport({ ratio: 1 });
+    await page.getByRole("button", { name: "Close sources and legend" }).click();
+    await expect(sources).toBeFocused();
+  }
+});
