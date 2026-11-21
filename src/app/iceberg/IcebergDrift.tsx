@@ -131,9 +131,11 @@ export function IcebergDrift({ onView, ...panel }: ReplayProps) {
       inset={
         showingPhoto ? (
           <figure className="iceberg-photo" aria-busy={image.status === "loading"}>
-            {image.status === "ready" && image.element && (
-              <img src={image.element.src} alt={photograph.alt} />
-            )}
+            <div className="iceberg-photo-image">
+              {image.status === "ready" && image.element && (
+                <img src={image.element.src} alt={photograph.alt} />
+              )}
+            </div>
             <figcaption>{photograph.alt}</figcaption>
           </figure>
         ) : (

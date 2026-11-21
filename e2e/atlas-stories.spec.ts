@@ -409,5 +409,8 @@ test("a basin selection keeps its recorded year and explains missing observation
   await panel.getByRole("button", { name: "Map", exact: true }).click();
   await panel.getByRole("button", { name: "Inspect West basin", exact: true }).click();
   await expect(reading).toContainText("West basin · 1997");
+  await page.setViewportSize({ width: 320, height: 568 });
+  await reading.getByRole("combobox", { name: "Inspect a basin" }).selectOption("east");
+  await expect(reading).toContainText("East basin · 1997");
   expect(await canvas!.evaluate((node) => node === document.querySelector("#globe-view canvas"))).toBe(true);
 });
