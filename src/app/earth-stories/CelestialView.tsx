@@ -29,23 +29,11 @@ export function useArchiveSky(
     localSky && body && orbital
       ? `${body.name} · ${body.altitude > 0 ? "above horizon" : "below horizon"} · ${sunElevation(localSky.city.lon, localSky.city.lat, at) > -0.833 ? "daylight" : "Sun below horizon"}`
       : localSky && `${localSky.targetName} from ${localSky.city.name}`;
-  const action = (
-    <button
-      type="button"
-      ref={earth.action}
-      onClick={() => {
-        clock.pause();
-        if (localSky) earth.leave((time) => clock.seek(nearestFrame(data, time)));
-        else {
-          earth.capture(at);
-          panel.onMap(false);
-        }
-        setSkyMode(!localSky);
-      }}
-    >
-      {localSky ? "Back to Earth" : "See from my city"}
-    </button>
-  );
+  const leave = (map?: boolean) => {
+    clock.pause();
+    earth.leave((time) => clock.seek(nearestFrame(data, time)), map);
+    setSkyMode(false);
+  };
   const sceneFrame = useMemo(
     () => (orbital && localSky ? { at, ...(frame.orbit?.eclipse ? { orbit: frame.orbit } : {}) } : frame),
     [at, frame, localSky, orbital],
@@ -56,12 +44,32 @@ export function useArchiveSky(
     skyMode,
     setSkyMode,
     status,
-    projection: !orbital ? undefined : localSky ? (
-      <div className="story-projection">{action}</div>
-    ) : (
-      <StoryProjection map={panel.map} onMap={panel.onMap}>
-        {action}
-      </StoryProjection>
-    ),
+    projection:
+      (orbital && (
+        <StoryProjection
+          map={panel.map}
+          globeActive={!localSky && !panel.map}
+          onMap={(map) => (localSky ? leave(map) : panel.onMap(map))}
+        >
+          <button
+            type="button"
+            ref={earth.action}
+            aria-pressed={!!localSky}
+            onClick={() => {
+              if (localSky) {
+                leave();
+                return;
+              }
+              clock.pause();
+              earth.capture(at);
+              panel.onMap(false);
+              setSkyMode(true);
+            }}
+          >
+            {localSky ? "Back to Earth" : "See from my city"}
+          </button>
+        </StoryProjection>
+      )) ||
+      undefined,
   };
 }

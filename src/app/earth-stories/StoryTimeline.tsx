@@ -110,7 +110,7 @@ export function StoryTimeline({
                 clock.seek(next);
               }}
             />
-            {data.timelineCues && !compact && (
+            {data.timelineCues && (
               <TimelineCues
                 cues={milestones.map(({ at, label }) => ({ index: nearest(at), label }))}
                 index={index}
