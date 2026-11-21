@@ -20,6 +20,7 @@ export interface ObservationMark extends GeoPoint {
 export interface ObservationPath {
   points: readonly GeoPoint[];
   color?: number;
+  spaceOnly?: boolean;
 }
 
 export interface ObservationRaster {
@@ -67,7 +68,7 @@ export interface ObservationFrame {
   tide?: { observed: number; predicted?: number | undefined; min: number; max: number };
   camera?: CameraState;
   details?: { title: string; rows: readonly Measurement[] };
-  localSky?: { city: SkyCity; look: SkyLook };
+  localSky?: { city: SkyCity; look: SkyLook; visible?: boolean };
   section?: {
     image: string;
     points: readonly GeoPoint[];
@@ -78,6 +79,7 @@ export interface ObservationFrame {
   orbit?: {
     focus: readonly [number, number, number];
     distance: number;
+    fitNarrow?: boolean;
     eclipse?: { moon: GeoPoint; radius: number; sun: GeoPoint; sunDistance: number };
   };
 }
@@ -107,6 +109,7 @@ export interface ObservationData {
   series?: readonly ObservationSeries[];
   units?: string;
   initial?: number;
+  visiblePass?: { appearance: number; peak: number; disappearance: number };
   chapters?: readonly { index: number; label: string }[];
 }
 

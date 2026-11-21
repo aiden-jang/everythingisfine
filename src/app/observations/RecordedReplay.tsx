@@ -67,6 +67,8 @@ export function ReplayPanel({
   sharing = true,
   sharedMoment,
   evidence,
+  horizon = false,
+  projection,
 }: Omit<ReplayProps, "onView"> & {
   title: string;
   location: string;
@@ -84,6 +86,8 @@ export function ReplayPanel({
   sharing?: boolean;
   sharedMoment?: StoryMoment | undefined;
   evidence?: ReactNode;
+  horizon?: boolean;
+  projection?: ReactNode;
 }): JSX.Element {
   const back = useRef<HTMLButtonElement>(null);
   useLayoutEffect(() => {
@@ -96,7 +100,7 @@ export function ReplayPanel({
         className="observatory-stage replay-stage"
         data-stage="observation"
         role="group"
-        aria-label={`${title} on the ${map ? "map" : "globe"}`}
+        aria-label={`${title} on the ${horizon ? "horizon" : map ? "map" : "globe"}`}
       >
         <StoryDeparture />
         {inset}
@@ -116,7 +120,7 @@ export function ReplayPanel({
             {at}
           </div>
         )}
-        <StoryProjection map={map} onMap={onMap} />
+        {projection ?? (!horizon && <StoryProjection map={map} onMap={onMap} />)}
       </div>
       {evidence}
       <div className="observatory-sidebar replay-sidebar">

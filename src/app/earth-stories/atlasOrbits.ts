@@ -7,6 +7,25 @@ import { atlasArchive } from "./atlasArchive";
 import type { EarthStoryData, StoryFrame } from "./types";
 import moonTexture from "../../sources/moonfall/recordings/moon.webp?url";
 
+const eclipseContacts = [
+  ["03:57:24", "Penumbral entry"],
+  ["05:09:33", "Umbral entry"],
+  ["06:25:59", "Totality begins"],
+  ["06:58:42", "Greatest eclipse"],
+  ["07:31:23", "Totality ends"],
+  ["08:47:48", "Umbral exit"],
+  ["10:00:01", "Penumbral exit"],
+].map(([time, label]) => ({
+  at: Date.parse(`2025-03-14T${time}Z`),
+  label: label!,
+  timeLabel: `${time} UT`,
+}));
+
+const ease = (value: number) => {
+  const t = Math.min(1, Math.max(0, value));
+  return t * t * (3 - 2 * t);
+};
+
 type Sample = [number, number, number, number, number];
 const AU = 149597870.7;
 const wrap = (lon: number) => ((lon + 540) % 360) - 180;
@@ -88,20 +107,29 @@ export async function apophisStory(city: SkyCity): Promise<EarthStoryData> {
     lift: 42164 / EARTH_RADIUS_KM - 1,
   }));
   const closest = samples.reduce((a, b) => (a[3] < b[3] ? a : b));
+  const closestIndex = samples.indexOf(closest);
+  const past = samples.map(ephemerisPoint);
+  const reference = { points: geostationary, color: 0x7294b5, spaceOnly: true };
+  const minimum = (closest[3] * AU) / EARTH_RADIUS_KM;
+  const initial = past[0]!;
+  const closestPoint = past[closestIndex]!;
   const frames = samples.map((sample, i): StoryFrame => {
     const point = ephemerisPoint(sample);
     const vector = toVec3(point.lon, point.lat, 1 + point.lift!);
     return {
       at: sample[0],
-      caption: "Predicted 2029 flyby · Earth distances shown at physical scale",
+      caption:
+        i === closestIndex
+          ? "Closest approach · JPL prediction"
+          : i < closestIndex
+            ? "Approaching Earth"
+            : "Departing Earth",
       marks: [{ ...point, size: 17, color: 0xe9d9b7 }],
-      paths: [
-        { points: geostationary, color: 0x587c9b },
-        { points: samples.slice(0, i + 1).map(ephemerisPoint), color: 0xe2c8a1 },
-      ],
+      paths: [reference, { points: past.slice(0, i + 1), color: 0xe2c8a1 }],
       orbit: {
-        focus: vector.map((v) => v * 0.32) as [number, number, number],
-        distance: Math.max(20, (1 + point.lift!) * 2.6),
+        focus: vector.map((v) => v * 0.38) as [number, number, number],
+        distance: 24 + (1 + point.lift! - minimum) * 1.5,
+        fitNarrow: true,
       },
       measurements: [
         {
@@ -115,7 +143,12 @@ export async function apophisStory(city: SkyCity): Promise<EarthStoryData> {
   });
   return {
     frames,
-    target: { lon: -30, lat: 35, zoom: 1 },
+    playbackDuration: 18_000,
+    pace: (position) =>
+      1.25 - 0.92 * Math.exp(-Math.pow((position - closestIndex) / (frames.length * 0.075), 2)),
+    timelineCues: true,
+    target: { lon: wrap(initial.lon + 82), lat: initial.lat * 0.35, zoom: 1 },
+    mapTarget: { lon: closestPoint.lon, lat: closestPoint.lat * 0.6, zoom: 1.2 },
     sky: (at) => citySky(city, sampleAt(samples, at), "Apophis"),
     timelineLabel: "Predicted flyby · UTC",
     chapters: [
@@ -124,8 +157,8 @@ export async function apophisStory(city: SkyCity): Promise<EarthStoryData> {
       { at: samples.at(-1)![0], label: "Departure" },
     ],
     legend: [
-      { color: "#587c9b", label: "Geostationary altitude reference" },
-      { color: "#e2c8a1", label: "Apophis · rotating-Earth reference frame" },
+      { color: "#7294b5", label: "Geostationary altitude reference · globe only" },
+      { color: "#e2c8a1", label: "Apophis path · map shows the point directly underneath" },
     ],
   };
 }
@@ -162,19 +195,35 @@ export async function eclipseStory(city: SkyCity): Promise<EarthStoryData> {
       sun = ephemerisPoint(data.sun[i]!);
     const shadow = lunarShadow(sample, data.sun[i]!);
     const center = toVec3(moon.lon, moon.lat, 1 + moon.lift!);
-    const p = Math.min(1, i / 65),
-      focus = p * p * (3 - 2 * p);
+    const focus = ease(
+      (sample[0] - eclipseContacts[0]!.at) / (eclipseContacts[1]!.at - eclipseContacts[0]!.at),
+    );
+    const sunDirection = { ...sun, lift: 25 };
+    const shadowDirection = { lon: wrap(sun.lon + 180), lat: -sun.lat, lift: 66 };
     return {
       at: sample[0],
-      caption: `${shadow.phase} · computed shadow geometry`,
-      paths: [{ points: lunarHorizon(moon), color: 0x8ba4ba }],
+      caption: focus < 0.72 ? "Sunlight → Earth → Moon" : shadow.phase,
+      paths: [
+        { points: lunarHorizon(moon), color: 0x8ba4ba },
+        ...(focus < 0.72
+          ? [
+              { points: [sunDirection, { ...sun, lift: 0 }], color: 0xb4a479, spaceOnly: true },
+              {
+                points: [{ ...shadowDirection, lift: 0 }, shadowDirection],
+                color: 0x57738c,
+                spaceOnly: true,
+              },
+            ]
+          : []),
+      ],
       marks: [
         { lon: city.lon, lat: city.lat, size: 9, color: 0xe5d4b1 },
         { lon: moon.lon, lat: moon.lat, size: 11, color: 0xb9d7e9 },
       ],
       orbit: {
         focus: center.map((v) => v * (0.5 + 0.5 * focus)) as [number, number, number],
-        distance: 110 * (1 - focus) + 2.6 * focus,
+        distance: 150 * (1 - focus) + 2.85 * focus,
+        fitNarrow: true,
         eclipse: {
           moon,
           radius: 1737.4 / EARTH_RADIUS_KM,
@@ -189,6 +238,8 @@ export async function eclipseStory(city: SkyCity): Promise<EarthStoryData> {
     frames,
     lunarImage: moonTexture,
     timelineLabel: "Eclipse time",
+    timelineCues: true,
+    playbackDuration: 24_000,
     mapTarget: { lon: ephemerisPoint(data.moon[210]!).lon, lat: 15, zoom: 1 },
     legend: [
       { color: "#8ba4ba", label: "Moon on the horizon · visible on the blue dot’s side" },
@@ -196,11 +247,6 @@ export async function eclipseStory(city: SkyCity): Promise<EarthStoryData> {
     ],
     target: { lon: wrap(ephemerisPoint(data.moon[210]!).lon + 155), lat: -15, zoom: 1 },
     sky: (at) => citySky(city, sampleAt(data.moon, at), "Moon"),
-    chapters: [
-      { at: Date.parse("2025-03-14T03:57:24Z"), label: "Penumbral entry" },
-      { at: Date.parse("2025-03-14T05:09:33Z"), label: "Umbral entry" },
-      { at: Date.parse("2025-03-14T06:58:42Z"), label: "Greatest eclipse" },
-      { at: Date.parse("2025-03-14T08:47:48Z"), label: "Umbral exit" },
-    ],
+    chapters: eclipseContacts,
   };
 }

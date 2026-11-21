@@ -165,6 +165,20 @@ test("Orbital Pass shares the city and time between the horizon, globe and map",
   await expect(page.getByRole("group", { name: "Orbital Pass on the map" })).toBeVisible();
   await expect(slider).toHaveAttribute("aria-valuetext", time!);
   await expect(city).toHaveValue("Tokyo");
+  const cues = pass.getByRole("group", { name: "Pass moments" });
+  await expect(cues.getByRole("button")).toHaveCount(3);
+  await pass.getByRole("button", { name: "Watch the next pass" }).click();
+  const horizon = page.getByRole("group", { name: "Orbital Pass on the horizon" });
+  await expect(horizon.getByText("ISS above the horizon and sunlit")).toBeVisible();
+  await expect(horizon.locator('[data-body="ISS"]')).toHaveCSS("visibility", "visible");
+  await expect(cues.getByRole("button", { name: /Appearance/ })).toHaveAttribute("aria-pressed", "true");
+  await cues.getByRole("button", { name: /Disappearance/ }).click();
+  await expect(horizon.getByText("Outside the visible pass window")).toBeVisible();
+  await expect(horizon.locator('[data-body="ISS"]')).toHaveCSS("visibility", "hidden");
+  await pass.getByRole("button", { name: "Back to Earth" }).click();
+  await expect(page.getByRole("group", { name: "Orbital Pass on the map" })).toBeVisible();
+  await expect(slider).toHaveAttribute("aria-valuetext", time!);
+
   await pass.getByRole("button", { name: "Back to stories", exact: true }).click();
   await expect(open).toBeFocused();
 });

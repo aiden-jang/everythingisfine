@@ -25,14 +25,12 @@ const clock = new Intl.DateTimeFormat("en-GB", { timeZone: "UTC", dateStyle: "me
 export function ObservationPlayer({
   id,
   source,
-  horizon,
   map,
   update,
   picker,
 }: {
   id: ObservationId;
   source: ObservationSource;
-  horizon: boolean;
   map: boolean;
   update: (view: ObservationView | null) => void;
   picker?: { value: string; select: (value: string) => void };
@@ -89,16 +87,6 @@ export function ObservationPlayer({
   useLayoutEffect(() => {
     if (preparing) return;
     if (canHold && (!data || !frame) && state === "loading") return;
-    const sky =
-      horizon && frame?.localSky
-        ? {
-            kind: "tonight" as const,
-            ...frame.localSky,
-            at: frame.at,
-            look: { ...frame.localSky.look, altitude: Math.max(5, frame.localSky.look.altitude) },
-            bodies: [],
-          }
-        : undefined;
     update(
       data && frame
         ? {
@@ -106,7 +94,6 @@ export function ObservationPlayer({
             target: (map ? data.mapTarget : undefined) ?? frame.camera ?? data.target,
             frame: shown ?? frame,
             image: element,
-            sky,
             ...(id === "air" ? { onPick: inspect, pickOnGlobe: true } : {}),
             ...(id === "river" ? { onPick: pick, pickOnGlobe: true } : {}),
             ...(!map && playing && frame.camera ? { follow: frame.camera } : {}),
@@ -118,14 +105,12 @@ export function ObservationPlayer({
     if (frame)
       remember?.({
         choice: option,
-        chapter: gauge ? `gauge:${gauge.id}` : horizon ? "horizon" : "",
-        ...(id === "orbit" ? { city: option } : {}),
+        chapter: gauge ? `gauge:${gauge.id}` : "",
       });
   }, [
     data,
     frame,
     element,
-    horizon,
     map,
     update,
     canHold,

@@ -10,6 +10,8 @@ import { StorySession } from "./StorySession";
 import { searchStories } from "../storyIndex";
 import { isEarthStory } from "../earth-stories/catalogue";
 import "../earth-stories/stories.css";
+import "../earth-stories/celestial.css";
+import "./orbital-pass.css";
 import "./observations.css";
 import "../iceberg/iceberg.css";
 import "../lights/lights.css";
@@ -18,6 +20,7 @@ import "../shadow/shadow.css";
 const ObservationDeck = lazy(() =>
   import("./ObservationDeck").then(({ ObservationDeck }) => ({ default: ObservationDeck })),
 );
+const OrbitalPass = lazy(() => import("./OrbitalPass").then(({ OrbitalPass }) => ({ default: OrbitalPass })));
 const EarthStory = lazy(() =>
   import("../earth-stories/EarthStory").then(({ EarthStory }) => ({ default: EarthStory })),
 );
@@ -98,6 +101,8 @@ export function ObservationDeckShell({
         {isEarthStory(entry) ? (
           <EarthStory
             id={entry}
+            readCamera={readCamera}
+            restoreCamera={restoreCamera}
             map={deck.map}
             onMap={deck.setMap}
             onView={deck.update}
@@ -105,6 +110,17 @@ export function ObservationDeckShell({
             closeLabel={closeLabel}
             city={city}
             onRadar={onRadar}
+          />
+        ) : entry === "orbit" ? (
+          <OrbitalPass
+            city={city}
+            map={deck.map}
+            readCamera={readCamera}
+            restoreCamera={restoreCamera}
+            onMap={deck.setMap}
+            onView={deck.update}
+            onClose={close}
+            closeLabel={closeLabel}
           />
         ) : entry === "iceberg" ? (
           <IcebergDrift
@@ -152,7 +168,7 @@ export function ObservationDeckShell({
             closeLabel={closeLabel}
           />
         ) : (
-          <ObservationDeck deck={{ ...deck, entry }} closeLabel={closeLabel} city={city} onClose={close} />
+          <ObservationDeck deck={{ ...deck, entry }} closeLabel={closeLabel} onClose={close} />
         )}
       </Suspense>
     </StorySession.Provider>

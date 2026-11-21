@@ -630,8 +630,11 @@ Provider colors belong to the raster. Region changes reuse the camera flight, an
 cuts directly to the chosen view. Both entries share the scan player and bounded image loader.
 
 The optional observation views keep one timeline through the existing globe and map morph.
-Orbital Pass adds a city horizon, Tide Watch adds a measured gauge, and Wind Atlas traces
-its vectors downwind as each forecast step arrives. Satellite imagery and tsunami travel
+Close Encounter holds Earth and the altitude reference in frame and slows around its closest
+approach. Earth’s Shadow moves from the Sun–Earth–Moon alignment into a steady lunar close-up
+with marked eclipse contacts. Orbital Pass follows the ISS ground track into the city sky only
+when requested. Returning restores the projection, camera and time. Tide Watch adds a measured
+gauge, and Wind Atlas traces its vectors downwind as each forecast step arrives. Satellite imagery and tsunami travel
 times stay pinned to geography. Recorded data and model output carry separate labels.
 Live observation playback runs when requested. Recorded journeys may open with an authored flight.
 Playback stops advancing while the page is hidden.

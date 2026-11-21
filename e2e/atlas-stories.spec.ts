@@ -240,6 +240,12 @@ for (const [id, title] of [
     const panel = page.getByRole("region", { name: title, exact: true });
     await expect(panel.getByRole("slider", { name: /Predicted flyby|Eclipse time/ })).toBeVisible();
     const time = panel.locator(".story-time time");
+    if (id === "eclipse") {
+      const contacts = panel.getByRole("group", { name: "Story moments" });
+      await expect(contacts.getByRole("button")).toHaveCount(7);
+      await expect(contacts.getByRole("button", { name: "Totality begins" })).toContainText("06:25:59 UT");
+      await expect(panel.locator(".time-cues > span")).toHaveCount(7);
+    }
     await panel
       .getByRole("button", { name: id === "eclipse" ? "Greatest eclipse" : "Closest approach" })
       .click();
@@ -268,6 +274,18 @@ for (const [id, title] of [
     await expect(time).not.toHaveAttribute("datetime", at!);
     await page.locator("#globe-view canvas").click({ position: { x: 60, y: 100 } });
     await expect(panel.getByRole("button", { name: "Play", exact: true })).toBeVisible();
+    await panel.getByRole("button", { name: "Map", exact: true }).click();
+    const mapTime = await time.getAttribute("datetime");
+    await panel.getByRole("button", { name: "See from my city" }).click();
+    const scrubber = panel.getByRole("slider", { name: /Predicted flyby|Eclipse time/ });
+    await scrubber.press("ArrowRight");
+    await expect(time).not.toHaveAttribute("datetime", mapTime!);
+    await panel.getByRole("button", { name: "Back to Earth" }).click();
+    await expect(panel.getByRole("button", { name: "Map", exact: true })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    await expect(time).toHaveAttribute("datetime", mapTime!);
   });
 }
 

@@ -5,8 +5,10 @@ export function createOrbitalFraming() {
   let goal: ObservationFrame["orbit"];
   let amount = 0;
   let distance = 0;
+  let fitNarrow = false;
   const focus = new Vector3();
   const target = new Vector3();
+  const direction = new Vector3();
   let dirty = false;
   return {
     magnification(gain: number, morph: number) {
@@ -17,6 +19,7 @@ export function createOrbitalFraming() {
         focus.fromArray(orbit.focus);
         distance = orbit.distance;
       }
+      if (orbit) fitNarrow = !!orbit.fitNarrow;
       goal = orbit;
       dirty = true;
     },
@@ -44,13 +47,17 @@ export function createOrbitalFraming() {
         return;
       }
       const blend = amount * (1 - morph);
-      const orbit = camera.position
-        .clone()
-        .normalize()
-        .multiplyScalar(distance * zoom)
-        .add(focus);
-      camera.position.lerp(orbit, blend);
+      const framingDistance = (distance * zoom) / (fitNarrow ? Math.min(1, camera.aspect) : 1);
+      direction.copy(camera.position).normalize().multiplyScalar(framingDistance).add(focus);
+      camera.position.lerp(direction, blend);
       target.copy(focus).multiplyScalar(blend);
+      if (fitNarrow && camera.aspect > 1) {
+        // Leave room below the orbital subject for the playback dock.
+        camera.lookAt(target);
+        direction.set(0, -0.06 * framingDistance * blend, 0).applyQuaternion(camera.quaternion);
+        camera.position.add(direction);
+        target.add(direction);
+      }
       camera.lookAt(target);
       camera.far = blend > 0 ? 2000 : 100;
       camera.updateProjectionMatrix();

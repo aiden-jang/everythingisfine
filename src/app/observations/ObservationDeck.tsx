@@ -17,19 +17,17 @@ import { StoryProjection } from "./StoryProjection";
 import { ShareMoment, useStorySession } from "./StorySession";
 
 type Deck = Omit<ReturnType<typeof useObservationDeck>, "entry"> & {
-  entry: Exclude<ObservationId, "iceberg">;
+  entry: Exclude<ObservationId, "iceberg" | "orbit">;
 };
 
 export function ObservationDeck({
   deck,
   onClose,
   closeLabel,
-  city,
 }: {
   deck: Deck;
   onClose: () => void;
   closeLabel: string;
-  city: { name: string; select: (name: string) => void };
 }): JSX.Element {
   const { initial } = useStorySession();
   const back = useRef<HTMLButtonElement>(null);
@@ -42,12 +40,7 @@ export function ObservationDeck({
   const meta = observations[id];
   const title = meta.title;
   const photograph = deck.view?.frame.photograph;
-  const picker =
-    id === "orbit"
-      ? { value: city.name, select: city.select }
-      : id === "swell"
-        ? { value: buoy, select: setBuoy }
-        : undefined;
+  const picker = id === "swell" ? { value: buoy, select: setBuoy } : undefined;
 
   useLayoutEffect(() => back.current?.focus({ preventScroll: true }), [id]);
   useObservatoryEscape(onClose);
@@ -73,11 +66,7 @@ export function ObservationDeck({
         className="observatory-stage replay-stage"
         data-stage="observation"
         role="group"
-        aria-label={
-          id === "epic"
-            ? "DSCOVR camera view"
-            : `${title} on the ${deck.map ? "map" : deck.horizon ? "horizon" : "globe"}`
-        }
+        aria-label={id === "epic" ? "DSCOVR camera view" : `${title} on the ${deck.map ? "map" : "globe"}`}
       >
         {photograph && id === "epic" && (
           <div className="observation-photograph" data-loaded={deck.view?.image ? "true" : "false"}>
@@ -97,18 +86,10 @@ export function ObservationDeck({
         </div>
         {!deck.map && deck.view?.frame.tide && <TideGauge tide={deck.view.frame.tide} />}
         <div className="stage-readout">
-          {id === "epic" ? "DSCOVR camera" : deck.map ? "Map" : deck.horizon ? "Local horizon" : "Globe"} ·{" "}
-          {meta.group}
+          {id === "epic" ? "DSCOVR camera" : deck.map ? "Map" : "Globe"} · {meta.group}
         </div>
         {id !== "epic" && (
-          <StoryProjection
-            map={deck.map}
-            globeActive={!deck.map && !deck.horizon}
-            onMap={(map) => {
-              deck.setHorizon(false);
-              deck.setMap(map);
-            }}
-          >
+          <StoryProjection map={deck.map} onMap={deck.setMap}>
             {id === "swell" && (
               <div className="swell-buoys" role="group" aria-label="Pacific buoys">
                 {swellBuoys.map(({ id, short, label }) => (
@@ -123,18 +104,6 @@ export function ObservationDeck({
                   </button>
                 ))}
               </div>
-            )}
-            {id === "orbit" && (
-              <button
-                type="button"
-                aria-pressed={deck.horizon}
-                onClick={() => {
-                  deck.setMap(false);
-                  deck.setHorizon(true);
-                }}
-              >
-                Local sky
-              </button>
             )}
           </StoryProjection>
         )}
@@ -164,7 +133,6 @@ export function ObservationDeck({
                   key={id}
                   id={id}
                   source={loaded.source}
-                  horizon={deck.horizon}
                   map={deck.map}
                   update={deck.update}
                   {...(picker ? { picker } : {})}

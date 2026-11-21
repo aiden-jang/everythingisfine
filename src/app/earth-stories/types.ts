@@ -24,12 +24,15 @@ export interface StorySite {
 export interface EarthStoryData {
   frames: readonly StoryFrame[];
   openingAt?: number;
+  playbackDuration?: number;
+  pace?: (position: number) => number;
+  timelineCues?: boolean;
   sky?: (at: number) => NonNullable<ObservationView["sky"]>;
   geometry?: (frame: StoryFrame) => ObservationFrame;
   target: CameraState;
   mapTarget?: CameraState;
   lens?: { globe: number; map: number };
-  chapters: readonly { at: number; label: string }[];
+  chapters: readonly { at: number; label: string; timeLabel?: string }[];
   series?: readonly ObservationSeries[];
   units?: string;
   sites?: readonly StorySite[];

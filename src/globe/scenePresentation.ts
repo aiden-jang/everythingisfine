@@ -216,7 +216,8 @@ export function createScenePresentation(
     if (lens !== observation?.lens) lensReveal = 0;
     lens = observation?.lens;
     replay = observation?.follow;
-    if (guided || !observation?.frame.orbit) orbital.set(skyView ? undefined : observation?.frame.orbit);
+    if (skyView || guided || !observation?.frame.orbit)
+      orbital.set(skyView ? undefined : observation?.frame.orbit);
     orbitalMoon = !!observation?.frame.orbit?.eclipse;
     if (planetarium !== (mode === "planetarium")) controls.setPlanetarium(mode === "planetarium");
     planetarium = mode === "planetarium";

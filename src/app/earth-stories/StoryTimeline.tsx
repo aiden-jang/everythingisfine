@@ -6,6 +6,7 @@ import type { useStoryClock } from "./useStoryClock";
 import { FrameComparison } from "../observations/FrameComparison";
 import { layerTime } from "../layerTime";
 import { refreshAnnotations } from "../../globe/annotationInput";
+import { TimelineCues } from "../observations/TimelineCues";
 import { StoryDock } from "../observations/StoryDock";
 
 type Clock = ReturnType<typeof useStoryClock>;
@@ -92,22 +93,31 @@ export function StoryTimeline({
           <time dateTime={frame.dateTime ?? new Date(frame.at).toISOString()}>
             {finished && annual ? frame.dateTime : time}
           </time>
-          <input
-            id="earth-story-time"
-            ref={slider}
-            className="scrub-slider"
-            type="range"
-            min={0}
-            max={data.frames.length - 1}
-            value={index}
-            aria-valuetext={time}
-            disabled={busy}
-            onInput={(event) => {
-              const next = event.currentTarget.valueAsNumber;
-              if (next !== data.frames.length - 1) expand(null);
-              clock.seek(next);
-            }}
-          />
+          <div className="story-scrub">
+            <input
+              id="earth-story-time"
+              ref={slider}
+              className="scrub-slider"
+              type="range"
+              min={0}
+              max={data.frames.length - 1}
+              value={index}
+              aria-valuetext={time}
+              disabled={busy}
+              onInput={(event) => {
+                const next = event.currentTarget.valueAsNumber;
+                if (next !== data.frames.length - 1) expand(null);
+                clock.seek(next);
+              }}
+            />
+            {data.timelineCues && !compact && (
+              <TimelineCues
+                cues={milestones.map(({ at, label }) => ({ index: nearest(at), label }))}
+                index={index}
+                max={data.frames.length - 1}
+              />
+            )}
+          </div>
         </div>
         <div className="observatory-actions">
           <PlaybackButton
@@ -149,7 +159,7 @@ export function StoryTimeline({
             >
               {image && <img src={image} alt="" loading="lazy" decoding="async" width="160" height="72" />}
               <strong>{chapter.label}</strong>
-              <small>{item.timeLabel ?? layerTime(item.at)}</small>
+              <small>{chapter.timeLabel ?? item.timeLabel ?? layerTime(item.at)}</small>
             </button>
           );
         })}

@@ -1,10 +1,11 @@
+import { useArchiveSky } from "./CelestialView";
 import { StoryFinding } from "../journeys/StoryFinding";
 import { useStoryCompletion } from "../journeys/useStoryCompletion";
 import { StoryLoading } from "../StoryLoading";
 import { useJourneyGestures } from "../journeyCamera";
 import { storyMapTarget } from "./mapFraming";
 import { StoryTimeline } from "./StoryTimeline";
-import { nearestFrame } from "./nearestFrame";
+import { nearestFrame, openingFrame } from "./nearestFrame";
 import { useCallback, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { ReplayPanel, type ReplayProps } from "../observations/RecordedReplay";
 import { useObservationImage } from "../observations/useObservationData";
@@ -54,17 +55,12 @@ export function StoryPlayer({
 }): JSX.Element {
   const meta = earthStories[id];
   const { initial, remember } = useStorySession();
+  const orbitStory = id === "apophis" || id === "eclipse";
   const [ready, setReady] = useState(false);
-  const [skyMode, setSkyMode] = useState(initial?.chapter === "sky");
   const [slice, setSlice] = useState(initial?.chapter === "slice");
   const [site, setSite] = useState(initial?.chapter?.startsWith("site:") ? initial.chapter.slice(5) : "");
   const arrive = useCallback(() => setReady(true), []);
-  let restoredAt = initial?.at;
-  if ((id === "ozone" || id === "spring" || id === "glacier") && restoredAt !== undefined)
-    restoredAt = Date.parse(
-      `${new Date(data.frames[0]!.at).getUTCFullYear()}${new Date(restoredAt).toISOString().slice(4)}`,
-    );
-  const [start] = useState(() => nearestFrame(data, restoredAt ?? data.openingAt));
+  const [start] = useState(() => openingFrame(data, id, initial?.at));
   const selected = data.sites?.find((p) => p.id === site);
   const waiting = useRef(true);
   const startLabel =
@@ -76,7 +72,8 @@ export function StoryPlayer({
     waiting,
     initial?.at !== undefined,
     !startLabel && !surveyed,
-    id === "seafloor" ? 8500 : undefined,
+    id === "seafloor" ? 8500 : data.playbackDuration,
+    data.pace,
   );
   const index = Math.min(data.frames.length - 1, Math.floor(clock.position));
   const duration = Math.max(1, data.frames.length - 1);
@@ -155,10 +152,8 @@ export function StoryPlayer({
             : data.target,
     [selected, data.target, mapTarget, panel.map, id, slice],
   );
-  const localSky = useMemo(
-    () => (skyMode && !panel.map ? data.sky?.(frame.at) : undefined),
-    [skyMode, panel.map, data, frame.at],
-  );
+  const sky = useArchiveSky(data, viewFrame, initial, panel, clock, orbitStory);
+  const { localSky, skyMode, setSkyMode } = sky;
   const time = frame.timeLabel ?? format.format(frame.at) + " UTC";
   const settled = !busy && status === "ready" && bloom.status === "ready";
   const finished = settled && !clock.playing && clock.position >= duration;
@@ -178,7 +173,7 @@ export function StoryPlayer({
   const holdGeography = ready && (shoreline.holding || (!!shoreline.basin && !clock.playing));
   const flying = clock.cinematic && clock.playing;
   const motionProgress =
-    flying && !surveyed && !panel.map && !localSky && !shoreline.holding
+    flying && !orbitStory && !surveyed && !panel.map && !localSky && !shoreline.holding
       ? clock.position / duration
       : undefined;
   const terrainProgress = data.terrain
@@ -191,7 +186,7 @@ export function StoryPlayer({
     if (frame.raster && (!element || element.src !== new URL(frame.raster.url, location.href).href)) return;
     onView({
       kind: "observation",
-      frame: viewFrame,
+      frame: sky.sceneFrame,
       target,
       image: displayedImage,
       ...(bloom.comparing && surface ? { surface, surveyDivider: bloom.divider } : {}),
@@ -240,7 +235,7 @@ export function StoryPlayer({
     });
   }, [
     frame,
-    viewFrame,
+    sky.sceneFrame,
     bloom.comparing,
     bloom.divider,
     bloom.chapter,
@@ -287,23 +282,23 @@ export function StoryPlayer({
   return (
     <ReplayPanel
       {...panel}
+      horizon={orbitStory && !!localSky}
+      projection={sky.projection}
       focusOnEntry={false}
       title={meta.title}
       location={localSky ? `${city.name} · ${new Date(frame.at).getUTCFullYear()} sky` : meta.location}
       subtitle={meta.summary}
-      className={surveyed || id === "seafloor" ? `${id}-journey` : ""}
+      className={orbitStory ? "celestial-journey" : surveyed || id === "seafloor" ? `${id}-journey` : ""}
       finding={id !== "aral"}
       status={
         failed && id === "reef" && choice === "Recent observations"
           ? "Recent reef data unavailable · showing previous observations"
           : comparingShoreline
             ? null
-            : localSky
-              ? `${localSky.targetName} from ${city.name}`
-              : caption
+            : (sky.status ?? caption)
       }
       at={
-        comparingShoreline ? undefined : (
+        comparingShoreline || orbitStory ? undefined : (
           <time dateTime={frame.dateTime ?? new Date(frame.at).toISOString()}>{time}</time>
         )
       }
@@ -331,20 +326,22 @@ export function StoryPlayer({
       {section.controls}
       {section.chart}
       {moorings.controls}
-      <StorySideActions
-        {...{
-          id,
-          data,
-          map: panel.map,
-          onMap: panel.onMap,
-          onRadar,
-          clock,
-          skyMode,
-          setSkyMode,
-          slice,
-          setSlice,
-        }}
-      />
+      {!orbitStory && (
+        <StorySideActions
+          {...{
+            id,
+            data,
+            map: panel.map,
+            onMap: panel.onMap,
+            onRadar,
+            clock,
+            skyMode,
+            setSkyMode,
+            slice,
+            setSlice,
+          }}
+        />
+      )}
       {(busy || status === "loading") && <StoryLoading>Loading the selected observations…</StoryLoading>}
       {shoreline.reading}
       <StoryTimeline

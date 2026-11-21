@@ -30,7 +30,6 @@ export function useObservationDeck(
     queuedProjection.current = undefined;
     setProjection(next);
   }, []);
-  const [horizon, setHorizon] = useState(shared?.chapter === "horizon");
   const [query, setQuery] = useState("");
   const [revision, setRevision] = useState(0);
   const pending = useRef(false);
@@ -92,9 +91,8 @@ export function useObservationDeck(
     setEntry(null);
     setTrigger(null);
     setMap(false);
-    setHorizon(false);
   }, [setMap]);
-  const snapshot = { entry, trigger, map, horizon, query, recipient: recipient.current };
+  const snapshot = { entry, trigger, map, query, recipient: recipient.current };
   return {
     entry,
     revision,
@@ -108,7 +106,6 @@ export function useObservationDeck(
       setEntry(saved.entry);
       setTrigger(saved.trigger);
       setMap(saved.map);
-      setHorizon(saved.horizon);
       setQuery(saved.query);
       setView(null);
     },
@@ -129,12 +126,10 @@ export function useObservationDeck(
     map,
     update,
     setMap,
-    horizon,
     session,
     getMoment: current,
     query,
     setQuery,
-    setHorizon,
     open(next: StoryId, from: string, resume?: StoryMoment | null) {
       before();
       recipient.current = false;
@@ -169,7 +164,6 @@ export function useObservationDeck(
       const nextMap = memory.current.get(next)?.map ?? projection.current;
       if (view) queuedProjection.current = nextMap;
       else setMap(nextMap);
-      setHorizon(memory.current.get(next)?.chapter === "horizon");
       setEntry(next);
     },
     close,

@@ -15,7 +15,7 @@ export const atlasStories = {
     scene: "night",
     source: "NASA / JPL Horizons",
     url: "https://ssd.jpl.nasa.gov/horizons/",
-    note: "Predicted JPL geocentric ephemerides sampled every two minutes. Earth distances and the geostationary reference ring use physical scale; the asteroid marker is enlarged. City directions include parallax. The ring is a reference altitude, not a prediction of an encounter with a satellite. Daylight and the horizon affect visibility.",
+    note: "Predicted JPL geocentric ephemerides sampled every two minutes. Earth distances and the geostationary reference ring use physical scale; the asteroid marker is enlarged. City directions include parallax. The ring is a reference altitude, not a prediction of an encounter with a satellite. The map shows the point on Earth directly beneath Apophis. Daylight and the horizon affect visibility.",
   },
   glacier: {
     title: "Glacier Flow",
@@ -42,7 +42,7 @@ export const atlasStories = {
     scene: "night",
     source: "NASA eclipse catalogue / JPL Horizons",
     url: "https://eclipse.gsfc.nasa.gov/LEplot/LEplot2001/LE2025Mar14T.pdf",
-    note: "Sun and Moon positions are computed by JPL Horizons. Shadow geometry uses their distances and physical radii; the close-up enlarges the Moon for inspection. NASA catalogue contacts include Earth’s atmospheric shadow enlargement. The red appearance is illustrative, not a measured brightness or color. City visibility includes the local horizon and daylight.",
+    note: "Sun and Moon positions are computed by JPL Horizons. Shadow geometry uses their distances and physical radii; the close-up enlarges the Moon for inspection. NASA catalogue contacts use Universal Time and include Earth’s atmospheric shadow enlargement. Jumps select the nearest one-minute sample. The alignment guides show the direction of sunlight and shadow. The red appearance is illustrative, not a measured brightness or color. City visibility includes the local horizon and daylight.",
   },
   nino: {
     title: "El Niño Pulse",

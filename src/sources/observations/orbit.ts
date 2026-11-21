@@ -2,7 +2,7 @@ import { eciToGeodetic, gstime, propagate, twoline2satrec, type SatRec } from "s
 import { skyCities } from "../../app/tonight/cities";
 import { ObservationDataError } from "../../app/observations/types";
 import type { ObservationSource } from "../../app/observations/types";
-import { horizontal } from "../../geo/tonight";
+import { bearingLabel, horizontal } from "../../geo/tonight";
 import { DEG, toVec3 } from "../../geo/sphere";
 import { subsolarPoint, sunElevation } from "../../geo/sun";
 import { HOUR, MINUTE, request } from "./common";
@@ -40,6 +40,8 @@ export const orbit: ObservationSource = {
       throw new ObservationDataError("The ISS orbital data is too old to predict a pass.");
     const sat = twoline2satrec(first, second);
     let pass: number | undefined;
+    let appearance: number | undefined;
+    let disappearance: number | undefined;
     let overhead: number | undefined;
     let overheadPeak = -90;
     let overheadDone = false;
@@ -54,10 +56,14 @@ export const orbit: ObservationSource = {
         overhead = at;
       } else if (overhead !== undefined && sky.altitude < 10) overheadDone = true;
       const visible = sky.altitude >= 10 && pos.lit && daylight(at) < -6;
-      if (visible && sky.altitude > peak) {
-        peak = sky.altitude;
-        pass = at;
-      } else if (pass !== undefined && !visible) break;
+      if (visible) {
+        appearance ??= at;
+        disappearance = at + 30_000;
+        if (sky.altitude > peak) {
+          peak = sky.altitude;
+          pass = at;
+        }
+      } else if (appearance !== undefined) break;
     }
     const start = (pass ?? overhead ?? now + 48 * MINUTE) - 48 * MINUTE;
     const points = Array.from({ length: 193 }, (_, index) => position(sat, start + index * 30_000)).filter(
@@ -66,10 +72,10 @@ export const orbit: ObservationSource = {
     const ground = points.map(({ lon, lat }) => ({ lon, lat }));
     const frames = points.map((point, index) => {
       const look = horizontal(city, point, 1 + point.lift);
-      const compass = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"][Math.round(look.azimuth / 45) % 8];
+      const visible = look.altitude >= 10 && point.lit && daylight(point.at) < -6;
       return {
         at: point.at,
-        localSky: { city, look },
+        localSky: { city, look, visible },
         paths: [
           { points: ground, color: 0x577284 },
           {
@@ -86,7 +92,10 @@ export const orbit: ObservationSource = {
           { label: "Altitude above Earth", value: `${Math.round(point.height)} km` },
           {
             label: "From city",
-            value: look.altitude < 0 ? "Below horizon" : `${Math.round(look.altitude)}° high · ${compass}`,
+            value:
+              look.altitude < 0
+                ? "Below horizon"
+                : `${Math.round(look.altitude)}° high · ${bearingLabel(look.azimuth)}`,
           },
           { label: "Sunlight", value: point.lit ? "Sunlit" : "In Earth’s shadow" },
         ],
@@ -96,16 +105,19 @@ export const orbit: ObservationSource = {
       target: { lon: city.lon, lat: city.lat, zoom: 1.18 },
       mapTarget: { lon: city.lon, lat: 0, zoom: 0.78 },
       frames,
+      ...(appearance !== undefined && pass !== undefined && disappearance !== undefined
+        ? { visiblePass: { appearance, peak: pass, disappearance } }
+        : {}),
       chapters:
-        pass !== undefined || overhead !== undefined
+        pass === undefined && overhead !== undefined
           ? [
               {
                 index: 96,
-                label: pass !== undefined ? "Jump to visible pass" : "Jump to next pass above 10°",
+                label: "Next pass above 10°",
               },
             ]
           : [],
-      note: `Calculated from ISS elements dated ${new Date(epoch).toISOString().slice(0, 10)}. ${pass === undefined ? "No sunlit pass above 10° found in the next 48 hours." : "Predicted visibility assumes clear skies and a level horizon."}`,
+      note: `Calculated from ISS elements dated ${new Date(epoch).toISOString().slice(0, 10)}. ${pass === undefined ? "No visible pass found in the next 48 hours." : "Predicted visibility assumes clear skies and a level horizon."}`,
     };
   },
 };

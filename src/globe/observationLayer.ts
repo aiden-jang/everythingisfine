@@ -129,10 +129,13 @@ export function createObservationLayer(morph: { value: number }) {
       attribute float aSize;
       varying vec3 tint;
       varying float trail;
+      varying float pathVisibility;
+      attribute float aElapsed;
       uniform float orbital;
       void main() {
         tint = color;
         trail = aSize;
+        pathVisibility = 1.0 - aElapsed * smoothstep(0.0, 0.75, uMorph);
         vec3 point=mix(position,normalize(position)*1.012,uMorph*orbital);
         gl_Position = projectionMatrix * modelViewMatrix * vec4(fmProject(point), 1.0);
       }
@@ -140,13 +143,14 @@ export function createObservationLayer(morph: { value: number }) {
     fragmentShader: /* glsl */ `
       varying vec3 tint;
       varying float trail;
+      varying float pathVisibility;
       uniform float phase;
       uniform float opacity;
       void main() {
         float distance = (trail - phase) * 6.0;
         float head = exp(-distance * distance);
         float amount = phase < 0.0 ? 1.0 : (0.35 + 0.65 * head);
-        gl_FragColor = vec4(tint, opacity * amount);
+        gl_FragColor = vec4(tint, opacity * amount * pathVisibility);
         #include <colorspace_fragment>
       }
     `,
@@ -272,11 +276,11 @@ export function createObservationLayer(morph: { value: number }) {
     if (view?.frame.paths !== prior?.frame.paths || view?.frame.raster !== prior?.frame.raster) travel = 0;
     if (view?.frame.paths !== prior?.frame.paths) {
       const paths = rows();
-      for (const { points, color = INK } of view?.frame.paths ?? []) {
+      for (const { points, color = INK, spaceOnly = false } of view?.frame.paths ?? []) {
         for (let i = 1; i < points.length; i++)
           wrapSegment(points[i - 1]!, points[i]!, (a, b) => {
-            paths.push(a, color, (i - 1) / (points.length - 1));
-            paths.push(b, color, i / (points.length - 1));
+            paths.push(a, color, (i - 1) / (points.length - 1), Number(spaceOnly));
+            paths.push(b, color, i / (points.length - 1), Number(spaceOnly));
           });
       }
       line.geometry.dispose();

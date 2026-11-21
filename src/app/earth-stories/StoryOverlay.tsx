@@ -20,7 +20,7 @@ export function StoryOverlay({
         <div className="tonight-labels comet-labels" data-sky-labels="" aria-hidden="true">
           {localSky.bodies.map(({ name }) => (
             <span key={name} data-body={name}>
-              {name === "NEOWISE" && <i />}
+              {(name === "NEOWISE" || name === "Apophis") && <i />}
               {name}
             </span>
           ))}

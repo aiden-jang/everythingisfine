@@ -150,8 +150,8 @@ measurements, not field recordings.
   the globe or map and pin a present-day place to follow its plate.
 - **Swell Lines** follows forecast swell direction and height across the Pacific. Scrub two days
   of forecasts and select a buoy to compare recent measurements with the nearby model.
-- **Orbital Pass** opens from After Dark’s drawer with a city picker, a local horizon, and
-  Globe and Map views of the predicted ground track.
+- **Orbital Pass** follows the predicted ISS ground track into the saved city’s sky. Jump to
+  appearance, peak altitude or disappearance, then return to the Earth view you left.
 - **Feed status** links to official sources and shows availability, the last successful check or a short issue summary.
   Observatory views fetch their own sources when opened. In Storm Radar, switch projections or turn
   on matched GOES-East lightning scans.
