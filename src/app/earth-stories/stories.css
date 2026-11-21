@@ -297,6 +297,12 @@
   }
 }
 
+@media (max-width: 599px) and (max-height: 700px) {
+  .shoreline-basins button[data-basin="east"] span {
+    right: 25px;
+  }
+}
+
 @media (max-height: 620px) and (min-width: 600px) {
   .replay-region:has(.shoreline-basins) .story-dock-host {
     position: static;

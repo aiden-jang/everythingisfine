@@ -136,6 +136,14 @@
   }
 }
 
+@media (max-width: 599px) and (max-height: 700px) {
+  .lights-key {
+    inset: var(--stage-inset) auto auto var(--stage-inset);
+    gap: 5px;
+    font-size: 11px;
+  }
+}
+
 .lights-journey:has(.lights-comparison) .stage-readout {
   visibility: hidden;
 }
